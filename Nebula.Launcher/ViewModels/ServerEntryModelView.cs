@@ -1,17 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
-using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Nebula.Launcher.ProcessHelper;
 using Nebula.Launcher.ServerListProviders;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Pages;
@@ -32,30 +27,27 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer
     [ObservableProperty] private bool _expandInfo;
     [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private bool _isVisible;
-
-    private string _lastError = "";
-    private Process? _p;
+    [ObservableProperty] private bool _runVisible = true;
+    
     private ILogger _logger;
-    private ILogger? _processLogger;
-
+    private bool _isStatusFromHub;
     private ServerInfo? _serverInfo;
+    private ContentLogConsumer _currentContentLogConsumer;
+    private ProcessRunHandler<GameProcessStartInfoProvider>? _currentInstance;
+    
     [ObservableProperty] private bool _tagDataVisible;
 
     public LogPopupModelView CurrLog;
     public RobustUrl Address { get; private set; }
-
-    [GenerateProperty] private AuthService AuthService { get; } = default!;
-    [GenerateProperty] private ContentService ContentService { get; } = default!;
     [GenerateProperty] private ConfigurationService ConfigurationService { get; } = default!;
     [GenerateProperty] private CancellationService CancellationService { get; } = default!;
     [GenerateProperty] private DebugService DebugService { get; } = default!;
-    [GenerateProperty] private RunnerService RunnerService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
     [GenerateProperty] private ViewHelperService ViewHelperService { get; } = default!;
     [GenerateProperty] private RestService RestService { get; } = default!;
     [GenerateProperty] private MainViewModel MainViewModel { get; } = default!;
     [GenerateProperty] private FavoriteServerListProvider FavoriteServerListProvider { get; } = default!;
-    [GenerateProperty] private DotnetResolverService DotnetResolverService { get; } = default!;
+    [GenerateProperty] private GameRunnerPreparer GameRunnerPreparer { get; } = default!;
 
     public ServerStatus Status { get; private set; } =
         new(
@@ -71,21 +63,8 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer
         );
 
     public ObservableCollection<ServerLink> Links { get; } = new();
-    public bool RunVisible => Process == null;
-
     public ObservableCollection<string> Tags { get; } = [];
-
     public ICommand OnLinkGo { get; } = new LinkGoCommand();
-
-    private Process? Process
-    {
-        get => _p;
-        set
-        {
-            _p = value;
-            OnPropertyChanged(nameof(RunVisible));
-        }
-    }
 
     public async Task<ServerInfo?> GetServerInfo()
     {
@@ -119,6 +98,7 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer
     {
         _logger = DebugService.GetLogger(this);
         CurrLog = ViewHelperService.GetViewModel<LogPopupModelView>();
+        _currentContentLogConsumer = new(CurrLog, PopupMessageService);
     }
 
     public void ProcessFilter(ServerFilter? serverFilter)
@@ -140,11 +120,18 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer
         OnPropertyChanged(nameof(Status));
     }
 
+    public void UpdateStatusIfNecessary()
+    {
+        if(_isStatusFromHub) return;
+        FetchStatus();
+    }
+
     public ServerEntryModelView WithData(RobustUrl url, ServerStatus? serverStatus)
     {
         Address = url;
-        if (serverStatus is not null)
-            SetStatus(serverStatus);
+        _isStatusFromHub = serverStatus is not null;
+        if (_isStatusFromHub)
+            SetStatus(serverStatus!);
         else
             FetchStatus();
         
@@ -188,125 +175,46 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer
     }
 
     public void RunInstance()
-    {
-        Task.Run(RunAsync);
+    { 
+        CurrLog.Clear();
+        Task.Run(RunInstanceAsync);
     }
 
-    public async Task RunAsync()
+    private async void RunInstanceAsync()
     {
-        try
-        {
-            var authProv = AuthService.SelectedAuth;
+        using var loadingContext = ViewHelperService.GetViewModel<LoadingContextViewModel>();
+        loadingContext.LoadingName = "Loading instance...";
+        ((ILoadingHandler)loadingContext).AppendJob();
 
-            var buildInfo =
-                await ContentService.GetBuildInfo(Address, CancellationService.Token);
-
-            using (var loadingContext = ViewHelperService.GetViewModel<LoadingContextViewModel>())
-            {
-                loadingContext.LoadingName = "Loading instance...";
-                ((ILoadingHandler)loadingContext).AppendJob();
-
-                PopupMessageService.Popup(loadingContext);
-
-                await RunnerService.PrepareRun(buildInfo, loadingContext, CancellationService.Token);
-
-                var path = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
-                
-                Process = Process.Start(new ProcessStartInfo
-                {
-                    FileName = await DotnetResolverService.EnsureDotnet(),
-                    Arguments = Path.Join(path, "Nebula.Runner.dll"),
-                    Environment =
-                    {
-                        { "ROBUST_AUTH_USERID", authProv?.UserId.ToString() },
-                        { "ROBUST_AUTH_TOKEN", authProv?.Token.Token },
-                        { "ROBUST_AUTH_SERVER", authProv?.AuthServer },
-                        { "ROBUST_AUTH_PUBKEY", buildInfo.BuildInfo.Auth.PublicKey },
-                        { "GAME_URL", Address.ToString() },
-                        { "AUTH_LOGIN", authProv?.Login }
-                    },
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                });
-
-                ((ILoadingHandler)loadingContext).AppendResolvedJob();
-            }
-
-            if (Process is null) return;
+        PopupMessageService.Popup(loadingContext);
+        _currentInstance = 
+            await GameRunnerPreparer.GetGameProcessStartInfoProvider(Address, loadingContext, CancellationService.Token);
             
-            _processLogger = DebugService.GetLogger($"PROCESS_{Process.Id}");
-
-            Process.EnableRaisingEvents = true;
-
-            Process.BeginOutputReadLine();
-            Process.BeginErrorReadLine();
-
-            Process.OutputDataReceived += OnOutputDataReceived;
-            Process.ErrorDataReceived += OnErrorDataReceived;
-
-            Process.Exited += OnExited;
-        }
-        catch (TaskCanceledException e)
-        {
-            PopupMessageService.Popup("Task canceled: " + e.Message);
-            _logger.Error("Task canceled");
-            _logger.Error(e);
-        }
-        catch (Exception e)
-        {
-            PopupMessageService.Popup(e);
-        }
+        _currentInstance.RegisterLogger(_currentContentLogConsumer);
+        _currentInstance.RegisterLogger(new DebugLoggerBridge(DebugService.GetLogger($"PROCESS_{Random.Shared.Next(65535)}")));
+        _currentInstance.OnProcessExited += OnProcessExited;
+        RunVisible = false;
+        _currentInstance.Start();
     }
 
-    private void OnExited(object? sender, EventArgs e)
+    private void OnProcessExited(ProcessRunHandler<GameProcessStartInfoProvider> obj)
     {
-        if (Process is null) return;
-
-        Process.OutputDataReceived -= OnOutputDataReceived;
-        Process.ErrorDataReceived -= OnErrorDataReceived;
-        Process.Exited -= OnExited;
-
-        _processLogger?.Log("PROCESS EXIT WITH CODE " + Process.ExitCode);
-
-        if (Process.ExitCode != 0)
-            PopupMessageService.Popup($"Game exit with code {Process.ExitCode}.\nReason: {_lastError}");
-
-        _processLogger?.Dispose();
+        RunVisible = true;
+        if (_currentInstance == null) return;
         
-        Process.Dispose();
-        Process = null;
-    }
-
-    private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
-    {
-        if (e.Data != null)
-        {
-            _lastError = e.Data;
-            _processLogger?.Error(e.Data);
-            CurrLog.Append(e.Data);
-        }
-    }
-
-    private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
-    {
-        if (e.Data != null)
-        {
-            _processLogger?.Log(e.Data);
-            CurrLog.Append(e.Data);
-        }
-    }
-
-    public void ReadLog()
-    {
-        PopupMessageService.Popup(CurrLog);
+        _currentInstance.OnProcessExited -= OnProcessExited;
+        _currentInstance.Dispose();
+        _currentInstance = null;
     }
 
     public void StopInstance()
     {
-        Process?.CloseMainWindow();
+        _currentInstance?.Stop();   
+    }
+    
+    public void ReadLog()
+    {
+        PopupMessageService.Popup(CurrLog);
     }
 
     public async void ExpandInfoRequired()
@@ -323,57 +231,36 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer
         if (info.Links is null) return;
         foreach (var link in info.Links) Links.Add(link);
     }
-
-    private static string FindDotnetPath()
-    {
-        var pathEnv = Environment.GetEnvironmentVariable("PATH");
-        var paths = pathEnv?.Split(Path.PathSeparator);
-        if (paths != null)
-            foreach (var path in paths)
-            {
-                var dotnetPath = Path.Combine(path, "dotnet");
-                if (File.Exists(dotnetPath)) return dotnetPath;
-            }
-
-        return "dotnet";
-    }
 }
 
-public sealed class LogInfo
+public sealed class ContentLogConsumer : IProcessLogConsumer
 {
-    public string Category { get; set; } = "LOG";
-    public IBrush CategoryColor { get; set; } = Brush.Parse("#424242");
-    public string Message { get; set; } = "";
+    private readonly LogPopupModelView _currLog;
+    private readonly PopupMessageService _popupMessageService;
 
-    public static LogInfo FromString(string input)
+    public ContentLogConsumer(LogPopupModelView currLog, PopupMessageService popupMessageService)
     {
-        var matches = Regex.Matches(input, @"(\[(?<c>.*)\] (?<m>.*))|(?<m>.*)");
-        var category = "All";
+        _currLog = currLog;
+        _popupMessageService = popupMessageService;
+    }
 
-        if (matches[0].Groups.TryGetValue("c", out var c)) category = c.Value;
+    public void Out(string text)
+    {
+        _currLog.Append(text);
+    }
 
-        var color = Brush.Parse("#444444");
+    public void Error(string text)
+    {
+        _currLog.Append(text);
+    }
 
-        switch (category)
-        {
-            case "DEBG":
-                color = Brush.Parse("#2436d4");
-                break;
-            case "ERRO":
-                color = Brush.Parse("#d42436");
-                break;
-            case "INFO":
-                color = Brush.Parse("#0ab3c9");
-                break;
-        }
-
-        var message = matches[0].Groups["m"].Value;
-        return new LogInfo
-        {
-            Category = category, Message = message, CategoryColor = color
-        };
+    public void Fatal(string text)
+    {
+        _popupMessageService.Popup("Fatal error while stop instance:" + text);
     }
 }
+
+
 
 public class LinkGoCommand : ICommand
 {

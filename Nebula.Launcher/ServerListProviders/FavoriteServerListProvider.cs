@@ -16,7 +16,7 @@ using Nebula.Shared.Utils;
 
 namespace Nebula.Launcher.ServerListProviders;
 
-[ServiceRegister(), ConstructGenerator]
+[ServiceRegister, ConstructGenerator]
 public sealed partial class FavoriteServerListProvider : IServerListProvider, IServerListDirtyInvoker
 {
     [GenerateProperty] private ConfigurationService ConfigurationService { get; }

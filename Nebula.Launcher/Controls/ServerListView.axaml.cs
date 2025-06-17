@@ -43,6 +43,17 @@ public partial class ServerListView : UserControl
         else _provider.OnLoaded += RefreshRequired;
     }
 
+    public void RequireStatusUpdate()
+    {
+        foreach (var rawView in ServerList.Items)
+        {
+            if (rawView is ServerEntryModelView serverEntryModelView)
+            {
+                serverEntryModelView.UpdateStatusIfNecessary();
+            }
+        }
+    }
+
     public void ApplyFilter(ServerFilter? filter)
     {
         _currentFilter = filter;

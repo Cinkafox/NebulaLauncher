@@ -104,6 +104,8 @@ public partial class ServerOverviewModel : ViewModelBase
     public void UpdateRequired()
     {
         CurrentServerList.RefreshFromProvider();
+        CurrentServerList.RequireStatusUpdate();
+        CurrentServerList.ApplyFilter(CurrentFilter);
     }
 
     partial void OnSelectedItemChanged(ServerListTabTemplate value)

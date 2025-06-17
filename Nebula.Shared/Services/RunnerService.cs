@@ -13,20 +13,6 @@ public sealed class RunnerService(
     AssemblyService assemblyService)
 {
     private ILogger _logger = debugService.GetLogger("RunnerService");
-    
-    public async Task PrepareRun(RobustBuildInfo buildInfo, ILoadingHandler loadingHandler,
-        CancellationToken cancellationToken)
-    {
-        _logger.Log("Prepare Content!");
-
-        var engine = await engineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion);
-
-        if (engine is null)
-            throw new Exception("Engine version not found: " + buildInfo.BuildInfo.Build.EngineVersion);
-
-        await contentService.EnsureItems(buildInfo.RobustManifestInfo, loadingHandler, cancellationToken);
-        await engineService.EnsureEngineModules("Robust.Client.WebView", buildInfo.BuildInfo.Build.EngineVersion);
-    }
 
     public async Task Run(string[] runArgs, RobustBuildInfo buildInfo, IRedialApi redialApi,
         ILoadingHandler loadingHandler,
