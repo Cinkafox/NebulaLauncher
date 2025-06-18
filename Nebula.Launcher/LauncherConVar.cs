@@ -26,8 +26,8 @@ public static class LauncherConVar
     ]);
     
     public static readonly ConVar<ServerHubRecord[]> Hub = ConVarBuilder.Build<ServerHubRecord[]>("launcher.hub.v2", [
-        new ServerHubRecord("WizDen", "https://harpy.durenko.tatar/hub-api/api/servers", null),
-        new ServerHubRecord("AltHub","https://web.networkgamez.com/api/servers",null)
+        new ServerHubRecord("WizDen", "https://harpy.durenko.tatar/hub-api/api/servers"),
+        new ServerHubRecord("AltHub","https://web.networkgamez.com/api/servers")
     ]);
 
     public static readonly ConVar<string> CurrentLang = ConVarBuilder.Build<string>("launcher.language", "en-US");

@@ -262,8 +262,7 @@ public sealed record ProfileAuthCredentials(
     string Password,
     string AuthServer,
     [property: JsonIgnore] ICommand OnSelect = default!,
-    [property: JsonIgnore] ICommand OnDelete = default!
-);
+    [property: JsonIgnore] ICommand OnDelete = default!);
     
 public sealed record AuthServerCredentials(
     string Name, 

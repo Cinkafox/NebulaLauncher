@@ -10,31 +10,25 @@
         <pages:ConfigurationViewModel />
     </Design.DataContext>
     
-    <Panel>
-        <Border
-            VerticalAlignment="Top"
-            Margin="5" Padding="5,2,5,2">
-            <Border.Background>
-                <LinearGradientBrush EndPoint="50%,100%" StartPoint="50%,0%">
-                    <GradientStop Color="#222222" Offset="0.0" />
-                    <GradientStop Color="#292222" Offset="1.0" />
-                </LinearGradientBrush>
-            </Border.Background>
-            <ScrollViewer >
-                <StackPanel>
-                    <ItemsControl
-                        ItemsSource="{Binding ConfigurationVerbose}"
-                        Padding="0" />
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
-        <Button 
-            VerticalAlignment="Bottom" 
-            HorizontalAlignment="Stretch" 
-            Padding="5"
-            Margin="5"
-            Command="{Binding InvokeUpdateConfiguration}"
-            >Save
-        </Button>
-    </Panel>
+    <ScrollViewer>
+        <StackPanel Spacing="10" Margin="10">
+            <ItemsControl
+                ItemsSource="{Binding ConfigurationVerbose}"
+                Padding="0" >
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="10" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+            <Button 
+                VerticalAlignment="Bottom" 
+                HorizontalAlignment="Stretch" 
+                Padding="5"
+                Margin="5"
+                Command="{Binding InvokeUpdateConfiguration}">
+                Save
+            </Button>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

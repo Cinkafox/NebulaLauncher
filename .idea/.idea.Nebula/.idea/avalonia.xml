@@ -12,6 +12,7 @@
         <entry key="Nebula.Launcher/MessageBox/MessageView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/MessageBox/MessageWindow.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/ViewModels/Styles1.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
+        <entry key="Nebula.Launcher/Views/Config/StringConfigurationView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Controls/PlayerContainerControl.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Controls/ServerContainerControl.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/ExceptionView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
@@ -21,6 +22,7 @@
         <entry key="Nebula.Launcher/Views/Pages/AccountInfoPage.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Pages/AccountInfoView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Pages/AddFavoriteView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
+        <entry key="Nebula.Launcher/Views/Pages/ConfigurationView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Pages/ContentBrowserView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Pages/FavoriteServerListView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Pages/ServerListPage.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
