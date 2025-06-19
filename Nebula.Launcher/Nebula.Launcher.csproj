@@ -78,8 +78,4 @@
     <ItemGroup>
       <AdditionalFiles Include="Controls\ServerListView.axaml" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Views\Config\" />
-    </ItemGroup>
 </Project>

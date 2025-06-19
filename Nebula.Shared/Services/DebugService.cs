@@ -72,17 +72,19 @@ internal class ServiceLogger : ILogger
         if (!DebugService.DoFileLog) return;
         
         if(!Directory.Exists(directory)) Directory.CreateDirectory(directory);
+
+        _path = Path.Combine(directory, $"{Category}.log");
         
-        _fileStream = File.Open(Path.Combine(directory,$"{Category}.log"), FileMode.Create, FileAccess.Write, FileShare.Read);
-        _streamWriter = new StreamWriter(_fileStream);
+        File.Create(_path).Dispose();
     }
 
     public string Category { get; init; }
     
     private Dictionary<string, ServiceLogger> Childs { get; init; } = new();
     
-    private readonly FileStream _fileStream;
-    private readonly StreamWriter _streamWriter;
+    private FileStream? _fileStream;
+    private StreamWriter? _streamWriter;
+    private readonly string _path;
 
     public ServiceLogger GetLogger(string category)
     {
@@ -109,17 +111,25 @@ internal class ServiceLogger : ILogger
     private void LogToFile(string output)
     {
         if(!DebugService.DoFileLog) return;
+        _fileStream = File.Open(_path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+        _streamWriter = new StreamWriter(_fileStream);
         Root?.LogToFile(output);
         _streamWriter.WriteLine(output);
         _streamWriter.Flush();
+        
+        _streamWriter.Dispose();
+        _fileStream.Dispose();
+        
+        _fileStream = null;
+        _streamWriter = null;
     }
 
     public void Dispose()
     {
         if (!DebugService.DoFileLog) return;
         
-        _streamWriter.Dispose();
-        _fileStream.Dispose();
+        _streamWriter?.Dispose();
+        _fileStream?.Dispose();
         foreach (var (_, child) in Childs)
         {
             child.Dispose();

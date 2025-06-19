@@ -21,14 +21,45 @@
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
-            <Button 
-                VerticalAlignment="Bottom" 
-                HorizontalAlignment="Stretch" 
-                Padding="5"
-                Margin="5"
-                Command="{Binding InvokeUpdateConfiguration}">
-                Save
-            </Button>
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <Button 
+                    Classes="ConfigBorder"
+                    VerticalAlignment="Bottom" 
+                    HorizontalAlignment="Stretch" 
+                    Padding="5"
+                    Margin="5"
+                    Command="{Binding InvokeUpdateConfiguration}">
+                    Save
+                </Button>
+                <Button 
+                    Classes="ConfigBorder"
+                    VerticalAlignment="Bottom" 
+                    HorizontalAlignment="Stretch" 
+                    Padding="5"
+                    Margin="5"
+                    Command="{Binding ResetConfig}">
+                    Reset to default
+                </Button>
+                <Button 
+                    Classes="ConfigBorder"
+                    VerticalAlignment="Bottom" 
+                    HorizontalAlignment="Stretch" 
+                    Padding="5"
+                    Margin="5"
+                    Command="{Binding OpenDataFolder}">
+                    Open Data path
+                </Button>
+                
+                <Button 
+                    Classes="ConfigBorder"
+                    VerticalAlignment="Bottom" 
+                    HorizontalAlignment="Stretch" 
+                    Padding="5"
+                    Margin="5"
+                    Command="{Binding ExportLogs}">
+                    Export logs
+                </Button>
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

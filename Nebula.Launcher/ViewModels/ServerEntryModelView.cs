@@ -134,17 +134,10 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer
             SetStatus(serverStatus!);
         else
             FetchStatus();
-        
-        IsFavorite = GetFavoriteEntries().Contains(Address.ToString());
 
         return this;
     }
-    
-    private List<string> GetFavoriteEntries()
-    {
-        return ConfigurationService.GetConfigValue(LauncherConVar.Favorites)?.ToList() ?? [];
-    }
-
+  
     private async void FetchStatus()
     {
         try

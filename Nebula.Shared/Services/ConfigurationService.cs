@@ -8,6 +8,8 @@ namespace Nebula.Shared.Services;
 
 public class ConVar<T>
 {
+    internal ConfigurationService.OnConfigurationChangedDelegate<T?>? OnValueChanged;
+    
     public ConVar(string name, T? defaultValue = default)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -45,11 +47,16 @@ public class ConfigurationService
         ConfigurationApi = fileService.CreateFileApi("config");
     }
 
-    private void SubscribeVarChanged<T>(ConVar<T> convar, OnConfigurationChangedDelegate<T> @delegate)
+    public ConfigChangeSubscriberDisposable<T> SubscribeVarChanged<T>(ConVar<T> convar, OnConfigurationChangedDelegate<T?> @delegate, bool invokeNow = false)
     {
+        convar.OnValueChanged += @delegate;
+        if (invokeNow)
+        {
+            @delegate(GetConfigValue(convar));
+        }
         
+        return new ConfigChangeSubscriberDisposable<T>(convar, @delegate);
     }
-
     
     public T? GetConfigValue<T>(ConVar<T> conVar)
     {
@@ -107,8 +114,12 @@ public class ConfigurationService
 
     public void SetConfigValue<T>(ConVar<T> conVar, T value)
     {
-        ArgumentNullException.ThrowIfNull(conVar);
-        if (value == null) throw new ArgumentNullException(nameof(value));
+        if (value == null)
+        {
+            ConfigurationApi.Remove(GetFileName(conVar));
+            conVar.OnValueChanged?.Invoke(conVar.DefaultValue);
+            return;
+        }
 
         if (!conVar.Type.IsInstanceOfType(value))
         {
@@ -129,6 +140,7 @@ public class ConfigurationService
             stream.Seek(0, SeekOrigin.Begin);
 
             ConfigurationApi.Save(GetFileName(conVar), stream);
+            conVar.OnValueChanged?.Invoke(value);
         }
         catch (Exception e)
         {
@@ -139,5 +151,21 @@ public class ConfigurationService
     private static string GetFileName<T>(ConVar<T> conVar)
     {
         return $"{conVar.Name}.json";
+    }
+}
+
+public sealed class ConfigChangeSubscriberDisposable<T> : IDisposable
+{
+    private readonly ConVar<T> _convar;
+    private readonly ConfigurationService.OnConfigurationChangedDelegate<T> _delegate;
+
+    public ConfigChangeSubscriberDisposable(ConVar<T> convar, ConfigurationService.OnConfigurationChangedDelegate<T> @delegate)
+    {
+        _convar = convar;
+        _delegate = @delegate;
+    }
+    public void Dispose()
+    {
+        _convar.OnValueChanged -= _delegate;
     }
 }

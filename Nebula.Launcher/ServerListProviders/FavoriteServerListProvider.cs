@@ -24,6 +24,7 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
     [GenerateProperty] private ServerViewContainer ServerViewContainer { get; }
 
     private List<IFilterConsumer> _serverLists = [];
+    private string[] rawServerLists = [];
     
     public bool IsLoaded { get; private set; }
     public Action? OnLoaded { get; set; }
@@ -67,7 +68,6 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
         servers.Add(robustUrl.ToString());
         ConfigurationService.SetConfigValue(LauncherConVar.Favorites, servers.ToArray());
         ServerViewContainer.Get(robustUrl).IsFavorite = true;
-        Dirty?.Invoke();
     }
 
     public void RemoveFavorite(ServerEntryModelView entryModelView)
@@ -75,15 +75,31 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
         var servers = GetFavoriteEntries();
         servers.Remove(entryModelView.Address.ToString());
         ConfigurationService.SetConfigValue(LauncherConVar.Favorites, servers.ToArray());
-        Dirty?.Invoke();
     }
 
     private List<string> GetFavoriteEntries()
     {
-        return ConfigurationService.GetConfigValue(LauncherConVar.Favorites)?.ToList() ?? [];
+        return rawServerLists.ToList();
     }
-    
-    private void Initialise(){}
+
+    private void Initialise()
+    {
+        ConfigurationService.SubscribeVarChanged(LauncherConVar.Favorites, OnVarChanged, true);
+    }
+
+    private void OnVarChanged(string[]? value)
+    {
+        if (value == null)
+        {
+            rawServerLists = [];
+            Dirty?.Invoke();
+            return;
+        }
+
+        rawServerLists = value;
+        Dirty?.Invoke();
+    }
+
     private void InitialiseInDesignMode(){}
 }
 

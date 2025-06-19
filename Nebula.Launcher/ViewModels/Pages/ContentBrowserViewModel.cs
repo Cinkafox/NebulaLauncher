@@ -59,12 +59,7 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
         PopupService.Popup(loading);
 
         Task.Run(() => ContentService.Unpack(serverEntry.FileApi, myTempDir, loading));
-        var startInfo = new ProcessStartInfo(){
-            FileName = "explorer.exe",
-            Arguments = tmpDir,
-        };
-      
-        Process.Start(startInfo);
+        ExplorerHelper.OpenFolder(tmpDir);
     }
 
     public void OnGoEnter()

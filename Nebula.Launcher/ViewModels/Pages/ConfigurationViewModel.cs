@@ -2,13 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Nebula.Launcher.Services;
 using Nebula.Launcher.Views.Pages;
 using Nebula.Shared;
 using Nebula.Shared.Services;
@@ -22,6 +24,8 @@ public partial class ConfigurationViewModel : ViewModelBase
     public ObservableCollection<IConfigControl> ConfigurationVerbose { get; } = new();
     
     [GenerateProperty] private ConfigurationService ConfigurationService { get; } = default!;
+    [GenerateProperty] private PopupMessageService PopupService { get; } = default!;
+    [GenerateProperty] private FileService FileService { get; set; } = default!;
 
     public List<(object, Type)> ConVarList = new();
 
@@ -45,9 +49,40 @@ public partial class ConfigurationViewModel : ViewModelBase
             methodInfo.Invoke(ConfigurationService, [conVar.Item1, conVarControl.GetValue()]);
         }
     }
+
+    public void ResetConfig()
+    {
+        foreach (var conVar in ConVarList)
+        {
+            var methodInfo = ConfigurationService.GetType().GetMethod("SetConfigValue")!.MakeGenericMethod(conVar.Item2);
+            methodInfo.Invoke(ConfigurationService, [conVar.Item1, null]);
+        }
+        
+        ConVarList.Clear();
+        ConfigurationVerbose.Clear();
+
+        InitConfiguration();
+        
+        PopupService.Popup("Configuration has been reset.");
+    }
+
+    public void OpenDataFolder()
+    {
+        ExplorerHelper.OpenFolder(FileService.RootPath);
+    }
+
+    public void ExportLogs()
+    {
+        var logPath = Path.Join(FileService.RootPath, "log");
+        var path = Path.Combine(Path.GetTempPath(), "tempThink"+Path.GetRandomFileName());
+        Directory.CreateDirectory(path);
+        
+        ZipFile.CreateFromDirectory(logPath, Path.Join(path, DateTime.Now.ToString("yyyy-MM-dd") + ".zip"));
+        ExplorerHelper.OpenFolder(path);
+    }
     
-    protected override void InitialiseInDesignMode()
-    { 
+    private void InitConfiguration()
+    {
         AddCvarConf(LauncherConVar.ILSpyUrl);
         AddCvarConf(LauncherConVar.Hub);
         AddCvarConf(LauncherConVar.AuthServers);
@@ -55,10 +90,15 @@ public partial class ConfigurationViewModel : ViewModelBase
         AddCvarConf(CurrentConVar.RobustAssemblyName);
         AddCvarConf(CurrentConVar.ManifestDownloadProtocolVersion);
     }
+    
+    protected override void InitialiseInDesignMode()
+    {
+        InitConfiguration();
+    }
 
     protected override void Initialise()
     {
-        InitialiseInDesignMode();
+        InitConfiguration();
     }
 }
 
@@ -103,31 +143,34 @@ public static class ConfigControlHelper{
     }
 }
 
-public sealed class ComplexUnitConfigControl : StackPanel, IConfigControl
+public sealed class ComplexUnitConfigControl : Border, IConfigControl
 {
-    private List<(PropertyInfo, IConfigControl)> _units = [];
+    private readonly List<(PropertyInfo, IConfigControl)> _units = [];
     
     private Type _objectType = typeof(object);
+
+    private readonly StackPanel _panel = new();
     
     public string ConfigName { get; }
     public bool Dirty => _units.Any(dirty => dirty.Item2.Dirty);
 
     public ComplexUnitConfigControl(string name, object obj)
     {
-        Orientation = Orientation.Vertical;
-        Margin = new Thickness(5);
-        Spacing = 2f;
+        Classes.Add("ConfigBorder");
+        _panel.Orientation = Orientation.Vertical;
+        _panel.Spacing = 4f;
         ConfigName = name;
+        Child = _panel;
         SetValue(obj);
     }
 
     public void SetValue(object value)
     {
         _units.Clear();
-        Children.Clear();
+        _panel.Children.Clear();
         _objectType = value.GetType();
         
-        Children.Add(new Label()
+        _panel.Children.Add(new Label()
         {
             Content = ConfigName
         });
@@ -141,7 +184,8 @@ public sealed class ComplexUnitConfigControl : StackPanel, IConfigControl
 
             var control = ConfigControlHelper.GetConfigControl(propInfo.Name, propValue);
             
-            Children.Add(control as Control);
+            ((Control)control).Margin = new Thickness(5);
+            _panel.Children.Add((Control)control);
             _units.Add((propInfo,control));
         }
     }
@@ -158,48 +202,51 @@ public sealed class ComplexUnitConfigControl : StackPanel, IConfigControl
     }
 }
 
-public sealed class ArrayUnitConfigControl : StackPanel, IConfigControl
+public sealed class ArrayUnitConfigControl : Border, IConfigControl
 {
     private readonly List<IConfigControl> _itemControls = [];
     private readonly StackPanel _itemsPanel = new StackPanel() { Orientation = Orientation.Vertical };
-    private readonly Button _addButton = new Button() { Content = "Add Item" };
-    private int oldCount;
+    private readonly Button _addButton = new Button() { Content = "Add Item", Classes = { "ConfigBorder" }};
+    private readonly int _oldCount;
     private readonly Type _elementType;
+    private readonly StackPanel _panel = new();
 
     public string ConfigName { get; }
-    public bool Dirty => _itemControls.Any(dirty => dirty.Dirty) || _itemControls.Count != oldCount;
+    public bool Dirty => _itemControls.Any(dirty => dirty.Dirty) || _itemControls.Count != _oldCount;
 
     public ArrayUnitConfigControl(string name, object value)
     {
-        _elementType = value.GetType().GetElementType();
+        Classes.Add("ConfigBorder");
+        _elementType = value.GetType().GetElementType()!;
         
         ConfigName = name;
-        Orientation = Orientation.Vertical;
-        Margin = new Thickness(5);
-        Spacing = 2f;
+        _panel.Orientation = Orientation.Vertical;
+        _panel.Spacing = 4f;
+        _itemsPanel.Spacing = 4f;
 
-        Children.Add(new Label { Content = name });
-        Children.Add(_itemsPanel);
-        Children.Add(_addButton);
+        _panel.Children.Add(new Label { Content = name });
+        _panel.Children.Add(_itemsPanel);
+        _panel.Children.Add(_addButton);
 
-        _addButton.Click += (_, _) => AddItem(ConfigControlHelper.CreateDefaultValue(_elementType));
-
+        _addButton.Click += (_, _) => AddItem(ConfigControlHelper.CreateDefaultValue(_elementType)!);
+        Child = _panel; 
         SetValue(value);
-        oldCount = _itemControls.Count;
+        _oldCount = _itemControls.Count;
     }
 
     private void AddItem(object value)
     {
         var itemPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
         var control = ConfigControlHelper.GetConfigControl(_itemControls.Count.ToString(), value);
-        var removeButton = new Button { Content = "Remove" };
+        var removeButton = new Button { Content = "Remove", Classes = { "ConfigBorder" }};
 
         removeButton.Click += (_, _) =>
         {
             _itemControls.Remove(control);
             _itemsPanel.Children.Remove(itemPanel);
         };
-
+        
+        ((Control)control).Margin = new Thickness(5);
         itemPanel.Children.Add((Control)control);
         itemPanel.Children.Add(removeButton);
 
@@ -242,37 +289,35 @@ public sealed class ArrayUnitConfigControl : StackPanel, IConfigControl
     }
 }
 
-public abstract class UnitConfigControl<T> : StackPanel, IConfigControl where T : notnull
+public abstract class UnitConfigControl<T> : Border, IConfigControl where T : notnull
 {
-    private readonly Label _nameLabel = new Label();
-    private readonly TextBox _valueLabel = new TextBox();
+    private readonly Label _nameLabel = new();
+    private readonly TextBox _valueLabel = new();
     private string _originalValue;
-    
-    public string ConfigName { get; private set;}
-   
-    public bool Dirty
-    {
-        get
-        {
-            return _originalValue != ConfigValue;
-        }
-    }
 
-    protected string? ConfigValue
+    private StackPanel _panel = new();
+    
+    public string ConfigName { get; }
+   
+    public bool Dirty => _originalValue != ConfigValue;
+
+    protected string ConfigValue
     {
-        get => _valueLabel.Text;
+        get => _valueLabel.Text ?? string.Empty;
         set => _valueLabel.Text = value;
     }
 
     public UnitConfigControl(string name, T value)
     {
+        Classes.Add("ConfigBorder");
         ConfigName = name;
-        Orientation = Orientation.Horizontal;
-        Children.Add(_nameLabel);
-        Children.Add(_valueLabel);
+        _panel.Orientation = Orientation.Horizontal;
+        _panel.Children.Add(_nameLabel);
+        _panel.Children.Add(_valueLabel);
         
         _nameLabel.Content = name;
         _nameLabel.VerticalAlignment = VerticalAlignment.Center;
+        Child = _panel;
         
         SetConfValue(value);
         _originalValue = ConfigValue;
@@ -302,7 +347,7 @@ public sealed class StringUnitConfigControl(string name, string value) : UnitCon
 
     public override string GetConfValue()
     {
-        return ConfigValue ?? string.Empty;
+        return ConfigValue;
     }
 }
 
@@ -315,8 +360,6 @@ public sealed class IntUnitConfigControl(string name, int value) : UnitConfigCon
 
     public override int GetConfValue()
     {
-        Debug.Assert(ConfigValue != null, nameof(ConfigValue) + " != null");
-        
         return int.Parse(ConfigValue);
     }
 }
@@ -333,8 +376,6 @@ public sealed class FloatUnitConfigControl(string name, float value) : UnitConfi
 
     public override float GetConfValue()
     {
-        Debug.Assert(ConfigValue != null, nameof(ConfigValue) + " != null");
-        
         return float.Parse(ConfigValue, CultureInfo);
     }
 }

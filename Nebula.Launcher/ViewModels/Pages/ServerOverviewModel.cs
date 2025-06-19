@@ -58,8 +58,14 @@ public partial class ServerOverviewModel : ViewModelBase
     //real think
     protected override void Initialise()
     {
+        ConfigurationService.SubscribeVarChanged(LauncherConVar.Hub, OnHubListChanged, true);
+    }
+
+    private void OnHubListChanged(ServerHubRecord[]? value)
+    {
         var tempItems = new List<ServerListTabTemplate>();
-        foreach (var record in ConfigurationService.GetConfigValue(LauncherConVar.Hub) ?? [])
+        
+        foreach (var record in value ?? [])
         {
             tempItems.Add(new ServerListTabTemplate(ServiceProvider.GetService<HubServerListProvider>()!.With(record.MainUrl), record.Name));
         }
@@ -125,17 +131,32 @@ public partial class ServerOverviewModel : ViewModelBase
 public class ServerViewContainer
 {
     private readonly ViewHelperService _viewHelperService;
+    private List<string> favorites = [];
 
     public ServerViewContainer()
     {
         _viewHelperService = new ViewHelperService();
     }
 
-    public ServerViewContainer(ViewHelperService viewHelperService)
+    public ServerViewContainer(ViewHelperService viewHelperService, ConfigurationService configurationService)
     {
         _viewHelperService = viewHelperService;
+        configurationService.SubscribeVarChanged(LauncherConVar.Favorites, OnFavoritesChange, true);
     }
-    
+
+    private void OnFavoritesChange(string[]? value)
+    {
+        favorites = new List<string>(value ?? []);
+        
+        foreach (var favorite in favorites)
+        {
+            if (_entries.TryGetValue(favorite, out var entry))
+            {
+                entry.IsFavorite = true;
+            }
+        }
+    }
+
     private readonly Dictionary<string, ServerEntryModelView> _entries = new();
     
     public ICollection<ServerEntryModelView> Items => _entries.Values;
@@ -157,6 +178,8 @@ public class ServerViewContainer
             }
 
             entry = _viewHelperService.GetViewModel<ServerEntryModelView>().WithData(url, serverStatus);
+            
+            if(favorites.Contains(url.ToString())) entry.IsFavorite = true;
             
             _entries.Add(url.ToString(), entry);
         }
