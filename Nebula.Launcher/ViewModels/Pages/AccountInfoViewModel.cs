@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -34,6 +35,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     [ObservableProperty] private string _currentPassword = string.Empty;
 
     [ObservableProperty] private bool _isLogged;
+    [ObservableProperty] private bool _doRetryAuth;
 
     private bool _isProfilesEmpty;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
@@ -62,7 +64,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     protected override void Initialise()
     {
         _logger = DebugService.GetLogger(this);
-        ReadAuthConfig();
+        Task.Run(ReadAuthConfig);
     }
 
     public void AuthByProfile(ProfileAuthCredentials credentials)
@@ -95,12 +97,14 @@ public partial class AccountInfoViewModel : ViewModelBase
             {
                 try
                 {
-                    await TryAuth(CurrentLogin, CurrentPassword, server,code);
+                    await CatchAuthError(async () => await TryAuth(CurrentLogin, CurrentPassword, server, code), ()=> message.Dispose());
                     break;
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    exception = e;
+                    var unexpectedError = new Exception("An unexpected error occurred during authentication.", ex);
+                    _logger.Error(unexpectedError);
+                    PopupMessageService.Popup(unexpectedError);
                 }
             }
             
@@ -113,19 +117,35 @@ public partial class AccountInfoViewModel : ViewModelBase
         });
     }
 
-    private async Task TryAuth(string login, string password, string authServer,string? code)
+    private async Task TryAuth(CurrentAuthInfo currentAuthInfo)
     {
+        CurrentLogin = currentAuthInfo.Login;
+        CurrentAuthServer = currentAuthInfo.AuthServer;
+        await AuthService.SetAuth(currentAuthInfo);
+        IsLogged = true;
+    }
+
+    private async Task TryAuth(string login, string password, string authServer, string? code)
+    {
+        await AuthService.Auth(new AuthLoginPassword(login, password, authServer), code);
+        CurrentLogin = login;
+        CurrentPassword = password;
+        CurrentAuthServer = authServer;
+        IsLogged = true;
+        ConfigurationService.SetConfigValue(LauncherConVar.AuthCurrent, AuthService.SelectedAuth);
+    }
+
+    private async Task CatchAuthError(Func<Task> a, Action? onError)
+    {
+        DoRetryAuth = false;
+
         try
         {
-            await AuthService.Auth(new AuthLoginPassword(login, password, authServer), code);
-            CurrentLogin = login;
-            CurrentPassword = password;
-            CurrentAuthServer = authServer;
-            IsLogged = true;
-            ConfigurationService.SetConfigValue(LauncherConVar.AuthCurrent, AuthService.SelectedAuth);
+            await a();
         }
         catch (AuthException e)
         {
+            onError?.Invoke();
             switch (e.Error.Code)
             {
                 case AuthenticateDenyCode.TfaRequired:
@@ -136,11 +156,32 @@ public partial class AccountInfoViewModel : ViewModelBase
                     _logger.Log("TFA required");
                     break;
                 case AuthenticateDenyCode.InvalidCredentials:
-                    PopupMessageService.Popup("Invalid Credentials!");
-                    _logger.Error($"Invalid credentials");
+                    PopupError("Invalid Credentials! Please, try another password or login!", e);
                     break;
                 default:
                     throw;
+            }
+        }
+        catch (HttpRequestException e)
+        {
+            onError?.Invoke();
+            switch (e.HttpRequestError)
+            {
+                case HttpRequestError.ConnectionError:
+                    PopupError("Failed to connect to the authentication server.", e);
+                    DoRetryAuth = true;
+                    break;
+
+                case HttpRequestError.NameResolutionError:
+                    PopupError("Unable to resolve the server address.", e);
+                    DoRetryAuth = true;
+                    break;
+
+                default:
+                    var authError = new Exception("An error occurred during authentication.", e);
+                    _logger.Error(authError);
+                    PopupMessageService.Popup(authError);
+                    break;
             }
         }
     }
@@ -182,7 +223,7 @@ public partial class AccountInfoViewModel : ViewModelBase
         Accounts.Add(alpm);
     }
 
-    private async void ReadAuthConfig()
+    private async Task ReadAuthConfig()
     {
         var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
         message.InfoText = "Read configuration file, please wait...";
@@ -198,25 +239,35 @@ public partial class AccountInfoViewModel : ViewModelBase
         var authUrls = ConfigurationService.GetConfigValue(LauncherConVar.AuthServers)!;
         foreach (var url in authUrls) AuthUrls.Add(url);
         if(authUrls.Length > 0) AuthItemSelect = authUrls[0];
-        
+        message.Dispose();
+
+        DoCurrentAuth();
+    }
+
+    public async void DoCurrentAuth()
+    {
+        var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
+        message.InfoText = "Trying to auth with saved data...";
+        message.IsInfoClosable = false;
+        PopupMessageService.Popup(message);
+
         var currProfile = ConfigurationService.GetConfigValue(LauncherConVar.AuthCurrent);
 
         if (currProfile != null)
         {
             try
             {
-                CurrentLogin = currProfile.Login;
-                CurrentAuthServer = currProfile.AuthServer;
-
-                IsLogged = await AuthService.SetAuth(currProfile);
+                await CatchAuthError(async () => await TryAuth(currProfile), () => message.Dispose());
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                message.Dispose();
-                PopupMessageService.Popup(e);
+                var unexpectedError = new Exception("An unexpected error occurred during authentication.", ex);
+                _logger.Error(unexpectedError);
+                PopupMessageService.Popup(unexpectedError);
+                return;
             }
         }
-        
+
         message.Dispose();
     }
 
@@ -235,6 +286,17 @@ public partial class AccountInfoViewModel : ViewModelBase
         _isProfilesEmpty = Accounts.Count == 0;
         UpdateAuthMenu();
         DirtyProfile();
+    }
+
+    private void PopupError(string message, Exception e)
+    {
+        message = "An error occurred during authentication: " + message;
+        _logger.Error(new Exception(message, e));
+
+        var messageView = ViewHelperService.GetViewModel<InfoPopupViewModel>();
+        messageView.InfoText = message;
+        messageView.IsInfoClosable = true;
+        PopupMessageService.Popup(messageView);
     }
 
     [RelayCommand]

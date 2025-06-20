@@ -53,25 +53,21 @@ public class AuthService(
         SelectedAuth = null;
     }
 
-    public async Task<bool> SetAuth(CurrentAuthInfo info)
+    public async Task SetAuth(CurrentAuthInfo info)
     {
         SelectedAuth = info;
-        return await EnsureToken();
+        await EnsureToken();
     }
 
-    public async Task<bool> EnsureToken()
+    public async Task EnsureToken()
     {
-        if (SelectedAuth is null) return false;
+        if (SelectedAuth is null) throw new Exception("Auth info is not set!");
 
         var authUrl = new Uri($"{SelectedAuth.AuthServer}api/auth/ping");
 
         using var requestMessage = new HttpRequestMessage(HttpMethod.Get, authUrl);
         requestMessage.Headers.Authorization = new AuthenticationHeaderValue("SS14Auth", SelectedAuth.Token.Token);
         using var resp = await _httpClient.SendAsync(requestMessage, cancellationService.Token);
-
-        if (!resp.IsSuccessStatusCode) SelectedAuth = null;
-
-        return resp.IsSuccessStatusCode;
     }
 }
 

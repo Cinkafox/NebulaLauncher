@@ -1,17 +1,28 @@
-<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<Styles xmlns="https://github.com/avaloniaui" 
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:pages="clr-namespace:Nebula.Launcher.ViewModels.Pages">
+    
+    <!-- Base Window Style -->
     <Style Selector="Window">
         <Setter Property="Background" Value="{StaticResource DefaultBackground}" />
     </Style>
+
+    <!-- Common Border Style -->
     <Style Selector="Border">
         <Setter Property="CornerRadius" Value="10" />
     </Style>
+
+    <!-- Common Label Style -->
     <Style Selector="Label">
         <Setter Property="Foreground" Value="#f7f7ff" />
     </Style>
+
+    <!-- Common ItemsControl Style -->
     <Style Selector="ItemsControl">
         <Setter Property="Background" Value="Transparent" />
     </Style>
+
+    <!-- General Button Style -->
     <Style Selector="Button">
         <Setter Property="BorderBrush" Value="#343334" />
         <Setter Property="BorderThickness" Value="0" />
@@ -20,6 +31,7 @@
         <Setter Property="Background" Value="Transparent" />
     </Style>
 
+    <!-- Button State Overrides -->
     <Style Selector="Button:pressed">
         <Setter Property="RenderTransform" Value="{x:Null}" />
         <Setter Property="BorderThickness" Value="0,0,0,2" />
@@ -31,26 +43,33 @@
         <Setter Property="BorderThickness" Value="0,0,0,0" />
     </Style>
 
+    <!-- ViewSelectButton Specialization -->
     <Style Selector="Button.ViewSelectButton">
         <Setter Property="CornerRadius" Value="0,8,8,0" />
         <Setter Property="Margin" Value="0,0,0,5" />
         <Setter Property="Padding" Value="8" />
-        <Setter Property="Background" Value="Transparent" />
     </Style>
 
     <Style Selector="Button.ViewSelectButton:pressed">
         <Setter Property="BorderThickness" Value="0,0,0,0" />
     </Style>
 
+    <!-- TextBox Styles -->
     <Style Selector="TextBox">
         <Setter Property="Foreground" Value="#f7f7ff" />
         <Setter Property="SelectionForegroundBrush" Value="#f7f7ff" />
-        <Setter Property="BorderThickness" Value="0,0,0,0" />
+        <Setter Property="BorderThickness" Value="0" />
         <Setter Property="BorderBrush" Value="#f7f7ff" />
         <Setter Property="Background" Value="Transparent" />
     </Style>
-    <Style Selector="TextBox" />
 
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="White" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+    </Style>
+
+    <!-- ListBoxItem Styles -->
     <Style Selector="ListBoxItem /template/ ContentPresenter">
         <Setter Property="CornerRadius" Value="0,8,8,0" />
         <Setter Property="Margin" Value="0,0,0,5" />
@@ -61,66 +80,37 @@
     <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
         <Setter Property="CornerRadius" Value="0,8,8,0" />
         <Setter Property="Background">
-            <LinearGradientBrush EndPoint="100%,50%" StartPoint="0%,50%">
-                <GradientStop Color="#ae4c47" Offset="0.0" />
-                <GradientStop Color="#D95F59" Offset="0.2" />
-                <GradientStop Color="#D95F59" Offset="1.0" />
-            </LinearGradientBrush>
+            <Setter.Value>
+                <LinearGradientBrush EndPoint="100%,50%" StartPoint="0%,50%">
+                    <GradientStop Color="#ae4c47" Offset="0.0" />
+                    <GradientStop Color="#D95F59" Offset="0.2" />
+                    <GradientStop Color="#D95F59" Offset="1.0" />
+                </LinearGradientBrush>
+            </Setter.Value>
         </Setter>
         <Setter Property="BoxShadow" Value="0 0 15 1 #1212" />
     </Style>
+
     <Style Selector="ListBoxItem:pointerover">
         <Setter Property="CornerRadius" Value="0,8,8,0" />
         <Setter Property="Margin" Value="0,0,5,0" />
     </Style>
+
     <Style Selector="ListBoxItem:pressed /template/ ContentPresenter">
         <Setter Property="CornerRadius" Value="0,8,8,0" />
         <Setter Property="Background" Value="{StaticResource DefaultSelected}" />
     </Style>
 
-    <Style Selector="TextBox">
-        <Setter Property="Background" Value="Transparent" />
-    </Style>
-    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
-        <Setter Property="BorderBrush" Value="White" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0,0,0,1" />
-    </Style>
-    
-    <Style Selector="pages|ComplexUnitConfigControl.ConfigBorder">
-        <Setter Property="Background" Value="#333333" />
-        <Setter Property="BorderThickness" Value="2,2,2,2"/>
-        <Setter Property="BorderBrush" Value="Azure"/>
-    </Style>
-    
-    <Style Selector="pages|ArrayUnitConfigControl.ConfigBorder">
-        <Setter Property="Background" Value="#333333" />
-        <Setter Property="BorderThickness" Value="2,2,2,2"/>
-        <Setter Property="BorderBrush" Value="Azure"/>
-    </Style>
-    
-    <Style Selector="pages|StringUnitConfigControl.ConfigBorder">
-        <Setter Property="Background" Value="#333333" />
-        <Setter Property="BorderThickness" Value="2,2,2,2"/>
-        <Setter Property="BorderBrush" Value="Azure"/>
-    </Style>
-    
-    <Style Selector="pages|IntUnitConfigControl.ConfigBorder">
-        <Setter Property="Background" Value="#333333" />
-        <Setter Property="BorderThickness" Value="2,2,2,2"/>
-        <Setter Property="BorderBrush" Value="Azure"/>
-    </Style>
-    
-    <Style Selector="pages|FloatUnitConfigControl.ConfigBorder">
-        <Setter Property="Background" Value="#333333" />
-        <Setter Property="BorderThickness" Value="2,2,2,2"/>
-        <Setter Property="BorderBrush" Value="Azure"/>
-    </Style>
-    
-    <Style Selector="Button.ConfigBorder /template/ ContentPresenter">
-        <Setter Property="Background" Value="#333333" />
-        <Setter Property="BorderThickness" Value="2,2,2,2"/>
-        <Setter Property="BorderBrush" Value="Azure"/>
-        <Setter Property="CornerRadius" Value="0"/>
-    </Style>
+    <!-- Combined ConfigBorder Styles -->
+    <Style Selector="pages|ComplexUnitConfigControl.ConfigBorder, 
+                 pages|ArrayUnitConfigControl.ConfigBorder, 
+                 pages|StringUnitConfigControl.ConfigBorder, 
+                 pages|IntUnitConfigControl.ConfigBorder, 
+                 pages|FloatUnitConfigControl.ConfigBorder">
+    <Setter Property="Background" Value="#333333" />
+    <Setter Property="CornerRadius" Value="5"/>
+    <Setter Property="BorderThickness" Value="1,0,1,2" />
+    <Setter Property="BorderBrush" Value="Azure" />
+</Style>
+
 </Styles>

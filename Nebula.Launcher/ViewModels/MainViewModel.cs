@@ -45,7 +45,7 @@ public partial class MainViewModel : ViewModelBase
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
     [GenerateProperty] private ContentService ContentService { get; } = default!;
     [GenerateProperty, DesignConstruct] private ViewHelperService ViewHelperService { get; } = default!;
-    [GenerateProperty] private FileService FileService { get; } = default!;
+    [GenerateProperty] private ConfigurationService ConfigurationService { get; } = default!;
 
     private ILogger _logger;
 
@@ -83,14 +83,18 @@ public partial class MainViewModel : ViewModelBase
 
     private void CheckMigration()
     {
+        if (!ConfigurationService.GetConfigValue(LauncherConVar.DoMigration))
+            return;
+
         var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loadingHandler.LoadingName = "Migration task, please wait...";
         loadingHandler.IsCancellable = false;
 
         if (!ContentService.CheckMigration(loadingHandler))
             return;
-        
+
         OnPopupRequired(loadingHandler);
+        ConfigurationService.SetConfigValue(LauncherConVar.DoMigration, false);
     }
 
     partial void OnSelectedListItemChanged(ListItemTemplate? value)

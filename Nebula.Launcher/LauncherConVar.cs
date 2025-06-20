@@ -7,6 +7,8 @@ namespace Nebula.Launcher;
 
 public static class LauncherConVar
 {
+    public static readonly ConVar<bool> DoMigration =
+        ConVarBuilder.Build("migration.doMigrate", true);
     public static readonly ConVar<ProfileAuthCredentials[]> AuthProfiles =
         ConVarBuilder.Build<ProfileAuthCredentials[]>("auth.profiles.v2", []);
 

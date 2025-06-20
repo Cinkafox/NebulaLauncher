@@ -102,6 +102,17 @@
                             Margin="0,0,0,20"
                             Path="/Assets/svg/user.svg" />
                         <StackPanel HorizontalAlignment="Center">
+                            <StackPanel IsVisible="{Binding DoRetryAuth}">
+                                <Border Background="{StaticResource DefaultSelected}" BoxShadow="{StaticResource DefaultShadow}">
+                                    <Button
+                                        Command="{Binding DoCurrentAuth}"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center">
+                                        <Label>Retry previous auth</Label>
+                                    </Button>
+                                </Border>
+                                <Label HorizontalAlignment="Center">Or try another account</Label>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <Label VerticalAlignment="Center">
                                     Login:
