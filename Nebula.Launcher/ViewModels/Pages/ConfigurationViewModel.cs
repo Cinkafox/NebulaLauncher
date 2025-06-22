@@ -125,12 +125,6 @@ public static class ConfigControlHelper{
 
     public static object? CreateDefaultValue(Type type)
     {
-        if (type == typeof(string))
-            return string.Empty;
-        if (type == typeof(int))
-            return 0;
-        if (type == typeof(float))
-            return 0f;
         if(type.IsValueType)
             return Activator.CreateInstance(type);
         

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Nebula.Launcher.Controls;
@@ -89,7 +90,8 @@ public partial class ServerOverviewModel : ViewModelBase
     {
         foreach (var entry in ServerViewContainer.Items)
         {
-            entry.ProcessFilter(CurrentFilter);
+            if(entry is IFilterConsumer filterConsumer)
+                filterConsumer.ProcessFilter(CurrentFilter);
         }
     }
     
@@ -109,6 +111,7 @@ public partial class ServerOverviewModel : ViewModelBase
 
     public void UpdateRequired()
     {
+        ServerViewContainer.Clear();
         CurrentServerList.RefreshFromProvider();
         CurrentServerList.RequireStatusUpdate();
         CurrentServerList.ApplyFilter(CurrentFilter);
@@ -150,25 +153,25 @@ public class ServerViewContainer
         
         foreach (var favorite in favorites)
         {
-            if (_entries.TryGetValue(favorite, out var entry))
+            if (_entries.TryGetValue(favorite, out var entry) && entry is IFavoriteEntryModelView favoriteView)
             {
-                entry.IsFavorite = true;
+                favoriteView.IsFavorite = true;
             }
         }
     }
 
-    private readonly Dictionary<string, ServerEntryModelView> _entries = new();
+    private readonly Dictionary<string, IListEntryModelView> _entries = new();
     
-    public ICollection<ServerEntryModelView> Items => _entries.Values;
+    public ICollection<IListEntryModelView> Items => _entries.Values;
 
     public void Clear()
     {
         _entries.Clear();
     }
 
-    public ServerEntryModelView Get(RobustUrl url, ServerStatus? serverStatus = null)
+    public IListEntryModelView Get(RobustUrl url, ServerStatus? serverStatus = null)
     {
-        ServerEntryModelView? entry;
+        IListEntryModelView? entry;
         
         lock (_entries)
         {
@@ -177,15 +180,29 @@ public class ServerViewContainer
                 return entry;
             }
 
-            entry = _viewHelperService.GetViewModel<ServerEntryModelView>().WithData(url, serverStatus);
+            if (serverStatus is not null)
+                entry = _viewHelperService.GetViewModel<ServerEntryModelView>().WithData(url, serverStatus);
+            else
+                entry = _viewHelperService.GetViewModel<ServerCompoundEntryViewModel>().LoadServerEntry(url, CancellationToken.None);
             
-            if(favorites.Contains(url.ToString())) entry.IsFavorite = true;
+            if(favorites.Contains(url.ToString()) && entry is IFavoriteEntryModelView favoriteEntryModelView) 
+                favoriteEntryModelView.IsFavorite = true;
             
             _entries.Add(url.ToString(), entry);
         }
         
         return entry;
     }
+}
+
+public interface IListEntryModelView
+{
+    
+}
+
+public interface IFavoriteEntryModelView
+{
+    public bool IsFavorite { get; set; }
 }
 
 public class ServerComparer : IComparer<ServerHubInfo>, IComparer<ServerStatus>, IComparer<(RobustUrl,ServerStatus)>

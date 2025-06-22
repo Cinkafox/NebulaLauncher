@@ -1,0 +1,73 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Nebula.Launcher.ViewModels"
+             xmlns:views="clr-namespace:Nebula.Launcher.Views"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nebula.Launcher.Views.ServerCompoundEntryView"
+             x:DataType="viewModels:ServerCompoundEntryViewModel">
+    <Design.DataContext>
+        <viewModels:ServerCompoundEntryViewModel />
+    </Design.DataContext>
+    
+    <Panel>
+        <Border IsVisible="{Binding Loading}"
+                                                      Background="{StaticResource DefaultGrad}"
+                                                      BoxShadow="-2 0 5 -1 #121212"
+                                                      CornerRadius="10"
+                                                      Margin="5">
+
+            <Grid ColumnDefinitions="*,80,50,50" RowDefinitions="35,*,*">
+                <Border
+                    Background="Transparent"
+                    BoxShadow="0 3 3 -2 #121212"
+                    CornerRadius="10"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    Grid.Row="0"/>
+
+                <ScrollViewer
+                    Grid.Column="0"
+                    Grid.Row="0"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    HorizontalScrollBarVisibility="Hidden"
+                    Margin="10,0,0,0"
+                    VerticalScrollBarVisibility="Disabled"
+                    x:Name="AutoScrollViewer">
+                    <Label VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" />
+                    </Label>
+                </ScrollViewer>
+
+                <Panel
+                    Grid.Column="2"
+                    Grid.Row="0"
+                    Margin="5,0,0,0">
+                    <Button
+                        Command="{Binding ToggleFavorites}"
+                        CornerRadius="10,10,10,10"
+                        HorizontalAlignment="Stretch"
+                        IsVisible="{Binding !IsFavorite}"
+                        VerticalAlignment="Stretch">
+                        <Svg Margin="4" Path="/Assets/svg/star.svg" />
+                    </Button>
+                    <Button
+                        Command="{Binding ToggleFavorites}"
+                        CornerRadius="10,10,10,10"
+                        HorizontalAlignment="Stretch"
+                        IsVisible="{Binding IsFavorite}"
+                        VerticalAlignment="Stretch">
+                        <Svg Margin="4" Path="/Assets/svg/starfull.svg" />
+                    </Button>
+                </Panel>
+            </Grid>
+        </Border>
+        
+        <Panel IsVisible="{Binding !Loading}">
+            <views:ServerEntryView IsVisible="{Binding !Loading}" DataContext="{Binding CurrentEntry}"/>
+        </Panel>
+         
+    </Panel>
+</UserControl>

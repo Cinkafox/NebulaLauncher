@@ -1,3 +1,4 @@
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Net;
 using System.Text;
@@ -24,12 +25,14 @@ public class RestService
         _logger = debug.GetLogger(this);
     }
 
+    [Pure]
     public async Task<T> GetAsync<T>(Uri uri, CancellationToken cancellationToken) where T : notnull
     {
         var response = await _client.GetAsync(uri, cancellationToken);
         return await ReadResult<T>(response, cancellationToken, uri);
     }
 
+    [Pure]
     public async Task<T> GetAsyncDefault<T>(Uri uri, T defaultValue, CancellationToken cancellationToken) where T : notnull
     {
         try
@@ -43,6 +46,7 @@ public class RestService
         }
     }
 
+    [Pure]
     public async Task<K> PostAsync<K, T>(T information, Uri uri, CancellationToken cancellationToken) where K : notnull
     {
         var json = JsonSerializer.Serialize(information, _serializerOptions);
@@ -51,6 +55,7 @@ public class RestService
         return await ReadResult<K>(response, cancellationToken, uri);
     }
 
+    [Pure]
     public async Task<T> PostAsync<T>(Stream stream, Uri uri, CancellationToken cancellationToken) where T : notnull
     {
         using var multipartFormContent =
@@ -60,12 +65,14 @@ public class RestService
         return await ReadResult<T>(response, cancellationToken, uri);
     }
 
+    [Pure]
     public async Task<T> DeleteAsync<T>(Uri uri, CancellationToken cancellationToken) where T : notnull
     {
         var response = await _client.DeleteAsync(uri, cancellationToken);
         return await ReadResult<T>(response, cancellationToken, uri);
     }
 
+    [Pure]
     private async Task<T> ReadResult<T>(HttpResponseMessage response, CancellationToken cancellationToken, Uri uri) where T : notnull
     {
         var content = await response.Content.ReadAsStringAsync(cancellationToken);

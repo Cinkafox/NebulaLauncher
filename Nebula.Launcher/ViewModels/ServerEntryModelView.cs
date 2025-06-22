@@ -21,21 +21,20 @@ namespace Nebula.Launcher.ViewModels;
 
 [ViewModelRegister(typeof(ServerEntryView), false)]
 [ConstructGenerator]
-public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer
+public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, IListEntryModelView, IFavoriteEntryModelView
 {
     [ObservableProperty] private string _description = "Fetching info...";
     [ObservableProperty] private bool _expandInfo;
     [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private bool _isVisible;
     [ObservableProperty] private bool _runVisible = true;
+    [ObservableProperty] private bool _tagDataVisible;
+    [ObservableProperty] private bool _loading;
     
     private ILogger _logger;
-    private bool _isStatusFromHub;
     private ServerInfo? _serverInfo;
     private ContentLogConsumer _currentContentLogConsumer;
     private ProcessRunHandler<GameProcessStartInfoProvider>? _currentInstance;
-    
-    [ObservableProperty] private bool _tagDataVisible;
 
     public LogPopupModelView CurrLog;
     public RobustUrl Address { get; private set; }
@@ -119,38 +118,13 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer
         foreach (var tag in Status.Tags) Tags.Add(tag);
         OnPropertyChanged(nameof(Status));
     }
+    
 
-    public void UpdateStatusIfNecessary()
-    {
-        if(_isStatusFromHub) return;
-        FetchStatus();
-    }
-
-    public ServerEntryModelView WithData(RobustUrl url, ServerStatus? serverStatus)
+    public ServerEntryModelView WithData(RobustUrl url, ServerStatus serverStatus)
     {
         Address = url;
-        _isStatusFromHub = serverStatus is not null;
-        if (_isStatusFromHub)
-            SetStatus(serverStatus!);
-        else
-            FetchStatus();
-
+        SetStatus(serverStatus);
         return this;
-    }
-  
-    private async void FetchStatus()
-    {
-        try
-        {
-            SetStatus(await RestService.GetAsync<ServerStatus>(Address.StatusUri, CancellationService.Token));
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e);
-            Status = new ServerStatus("ErrorLand", $"ERROR: {e.Message}", [], "", -1, -1, -1, false,
-                DateTime.Now,
-                -1);
-        }
     }
 
     public void OpenContentViewer()

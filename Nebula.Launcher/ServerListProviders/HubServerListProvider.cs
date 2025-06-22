@@ -24,7 +24,7 @@ public sealed partial class HubServerListProvider : IServerListProvider
     public Action? OnLoaded { get; set; }
 
     private CancellationTokenSource? _cts;
-    private readonly List<ServerEntryModelView> _servers = [];
+    private readonly List<IListEntryModelView> _servers = [];
     private readonly List<Exception> _errors = [];
 
     public HubServerListProvider With(string hubUrl)
@@ -33,7 +33,7 @@ public sealed partial class HubServerListProvider : IServerListProvider
         return this;
     }
     
-    public IEnumerable<IFilterConsumer> GetServers()
+    public IEnumerable<IListEntryModelView> GetServers()
     {
         return _servers;
     }

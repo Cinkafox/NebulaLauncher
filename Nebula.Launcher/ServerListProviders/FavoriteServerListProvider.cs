@@ -23,13 +23,13 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
     [GenerateProperty] private IServiceProvider ServiceProvider { get; }
     [GenerateProperty] private ServerViewContainer ServerViewContainer { get; }
 
-    private List<IFilterConsumer> _serverLists = [];
+    private List<IListEntryModelView> _serverLists = [];
     private string[] rawServerLists = [];
     
     public bool IsLoaded { get; private set; }
     public Action? OnLoaded { get; set; }
     public Action? Dirty { get; set; }
-    public IEnumerable<IFilterConsumer> GetServers()
+    public IEnumerable<IListEntryModelView> GetServers()
     {
         return _serverLists;
     }
@@ -44,12 +44,12 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
         IsLoaded = false;
         _serverLists.Clear();
         var servers = GetFavoriteEntries();
-        
-        _serverLists.AddRange(
-            servers.Select(s => 
-                ServerViewContainer.Get(s.ToRobustUrl())
-            )
+
+        var serverEntries = servers.Select(s =>
+            ServerViewContainer.Get(s.ToRobustUrl())
         );
+        
+        _serverLists.AddRange(serverEntries);
         
         _serverLists.Add(new AddFavoriteButton(ServiceProvider));
         
@@ -67,13 +67,20 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
         var servers = GetFavoriteEntries();
         servers.Add(robustUrl.ToString());
         ConfigurationService.SetConfigValue(LauncherConVar.Favorites, servers.ToArray());
-        ServerViewContainer.Get(robustUrl).IsFavorite = true;
+        if(ServerViewContainer.Get(robustUrl) is IFavoriteEntryModelView favoriteView) favoriteView.IsFavorite = true;
     }
 
     public void RemoveFavorite(ServerEntryModelView entryModelView)
     {
         var servers = GetFavoriteEntries();
         servers.Remove(entryModelView.Address.ToString());
+        ConfigurationService.SetConfigValue(LauncherConVar.Favorites, servers.ToArray());
+    }
+    
+    public void RemoveFavorite(RobustUrl url)
+    {
+        var servers = GetFavoriteEntries();
+        servers.Remove(url.ToString());
         ConfigurationService.SetConfigValue(LauncherConVar.Favorites, servers.ToArray());
     }
 
@@ -103,7 +110,7 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
     private void InitialiseInDesignMode(){}
 }
 
-public class AddFavoriteButton: Border, IFilterConsumer{
+public class AddFavoriteButton: Border, IListEntryModelView{
 
     private Button _addFavoriteButton = new Button();
     public AddFavoriteButton(IServiceProvider serviceProvider)
@@ -120,8 +127,5 @@ public class AddFavoriteButton: Border, IFilterConsumer{
         _addFavoriteButton.Content = "Add Favorite";
         Child = _addFavoriteButton;
     }
-
-    public void ProcessFilter(ServerFilter? serverFilter)
-    {
-    }
+    public bool IsFavorite { get; set; }
 }

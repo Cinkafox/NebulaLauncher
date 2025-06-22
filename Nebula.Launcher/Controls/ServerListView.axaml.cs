@@ -49,7 +49,7 @@ public partial class ServerListView : UserControl
         {
             if (rawView is ServerEntryModelView serverEntryModelView)
             {
-                serverEntryModelView.UpdateStatusIfNecessary();
+                //serverEntryModelView.UpdateStatusIfNecessary();
             }
         }
     }
@@ -61,9 +61,10 @@ public partial class ServerListView : UserControl
         if(IsLoading) 
             return;
         
-        foreach (IFilterConsumer? serverView in ServerList.Items)
+        foreach (var serverView in ServerList.Items)
         {
-            serverView?.ProcessFilter(filter);
+            if(serverView is IFilterConsumer filterConsumer)
+                filterConsumer.ProcessFilter(filter);
         }
     }
 
@@ -83,7 +84,8 @@ public partial class ServerListView : UserControl
         foreach (var serverEntry in _provider.GetServers())
         {
             ServerList.Items.Add(serverEntry);
-            serverEntry.ProcessFilter(_currentFilter);
+            if(serverEntry is IFilterConsumer serverFilter)
+                serverFilter.ProcessFilter(_currentFilter);
         }
         
         foreach (var error in _provider.GetErrors())

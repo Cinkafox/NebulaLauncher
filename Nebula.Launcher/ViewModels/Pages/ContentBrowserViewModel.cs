@@ -29,9 +29,7 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
     [ObservableProperty] private string _serverText = "";
     [ObservableProperty] private string _searchText = "";
     [GenerateProperty] private ContentService ContentService { get; } = default!;
-    [GenerateProperty] private CancellationService CancellationService { get; } = default!;
     [GenerateProperty] private FileService FileService { get; } = default!;
-    [GenerateProperty] private DebugService DebugService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupService { get; } = default!;
     [GenerateProperty] private IServiceProvider ServiceProvider { get; }
     [GenerateProperty, DesignConstruct] private ViewHelperService ViewHelperService { get; } = default!;
