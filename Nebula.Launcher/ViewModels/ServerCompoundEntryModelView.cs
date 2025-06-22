@@ -18,51 +18,59 @@ namespace Nebula.Launcher.ViewModels;
 [ViewModelRegister(typeof(ServerCompoundEntryView), false)]
 [ConstructGenerator]
 public sealed partial class ServerCompoundEntryViewModel : 
-    ViewModelBase, IFavoriteEntryModelView, IFilterConsumer, IListEntryModelView
+    ViewModelBase, IFavoriteEntryModelView, IFilterConsumer, IListEntryModelView, IEntryNameHolder
 {
-    [ObservableProperty] private ServerEntryModelView _currentEntry;
+    [ObservableProperty] private ServerEntryModelView? _currentEntry;
     [ObservableProperty] private Control? _entryControl;
-    [ObservableProperty] private string _name = "Loading...";
+    [ObservableProperty] private string _message = "Loading server entry...";
     [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private bool _loading = true;
+    
+    private string? _name;
+
+    public string? Name
+    {
+        get => _name;
+        set
+        {
+            _name = value;
+            OnPropertyChanged();
+            
+            if (CurrentEntry != null) 
+                CurrentEntry.Name = value;
+        }
+    }
     
     [GenerateProperty] private RestService RestService { get; }
     [GenerateProperty] private IServiceProvider ServiceProvider{ get; }
     [GenerateProperty] private FavoriteServerListProvider FavoriteServerListProvider { get; }
     
-    private RobustUrl? _url;
-    
-
     protected override void InitialiseInDesignMode()
     {
+        Name = "TEST.TEST";
     }
 
     protected override void Initialise()
     {
     }
 
-    public ServerCompoundEntryViewModel LoadServerEntry(RobustUrl url, CancellationToken cancellationToken)
+    public ServerCompoundEntryViewModel LoadServerEntry(RobustUrl url,string? name, CancellationToken cancellationToken)
     {
         Task.Run(async () =>
         {
             try
             {
-                _url = url;
-                Name = $"Loading {url}...";
+                Message = "Loading server entry...";
                 var status = await RestService.GetAsync<ServerStatus>(url.StatusUri, cancellationToken);
                 
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    CurrentEntry = ServiceProvider.GetService<ServerEntryModelView>()!.WithData(url, status);
-                    CurrentEntry.IsFavorite = IsFavorite;
-                    CurrentEntry.Loading = false;
-                    Loading = false;
-                });
+                CurrentEntry = ServiceProvider.GetService<ServerEntryModelView>()!.WithData(url,name, status);
+                CurrentEntry.IsFavorite = IsFavorite;
+                CurrentEntry.Loading = false;
+                Loading = false;
             }
             catch (Exception e)
             {
-                var error = new Exception("Unable to load server entry", e);
-                Name = e.Message;
+                Message = e.Message;
             }
         }, cancellationToken);
 
@@ -71,13 +79,7 @@ public sealed partial class ServerCompoundEntryViewModel :
 
     public void ToggleFavorites()
     {
-        if (_url == null) 
-            return;
-        IsFavorite = !IsFavorite;
-        if(IsFavorite)
-            FavoriteServerListProvider.AddFavorite(_url);
-        else
-            FavoriteServerListProvider.RemoveFavorite(_url);
+        CurrentEntry?.ToggleFavorites();
     }
     
     

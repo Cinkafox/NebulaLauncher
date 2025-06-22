@@ -1,0 +1,56 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using Nebula.Launcher.Views.Popup;
+using Nebula.Shared.Services;
+
+namespace Nebula.Launcher.ViewModels.Popup;
+
+[ViewModelRegister(typeof(EditServerNameView), false)]
+[ConstructGenerator]
+public sealed partial class EditServerNameViewModel : PopupViewModelBase
+{
+    [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
+    [GenerateProperty] public ConfigurationService ConfigurationService { get; }
+    public override string Title => "Edit server name";
+    public override bool IsClosable => true;
+    
+    [ObservableProperty] private string _ipInput;
+    [ObservableProperty] private string _nameInput;
+    
+    public void OnEnter()
+    {
+        if(string.IsNullOrWhiteSpace(IpInput)) 
+            return;
+
+        if (string.IsNullOrWhiteSpace(NameInput))
+        {
+            RemoveServerName();
+            Dispose();
+            return;
+        }
+        
+        AddServerName();
+        Dispose();
+    }
+
+    private void AddServerName()
+    {
+        var currentNames = ConfigurationService.GetConfigValue(LauncherConVar.ServerCustomNames)!;
+        currentNames.Add(IpInput, NameInput);
+        ConfigurationService.SetConfigValue(LauncherConVar.ServerCustomNames, currentNames);
+    }
+
+    private void RemoveServerName()
+    {
+        var currentNames = ConfigurationService.GetConfigValue(LauncherConVar.ServerCustomNames)!;
+        currentNames.Remove(IpInput);
+        ConfigurationService.SetConfigValue(LauncherConVar.ServerCustomNames, currentNames);
+    }
+    
+    protected override void InitialiseInDesignMode()
+    {
+    }
+
+    protected override void Initialise()
+    {
+    }
+}

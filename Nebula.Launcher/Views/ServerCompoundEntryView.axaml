@@ -36,9 +36,14 @@
                     Margin="10,0,0,0"
                     VerticalScrollBarVisibility="Disabled"
                     x:Name="AutoScrollViewer">
-                    <Label VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Name}" />
-                    </Label>
+                    <StackPanel Orientation="Horizontal">
+                        <Label VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" />
+                        </Label>
+                        <Label VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Message}" />
+                        </Label>
+                    </StackPanel>
                 </ScrollViewer>
 
                 <Panel

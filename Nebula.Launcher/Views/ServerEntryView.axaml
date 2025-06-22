@@ -24,7 +24,7 @@
         CornerRadius="10"
         Margin="5">
 
-        <Grid ColumnDefinitions="*,80,50,50" RowDefinitions="35,*,*">
+        <Grid ColumnDefinitions="*,80,50,50,50" RowDefinitions="35,*,*">
             <Border
                 Background="Transparent"
                 BoxShadow="0 3 3 -2 #121212"
@@ -47,7 +47,7 @@
                     VerticalScrollBarVisibility="Disabled"
                     x:Name="AutoScrollViewer">
                     <Label VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Status.Name}" />
+                        <TextBlock Text="{Binding RealName}" />
                     </Label>
                 </ScrollViewer>
             </Button>
@@ -67,8 +67,18 @@
                 </Label>
             </StackPanel>
 
-            <Panel
+            <Button
                 Grid.Column="2"
+                Grid.Row="0"
+                Command="{Binding EditName}"
+                CornerRadius="10,10,10,10"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch">
+                <Svg Margin="4" Path="/Assets/svg/pencil.svg" />
+            </Button>
+            
+            <Panel
+                Grid.Column="3"
                 Grid.Row="0"
                 Margin="5,0,0,0">
                 <Button
@@ -90,7 +100,7 @@
             </Panel>
 
             <Panel
-                Grid.Column="3"
+                Grid.Column="4"
                 Grid.Row="0"
                 Margin="5,0,0,0">
                 <Button

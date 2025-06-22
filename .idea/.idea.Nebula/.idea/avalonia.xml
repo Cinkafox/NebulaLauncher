@@ -28,6 +28,8 @@
         <entry key="Nebula.Launcher/Views/Pages/ServerListPage.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Pages/ServerListView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Pages/ServerOverviewView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
+        <entry key="Nebula.Launcher/Views/Popup/AddFavoriteView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
+        <entry key="Nebula.Launcher/Views/Popup/EditServerNameView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/ExceptionListView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/ExceptionView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/InfoPopupView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />

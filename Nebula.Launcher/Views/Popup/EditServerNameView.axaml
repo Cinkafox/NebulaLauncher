@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:popup="clr-namespace:Nebula.Launcher.ViewModels.Popup"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nebula.Launcher.Views.Popup.EditServerNameView"
+             x:DataType="popup:EditServerNameViewModel">
+    <Design.DataContext>
+        <popup:EditServerNameViewModel />
+    </Design.DataContext>
+    
+    <StackPanel Margin="15" Spacing="10">
+        <Border BoxShadow="{StaticResource DefaultShadow}">
+            <TextBlock  Text="{Binding IpInput}"  Margin="10,8,10,8"/>
+        </Border>
+        <Border BoxShadow="{StaticResource DefaultShadow}">
+            <TextBox Text="{Binding NameInput}" Watermark="custom server name" />
+        </Border>
+        <Border Background="{StaticResource DefaultSelected}" BoxShadow="{StaticResource DefaultShadow}">
+            <Button Command="{Binding OnEnter}" HorizontalAlignment="Stretch">
+                <Label HorizontalAlignment="Center">Set name</Label>
+            </Button>
+        </Border>
+    </StackPanel>
+</UserControl>

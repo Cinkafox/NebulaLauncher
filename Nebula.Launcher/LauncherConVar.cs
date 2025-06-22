@@ -18,7 +18,11 @@ public static class LauncherConVar
     public static readonly ConVar<string[]> Favorites =
         ConVarBuilder.Build<string[]>("server.favorites", []);
     
-    public static readonly ConVar<AuthServerCredentials[]> AuthServers = ConVarBuilder.Build<AuthServerCredentials[]>("launcher.authServers", [
+    public static readonly ConVar<Dictionary<string,string>> ServerCustomNames = 
+        ConVarBuilder.Build<Dictionary<string,string>>("server.names", []);
+    
+    public static readonly ConVar<AuthServerCredentials[]> AuthServers = 
+        ConVarBuilder.Build<AuthServerCredentials[]>("launcher.authServers", [
         new AuthServerCredentials(
             "WizDen", 
             [

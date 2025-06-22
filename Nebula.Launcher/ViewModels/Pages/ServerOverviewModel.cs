@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Nebula.Launcher.Controls;
 using Nebula.Launcher.Models;
@@ -24,24 +25,18 @@ public partial class ServerOverviewModel : ViewModelBase
     
     [ObservableProperty] private bool _isFilterVisible;
 
-    [ObservableProperty] private ServerListView _currentServerList = new ServerListView();
+    [ObservableProperty] private ServerListView _currentServerList = new();
     
-    public readonly ServerFilter CurrentFilter = new ServerFilter();
+    public readonly ServerFilter CurrentFilter = new();
     
     public Action? OnSearchChange;
-    
-    [GenerateProperty] private PopupMessageService PopupMessageService { get; }
-    [GenerateProperty] private CancellationService CancellationService { get; }
-    [GenerateProperty] private DebugService DebugService { get; }
     [GenerateProperty] private IServiceProvider ServiceProvider { get; }
     [GenerateProperty] private ConfigurationService ConfigurationService { get; }
     [GenerateProperty] private FavoriteServerListProvider FavoriteServerListProvider { get; }
-    [GenerateProperty, DesignConstruct] private ViewHelperService ViewHelperService { get; }
-    
     public ObservableCollection<ServerListTabTemplate> Items { get; private set; }
     [ObservableProperty] private ServerListTabTemplate _selectedItem;
     
-    [GenerateProperty, DesignConstruct] private ServerViewContainer ServerViewContainer { get; set; } 
+    [GenerateProperty, DesignConstruct] private ServerViewContainer ServerViewContainer { get; } 
     
     private Dictionary<string, ServerListView> _viewCache = [];
     
@@ -126,6 +121,7 @@ public partial class ServerOverviewModel : ViewModelBase
         }
         
         CurrentServerList = view;
+        ApplyFilter();
     }
     
 }
@@ -134,25 +130,77 @@ public partial class ServerOverviewModel : ViewModelBase
 public class ServerViewContainer
 {
     private readonly ViewHelperService _viewHelperService;
-    private List<string> favorites = [];
+    private readonly List<string> _favorites = [];
+    private readonly Dictionary<string, string> _customNames = [];
 
     public ServerViewContainer()
     {
         _viewHelperService = new ViewHelperService();
     }
 
+    [UsedImplicitly]
     public ServerViewContainer(ViewHelperService viewHelperService, ConfigurationService configurationService)
     {
         _viewHelperService = viewHelperService;
         configurationService.SubscribeVarChanged(LauncherConVar.Favorites, OnFavoritesChange, true);
+        configurationService.SubscribeVarChanged(LauncherConVar.ServerCustomNames, OnCustomNamesChanged, true);
+    }
+
+    private void OnCustomNamesChanged(Dictionary<string,string>? value)
+    {
+        var oldNames = 
+            _customNames.ToDictionary(k => k.Key, v => v.Value); //Clone think
+        
+        _customNames.Clear();
+        
+        if(value == null)
+        {
+            foreach (var (ip,_) in oldNames)
+            {
+                if(!_entries.TryGetValue(ip, out var listEntry) || listEntry is not IEntryNameHolder entryNameHolder) 
+                    continue;
+
+                entryNameHolder.Name = null;
+            }
+            
+            return;
+        }
+
+        foreach (var (oldIp, oldName) in oldNames)
+        {
+            if(value.TryGetValue(oldIp, out var newName))
+            {
+                if (oldName == newName)
+                    value.Remove(newName);
+                
+                continue;
+            }
+            
+            if(!_entries.TryGetValue(oldIp, out var listEntry) || 
+               listEntry is not IEntryNameHolder entryNameHolder) 
+                continue;
+            
+            entryNameHolder.Name = null;
+        }
+        
+        foreach (var (ip, name) in value)
+        {
+            _customNames.Add(ip, name);
+            if(!_entries.TryGetValue(ip, out var listEntry) || listEntry is not IEntryNameHolder entryNameHolder) 
+                continue;
+            
+            entryNameHolder.Name = name;
+        }
     }
 
     private void OnFavoritesChange(string[]? value)
     {
-        favorites = new List<string>(value ?? []);
+        _favorites.Clear();
+        if(value == null) return;
         
-        foreach (var favorite in favorites)
+        foreach (var favorite in value)
         {
+            _favorites.Add(favorite);
             if (_entries.TryGetValue(favorite, out var entry) && entry is IFavoriteEntryModelView favoriteView)
             {
                 favoriteView.IsFavorite = true;
@@ -175,17 +223,20 @@ public class ServerViewContainer
         
         lock (_entries)
         {
+            _customNames.TryGetValue(url.ToString(), out var customName);
+            
             if (_entries.TryGetValue(url.ToString(), out entry))
             {
                 return entry;
             }
 
             if (serverStatus is not null)
-                entry = _viewHelperService.GetViewModel<ServerEntryModelView>().WithData(url, serverStatus);
+                entry = _viewHelperService.GetViewModel<ServerEntryModelView>().WithData(url, customName, serverStatus);
             else
-                entry = _viewHelperService.GetViewModel<ServerCompoundEntryViewModel>().LoadServerEntry(url, CancellationToken.None);
+                entry = _viewHelperService.GetViewModel<ServerCompoundEntryViewModel>().LoadServerEntry(url, customName, CancellationToken.None);
             
-            if(favorites.Contains(url.ToString()) && entry is IFavoriteEntryModelView favoriteEntryModelView) 
+            if(_favorites.Contains(url.ToString()) && 
+               entry is IFavoriteEntryModelView favoriteEntryModelView) 
                 favoriteEntryModelView.IsFavorite = true;
             
             _entries.Add(url.ToString(), entry);
@@ -203,6 +254,11 @@ public interface IListEntryModelView
 public interface IFavoriteEntryModelView
 {
     public bool IsFavorite { get; set; }
+}
+
+public interface IEntryNameHolder
+{
+    public string? Name { get; set; }
 }
 
 public class ServerComparer : IComparer<ServerHubInfo>, IComparer<ServerStatus>, IComparer<(RobustUrl,ServerStatus)>
@@ -263,3 +319,5 @@ public sealed class ServerFilter
         return IsMatchByName(name) && IsMatchByTags(itemTags);
     }
 }
+
+public sealed record ServerCustomNameEntry(string Url, string Name);

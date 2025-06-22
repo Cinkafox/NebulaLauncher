@@ -21,7 +21,7 @@ namespace Nebula.Launcher.ViewModels;
 
 [ViewModelRegister(typeof(ServerEntryView), false)]
 [ConstructGenerator]
-public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, IListEntryModelView, IFavoriteEntryModelView
+public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, IListEntryModelView, IFavoriteEntryModelView, IEntryNameHolder
 {
     [ObservableProperty] private string _description = "Fetching info...";
     [ObservableProperty] private bool _expandInfo;
@@ -30,6 +30,13 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
     [ObservableProperty] private bool _runVisible = true;
     [ObservableProperty] private bool _tagDataVisible;
     [ObservableProperty] private bool _loading;
+    [ObservableProperty] private string _realName;
+
+    public string? Name
+    {
+        get => RealName;
+        set => RealName = value ?? Status.Name;
+    }
     
     private ILogger _logger;
     private ServerInfo? _serverInfo;
@@ -83,6 +90,8 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
 
     protected override void InitialiseInDesignMode()
     {
+        IsVisible = true;
+        RealName = "TEST.TEST";
         Description = "Server of meow girls! Nya~ \nNyaMeow\nOOOINK!!";
         Links.Add(new ServerLink("Discord", "discord", "https://cinka.ru"));
         Status = new ServerStatus("Ameba",
@@ -119,12 +128,20 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
         OnPropertyChanged(nameof(Status));
     }
     
-
-    public ServerEntryModelView WithData(RobustUrl url, ServerStatus serverStatus)
+    public ServerEntryModelView WithData(RobustUrl url, string? name,ServerStatus serverStatus)
     {
         Address = url;
         SetStatus(serverStatus);
+        Name = name;
         return this;
+    }
+
+    public void EditName()
+    {
+        var popup = ViewHelperService.GetViewModel<EditServerNameViewModel>();
+        popup.IpInput = Address.ToString();
+        popup.NameInput = Name ?? string.Empty;
+        PopupMessageService.Popup(popup);
     }
 
     public void OpenContentViewer()
