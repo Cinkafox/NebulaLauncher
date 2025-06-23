@@ -11,7 +11,6 @@ using CommunityToolkit.Mvvm.Input;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views.Pages;
-using Nebula.Shared;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
@@ -175,6 +174,11 @@ public partial class AccountInfoViewModel : ViewModelBase
 
                 case HttpRequestError.NameResolutionError:
                     PopupError(LocalisationService.GetString("auth-name-resolution-error"), e);
+                    DoRetryAuth = true;
+                    break;
+                
+                case HttpRequestError.SecureConnectionError:
+                    PopupError(LocalisationService.GetString("auth-secure-error"), e);
                     DoRetryAuth = true;
                     break;
 

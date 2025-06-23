@@ -10,7 +10,8 @@
     xmlns:pages="clr-namespace:Nebula.Launcher.ViewModels.Pages"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Nebula.Launcher.Controls"
-    xmlns:models="clr-namespace:Nebula.Launcher.Models">
+    xmlns:models="clr-namespace:Nebula.Launcher.Models"
+    xmlns:services="clr-namespace:Nebula.Launcher.Services">
 
     <Design.DataContext>
         <pages:ServerOverviewModel />
@@ -72,7 +73,7 @@
                 Text="{Binding SearchText}"
                 TextChanged="TextBox_OnTextChanged"
                 VerticalAlignment="Center"
-                Watermark="Server name..." />
+                Watermark="{services:LocaledText 'server-search'}" />
             <Button
                 Command="{Binding FilterRequired}"
                 Grid.Column="2"

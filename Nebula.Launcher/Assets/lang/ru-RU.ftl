@@ -32,6 +32,7 @@ auth-error-occured = Во время аутентификации произош
 auth-invalid-credentials = Неверное имя пользователя или пароль. Попробуйте еще раз.  
 auth-connection-error = Не удается подключиться к серверу аутентификации.  
 auth-name-resolution-error = Не удалось разрешить адрес сервера. Проверьте сетевые настройки или конфигурацию сервера.  
+auth-secure-error = Не удалось подключиться к серверу по SSL. Проверьте сетевые настройки.
 auth-config-read = Чтение конфигурации аутентификации...  
 auth-try-auth-config = Попытка аутентификации с использованием сохраненной конфигурации.
 
@@ -46,3 +47,11 @@ favorite-add = Добавить в избранное
 servername-set = Установить имя сервера
 twofa-enabled = У вас включена двухфакторная аутентификация. Введите код.
 twofa-set = Продолжить
+
+server-search = Поиск сервера
+serverentry-tag = Тэги
+serverentry-map = Карта
+serverentry-preset = Режим
+
+content-view-server = Сервер
+content-view-path = Путь

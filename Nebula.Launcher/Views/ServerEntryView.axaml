@@ -13,6 +13,7 @@
     xmlns:viewModels="clr-namespace:Nebula.Launcher.ViewModels"
     xmlns:views="clr-namespace:Nebula.Launcher.Views"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:services="clr-namespace:Nebula.Launcher.Services"
     IsVisible="{Binding IsVisible}">
     <Design.DataContext>
         <viewModels:ServerEntryModelView />
@@ -144,7 +145,7 @@
                 Margin="5">
                 <StackPanel Margin="5" Spacing="5">
                     <StackPanel Orientation="Horizontal">
-                        <Label FontSize="10" VerticalAlignment="Center">Tags:</Label>
+                        <Label FontSize="10" VerticalAlignment="Center" Content="{services:LocaledText serverentry-tag}"/>
                         <ItemsControl ItemsSource="{Binding Tags}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type system:String}">
@@ -175,7 +176,7 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
-                        <Label FontSize="10" VerticalAlignment="Center">Map:</Label>
+                        <Label FontSize="10" VerticalAlignment="Center" Content="{services:LocaledText serverentry-map}"/>
                         <Border
                             Background="{StaticResource DefaultForeground}"
                             BorderThickness="0"
@@ -190,7 +191,7 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">
-                        <Label FontSize="10" VerticalAlignment="Center">Preset:</Label>
+                        <Label FontSize="10" VerticalAlignment="Center" Content="{services:LocaledText serverentry-preset}"/>
                         <Border
                             Background="{StaticResource DefaultForeground}"
                             BorderThickness="0"

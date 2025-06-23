@@ -32,6 +32,7 @@ auth-error-occured = An error occurred during the authentication process.
 auth-invalid-credentials = Invalid username or password. Please try again.  
 auth-connection-error = Unable to connect to the authentication server.  
 auth-name-resolution-error = Failed to resolve server address. Check your network or server configuration.  
+auth-secure-error = Failed to cinnect to the server using SSL
 auth-config-read = Reading authentication configuration...  
 auth-try-auth-config = Attempting to authenticate using saved configuration.
 
@@ -46,3 +47,11 @@ favorite-add = Add to favorites
 servername-set = Set server name
 twofa-enabled = You have two-factor authentication enabled. Please enter the code.
 twofa-set = Proceed
+
+server-search = Server search
+serverentry-tag = Tag
+serverentry-map = Map
+serverentry-preset = Preset
+
+content-view-server = Server url
+content-view-path = Path

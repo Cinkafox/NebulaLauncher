@@ -15,7 +15,7 @@
 
     <Panel HorizontalAlignment="Center" VerticalAlignment="Center">
         <Label>
-            <TextBlock Text="{Binding InfoText}" />
+            <TextBlock Text="{Binding InfoText}" TextWrapping="Wrap"/>
         </Label>
     </Panel>
 </UserControl>

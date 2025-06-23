@@ -8,7 +8,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:pages="clr-namespace:Nebula.Launcher.ViewModels.Pages"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:services="clr-namespace:Nebula.Launcher.Services">
     <Design.DataContext>
         <pages:ContentBrowserViewModel />
     </Design.DataContext>
@@ -31,14 +32,14 @@
             Margin="5"
             Text="{Binding ServerText}"
             VerticalAlignment="Center"
-            Watermark="Server Url..." />
+            Watermark="{services:LocaledText content-view-server}" />
         <TextBox
             Grid.Column="1"
             Grid.Row="0"
             Margin="5"
             Text="{Binding SearchText}"
             VerticalAlignment="Center"
-            Watermark="Path..." />
+            Watermark="{services:LocaledText content-view-path}" />
         <Button
             Command="{Binding OnBackEnter}"
             Grid.Column="2"
