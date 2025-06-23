@@ -19,13 +19,16 @@ public class FilterBox : UserControl
     
     public Action<FilterBoxChangedEventArgs>? OnFilterChanged {get; set;}
 
-    public string? FilterBoxName {
-        set => filterName.Text = value;
-        get => filterName.Text;
+    public string FilterBoxName {
+        set => filterName.LocalId = value;
+        get => filterName.LocalId;
     }
     
     private StackPanel filterPanel;
-    private TextBox filterName = new TextBox();
+    private LocalizedLabel filterName = new LocalizedLabel()
+    {
+        VerticalAlignment = VerticalAlignment.Center
+    };
     
     public FilterBox()
     {
@@ -34,6 +37,8 @@ public class FilterBox : UserControl
             Orientation = Orientation.Horizontal,
             Spacing = 5,
         };
+
+        filterPanel.Children.Add(filterName);
         
         Content = filterPanel;
     }

@@ -38,6 +38,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     [ObservableProperty] private bool _doRetryAuth;
 
     private bool _isProfilesEmpty;
+    [GenerateProperty] private LocalisationService LocalisationService { get; }
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
     [GenerateProperty] private ConfigurationService ConfigurationService { get; } = default!;
     [GenerateProperty] private DebugService DebugService { get; }
@@ -79,7 +80,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     public void DoAuth(string? code = null)
     {
         var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
-        message.InfoText = "Auth think, please wait...";
+        message.InfoText = LocalisationService.GetString("auth-processing");
         message.IsInfoClosable = false;
         PopupMessageService.Popup(message);
 
@@ -102,7 +103,7 @@ public partial class AccountInfoViewModel : ViewModelBase
                 }
                 catch (Exception ex)
                 {
-                    var unexpectedError = new Exception("An unexpected error occurred during authentication.", ex);
+                    var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), ex);
                     _logger.Error(unexpectedError);
                     PopupMessageService.Popup(unexpectedError);
                 }
@@ -112,7 +113,7 @@ public partial class AccountInfoViewModel : ViewModelBase
 
             if (!IsLogged)
             {
-                PopupMessageService.Popup(new Exception("No one of auth server is available.", exception));
+                PopupMessageService.Popup(exception ?? new Exception(LocalisationService.GetString("auth-error")));
             }
         });
     }
@@ -156,7 +157,7 @@ public partial class AccountInfoViewModel : ViewModelBase
                     _logger.Log("TFA required");
                     break;
                 case AuthenticateDenyCode.InvalidCredentials:
-                    PopupError("Invalid Credentials! Please, try another password or login!", e);
+                    PopupError(LocalisationService.GetString("auth-invalid-credentials"), e);
                     break;
                 default:
                     throw;
@@ -168,17 +169,17 @@ public partial class AccountInfoViewModel : ViewModelBase
             switch (e.HttpRequestError)
             {
                 case HttpRequestError.ConnectionError:
-                    PopupError("Failed to connect to the authentication server.", e);
+                    PopupError(LocalisationService.GetString("auth-connection-error"), e);
                     DoRetryAuth = true;
                     break;
 
                 case HttpRequestError.NameResolutionError:
-                    PopupError("Unable to resolve the server address.", e);
+                    PopupError(LocalisationService.GetString("auth-name-resolution-error"), e);
                     DoRetryAuth = true;
                     break;
 
                 default:
-                    var authError = new Exception("An error occurred during authentication.", e);
+                    var authError = new Exception(LocalisationService.GetString("auth-error"), e);
                     _logger.Error(authError);
                     PopupMessageService.Popup(authError);
                     break;
@@ -223,10 +224,10 @@ public partial class AccountInfoViewModel : ViewModelBase
         Accounts.Add(alpm);
     }
 
-    private async Task ReadAuthConfig()
+    private void ReadAuthConfig()
     {
         var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
-        message.InfoText = "Read configuration file, please wait...";
+        message.InfoText = LocalisationService.GetString("auth-config-read");
         message.IsInfoClosable = false;
         PopupMessageService.Popup(message);
         foreach (var profile in
@@ -247,7 +248,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     public async void DoCurrentAuth()
     {
         var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
-        message.InfoText = "Trying to auth with saved data...";
+        message.InfoText = LocalisationService.GetString("auth-try-auth-config");
         message.IsInfoClosable = false;
         PopupMessageService.Popup(message);
 
@@ -261,7 +262,7 @@ public partial class AccountInfoViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                var unexpectedError = new Exception("An unexpected error occurred during authentication.", ex);
+                var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), ex);
                 _logger.Error(unexpectedError);
                 PopupMessageService.Popup(unexpectedError);
                 return;
@@ -290,7 +291,7 @@ public partial class AccountInfoViewModel : ViewModelBase
 
     private void PopupError(string message, Exception e)
     {
-        message = "An error occurred during authentication: " + message;
+        message = LocalisationService.GetString("auth-error-occured") + message;
         _logger.Error(new Exception(message, e));
 
         var messageView = ViewHelperService.GetViewModel<InfoPopupViewModel>();

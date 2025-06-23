@@ -200,7 +200,10 @@ public sealed class ArrayUnitConfigControl : Border, IConfigControl
 {
     private readonly List<IConfigControl> _itemControls = [];
     private readonly StackPanel _itemsPanel = new StackPanel() { Orientation = Orientation.Vertical };
-    private readonly Button _addButton = new Button() { Content = "Add Item", Classes = { "ConfigBorder" }};
+    private readonly Button _addButton = new Button() { Content = new Label()
+    {
+        Content = "Add Item"
+    }, Classes = { "ConfigBorder" }};
     private readonly int _oldCount;
     private readonly Type _elementType;
     private readonly StackPanel _panel = new();
@@ -232,7 +235,7 @@ public sealed class ArrayUnitConfigControl : Border, IConfigControl
     {
         var itemPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
         var control = ConfigControlHelper.GetConfigControl(_itemControls.Count.ToString(), value);
-        var removeButton = new Button { Content = "Remove", Classes = { "ConfigBorder" }};
+        var removeButton = new Button { Content = new Label(){ Content = "Remove" }, Classes = { "ConfigBorder" }};
 
         removeButton.Click += (_, _) =>
         {

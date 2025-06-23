@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Nebula.Launcher.Services;
 using Nebula.Launcher.Views.Popup;
 using Nebula.Shared.Services;
 
@@ -12,7 +13,7 @@ public partial class InfoPopupViewModel : PopupViewModelBase
 
     [ObservableProperty] private string _infoText = "Test";
 
-    public override string Title => "Info";
+    public override string Title => LocalisationService.GetString("popup-information");
     public bool IsInfoClosable { get; set; } = true;
     public override bool IsClosable => IsInfoClosable;
 

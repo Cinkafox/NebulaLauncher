@@ -51,8 +51,8 @@
                 VerticalAlignment="Bottom" 
                 IsVisible="{Binding IsFilterVisible}">
             <StackPanel Orientation="Vertical" Spacing="2" Margin="15">
-                <controls:FilterBox Name="EssentialFilters" FilterBoxName="Roleplay" FilterCommand="{Binding OnFilterChanged}"/>
-                <controls:FilterBox Name="LanguageFilters" FilterBoxName="Language" FilterCommand="{Binding OnFilterChanged}"/>
+                <controls:FilterBox Name="EssentialFilters" FilterBoxName="filter-roleplay" FilterCommand="{Binding OnFilterChanged}"/>
+                <controls:FilterBox Name="LanguageFilters" FilterBoxName="filter-language" FilterCommand="{Binding OnFilterChanged}"/>
             </StackPanel>
         </Border>
 

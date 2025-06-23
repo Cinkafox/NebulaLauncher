@@ -5,6 +5,7 @@
     x:Class="Nebula.Launcher.Views.Pages.AccountInfoView"
     x:DataType="pages:AccountInfoViewModel"
     xmlns="https://github.com/avaloniaui"
+    xmlns:customControls="clr-namespace:Nebula.Launcher.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:pages="clr-namespace:Nebula.Launcher.ViewModels.Pages"
@@ -28,7 +29,7 @@
                         <GradientStop Color="#292222" Offset="1.0" />
                     </LinearGradientBrush>
                 </Border.Background>
-                <Label HorizontalAlignment="Center">Profiles:</Label>
+                <customControls:LocalizedLabel HorizontalAlignment="Center" LocalId="account-profiles"/>
             </Border>
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                 <ItemsControl
@@ -59,17 +60,13 @@
                                             Command="{Binding OnSelect}"
                                             CornerRadius="0,0,0,10"
                                             Padding="5">
-                                            <Label>
-                                                Select
-                                            </Label>
+                                            <customControls:LocalizedLabel LocalId="account-profile-select"/>
                                         </Button>
                                         <Button
                                             Command="{Binding OnDelete}"
                                             CornerRadius="0,10,0,0"
                                             Padding="5">
-                                            <Label>
-                                                Delete
-                                            </Label>
+                                            <customControls:LocalizedLabel LocalId="account-profile-delete"/>
                                         </Button>
                                     </StackPanel>
                                 </Panel>
@@ -108,27 +105,21 @@
                                         Command="{Binding DoCurrentAuth}"
                                         HorizontalAlignment="Stretch"
                                         HorizontalContentAlignment="Center">
-                                        <Label>Retry previous auth</Label>
+                                        <customControls:LocalizedLabel LocalId="account-auth-retry"/>
                                     </Button>
                                 </Border>
-                                <Label HorizontalAlignment="Center">Or try another account</Label>
+                                <customControls:LocalizedLabel HorizontalAlignment="Center" LocalId="account-auth-try-another"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <Label VerticalAlignment="Center">
-                                    Login:
-                                </Label>
+                                <customControls:LocalizedLabel VerticalAlignment="Center" LocalId="account-auth-login"/>
                                 <TextBox Text="{Binding CurrentLogin}" MinWidth="200" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <Label HorizontalAlignment="Left" VerticalAlignment="Center">
-                                    Password:
-                                </Label>
+                                <customControls:LocalizedLabel HorizontalAlignment="Left" VerticalAlignment="Center" LocalId="account-auth-password"/>
                                 <TextBox PasswordChar="#" MinWidth="200" Text="{Binding CurrentPassword}" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <Label VerticalAlignment="Center">
-                                    Auth server:
-                                </Label>
+                                <customControls:LocalizedLabel VerticalAlignment="Center" LocalId="account-auth-server"/>
                                 <Button Command="{Binding ExpandAuthUrlCommand}" VerticalAlignment="Stretch">
                                     <Label>+</Label>
                                 </Button>
@@ -161,7 +152,7 @@
                                 Command="{Binding DoAuth}"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Center">
-                                <Label>Auth</Label>
+                                <customControls:LocalizedLabel LocalId="account-auth-button"/>
                             </Button>
                         </Border>
                         <Border BoxShadow="{StaticResource DefaultShadow}">
@@ -169,7 +160,7 @@
                                 Command="{Binding SaveProfileCommand}" 
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Center">
-                                <Label>Save profile</Label>
+                                <customControls:LocalizedLabel LocalId="account-auth-save"/>
                             </Button>
                         </Border>
                         <Button Command="{Binding ExpandAuthViewCommand}" HorizontalAlignment="Right">
@@ -186,7 +177,7 @@
                             Path="/Assets/svg/user.svg" />
                         <Label>
                             <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                                <TextBlock>Hello,</TextBlock>
+                                <customControls:LocalizedLabel LocalId="account-auth-hello"/>
                                 <TextBlock Text="{Binding CurrentLogin}" />
                             </StackPanel>
                         </Label>
@@ -197,12 +188,12 @@
                             Spacing="5">
                             <Border BoxShadow="{StaticResource DefaultShadow}">
                                 <Button Command="{Binding Logout}">
-                                    <Label>Logout</Label>
+                                    <customControls:LocalizedLabel LocalId="account-auth-logout"/>
                                 </Button>
                             </Border>
                             <Border BoxShadow="{StaticResource DefaultShadow}">
                                 <Button Command="{Binding SaveProfileCommand}">
-                                    <Label>Save profile</Label>
+                                    <customControls:LocalizedLabel LocalId="account-auth-save"/>
                                 </Button>
                             </Border>
                         </StackPanel>

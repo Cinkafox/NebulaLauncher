@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Nebula.Launcher/bin/Debug/net9.0/Nebula.Launcher.dll",
+            "program": "${workspaceFolder}/Nebula.Launcher/bin/Debug/Nebula.Launcher.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Nebula.Launcher",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

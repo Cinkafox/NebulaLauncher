@@ -1,4 +1,5 @@
 using System;
+using Nebula.Launcher.Services;
 using Nebula.Launcher.Views.Popup;
 using Nebula.Shared.Services;
 
@@ -24,6 +25,6 @@ public partial class TfaViewModel : PopupViewModelBase
     }
 
     [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
-    public override string Title => "2fa";
+    public override string Title => LocalisationService.GetString("popup-twofa");
     public override bool IsClosable => true;
 }

@@ -8,6 +8,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:popup="clr-namespace:Nebula.Launcher.ViewModels.Popup"
+    xmlns:customControls="clr-namespace:Nebula.Launcher.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Design.DataContext>
         <popup:AddFavoriteViewModel />
@@ -18,7 +19,7 @@
         </Border>
         <Border Background="{StaticResource DefaultSelected}" BoxShadow="{StaticResource DefaultShadow}">
             <Button Command="{Binding OnEnter}" HorizontalAlignment="Stretch">
-                <Label HorizontalAlignment="Center">Add</Label>
+               <customControls:LocalizedLabel HorizontalAlignment="Center" LocalId="favorite-add"/> 
             </Button>
         </Border>
         <Label>

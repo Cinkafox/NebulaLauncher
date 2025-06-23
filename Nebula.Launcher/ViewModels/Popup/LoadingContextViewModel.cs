@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Nebula.Launcher.Services;
 using Nebula.Launcher.Views.Popup;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
@@ -16,7 +17,7 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
 
     [ObservableProperty] private int _resolvedJobs;
 
-    public string LoadingName { get; set; } = "Loading...";
+    public string LoadingName { get; set; } = LocalisationService.GetString("popup-loading");
     public bool IsCancellable { get; set; } = true;
     public override bool IsClosable => false;
 

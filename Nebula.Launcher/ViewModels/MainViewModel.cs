@@ -23,10 +23,10 @@ public partial class MainViewModel : ViewModelBase
 {
     private readonly List<ListItemTemplate> _templates =
     [
-        new ListItemTemplate(typeof(AccountInfoViewModel), "user", "Account"),
-        new ListItemTemplate(typeof(ServerOverviewModel), "file", "Servers"),
-        new ListItemTemplate(typeof(ContentBrowserViewModel), "folder", "Content"),
-        new ListItemTemplate(typeof(ConfigurationViewModel), "settings", "Settings")
+        new ListItemTemplate(typeof(AccountInfoViewModel), "user", "tab-account"),
+        new ListItemTemplate(typeof(ServerOverviewModel), "file", "tab-servers"),
+        new ListItemTemplate(typeof(ContentBrowserViewModel), "folder", "tab-content"),
+        new ListItemTemplate(typeof(ConfigurationViewModel), "settings", "tab-settings")
     ];
 
     private readonly List<PopupViewModelBase> _viewQueue = new();
@@ -41,6 +41,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _popup;
     [ObservableProperty] private ListItemTemplate? _selectedListItem;
 
+    [GenerateProperty] private LocalisationService LocalisationService { get; }
     [GenerateProperty] private DebugService DebugService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
     [GenerateProperty] private ContentService ContentService { get; } = default!;
@@ -53,7 +54,11 @@ public partial class MainViewModel : ViewModelBase
 
     protected override void InitialiseInDesignMode()
     {
-        Items = new ObservableCollection<ListItemTemplate>(_templates);
+        Items = new ObservableCollection<ListItemTemplate>(_templates.Select(a=>
+        {
+            return new ListItemTemplate(a.ModelType, a.IconKey, LocalisationService.GetString(a.Label));
+        }
+        ));
         RequirePage<AccountInfoViewModel>();
     }
 
@@ -76,7 +81,7 @@ public partial class MainViewModel : ViewModelBase
         
         if (!VCRuntimeDllChecker.AreVCRuntimeDllsPresent())
         {
-            OnPopupRequired("VC runtime dlls are not present on this computer. Install VC runtime dlls.");
+            OnPopupRequired(LocalisationService.GetString("vcruntime-check-error"));
             Helper.OpenBrowser("https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170");
         }
     }
@@ -87,7 +92,7 @@ public partial class MainViewModel : ViewModelBase
             return;
 
         var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
-        loadingHandler.LoadingName = "Migration task, please wait...";
+        loadingHandler.LoadingName = LocalisationService.GetString("migration-label-task");
         loadingHandler.IsCancellable = false;
 
         if (!ContentService.CheckMigration(loadingHandler))

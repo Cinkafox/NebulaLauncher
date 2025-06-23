@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:pages="clr-namespace:Nebula.Launcher.ViewModels.Pages"
+             xmlns:customControls="clr-namespace:Nebula.Launcher.Controls"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Nebula.Launcher.Views.Pages.ConfigurationView"
              x:DataType="pages:ConfigurationViewModel">
@@ -29,7 +30,7 @@
                     Padding="5"
                     Margin="5"
                     Command="{Binding InvokeUpdateConfiguration}">
-                    Save
+                    <customControls:LocalizedLabel LocalId="config-save"/>
                 </Button>
                 <Button 
                     Classes="ConfigBorder"
@@ -38,7 +39,7 @@
                     Padding="5"
                     Margin="5"
                     Command="{Binding ResetConfig}">
-                    Reset to default
+                    <customControls:LocalizedLabel LocalId="config-reset"/>
                 </Button>
                 <Button 
                     Classes="ConfigBorder"
@@ -47,7 +48,7 @@
                     Padding="5"
                     Margin="5"
                     Command="{Binding OpenDataFolder}">
-                    Open Data path
+                    <customControls:LocalizedLabel LocalId="config-open-data"/>
                 </Button>
                 
                 <Button 
@@ -57,7 +58,7 @@
                     Padding="5"
                     Margin="5"
                     Command="{Binding ExportLogs}">
-                    Export logs
+                    <customControls:LocalizedLabel LocalId="config-export-logs"/>
                 </Button>
             </StackPanel>
         </StackPanel>
