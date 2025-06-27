@@ -27,6 +27,8 @@ public sealed partial class ServerCompoundEntryViewModel :
     [ObservableProperty] private bool _loading = true;
     
     private string? _name;
+    private RobustUrl? _url;
+    private ServerFilter? _currentFilter;
 
     public string? Name
     {
@@ -58,14 +60,16 @@ public sealed partial class ServerCompoundEntryViewModel :
     {
         Task.Run(async () =>
         {
+            _url = url;
             try
             {
                 Message = "Loading server entry...";
-                var status = await RestService.GetAsync<ServerStatus>(url.StatusUri, cancellationToken);
+                var status = await RestService.GetAsync<ServerStatus>(_url.StatusUri, cancellationToken);
                 
-                CurrentEntry = ServiceProvider.GetService<ServerEntryModelView>()!.WithData(url,name, status);
+                CurrentEntry = ServiceProvider.GetService<ServerEntryModelView>()!.WithData(_url,name, status);
                 CurrentEntry.IsFavorite = IsFavorite;
                 CurrentEntry.Loading = false;
+                CurrentEntry.ProcessFilter(_currentFilter);
                 Loading = false;
             }
             catch (Exception e)
@@ -79,12 +83,20 @@ public sealed partial class ServerCompoundEntryViewModel :
 
     public void ToggleFavorites()
     {
+        if (CurrentEntry is null && _url is not null)
+        {
+            IsFavorite = !IsFavorite;
+            if(IsFavorite) FavoriteServerListProvider.AddFavorite(_url);
+            else FavoriteServerListProvider.RemoveFavorite(_url);
+        }
+     
         CurrentEntry?.ToggleFavorites();
     }
     
     
     public void ProcessFilter(ServerFilter? serverFilter)
     {
+        _currentFilter = serverFilter;
         if(CurrentEntry is IFilterConsumer filterConsumer) 
             filterConsumer.ProcessFilter(serverFilter);
     }

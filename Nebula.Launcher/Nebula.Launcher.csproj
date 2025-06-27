@@ -54,6 +54,8 @@
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.pdb" DestinationFolder="$(OutDir)"/>
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.deps.json" DestinationFolder="$(OutDir)"/>
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.runtimeconfig.json" DestinationFolder="$(OutDir)"/>
+
+        <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\0Harmony.dll" DestinationFolder="$(OutDir)"/>
     </Target>
 
     <Target Name="PublishCheck" AfterTargets="Publish">
@@ -61,6 +63,8 @@
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.pdb" DestinationFolder="$(PublishDir)"/>
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.deps.json" DestinationFolder="$(PublishDir)"/>
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.runtimeconfig.json" DestinationFolder="$(PublishDir)"/>
+
+        <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\0Harmony.dll" DestinationFolder="$(OutDir)"/>
     </Target>
 
     <ItemGroup>

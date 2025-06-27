@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Lib.Harmony" Version="2.3.6" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0"/>
         <PackageReference Include="SharpZstd.Interop" Version="1.5.6"/>
     </ItemGroup>

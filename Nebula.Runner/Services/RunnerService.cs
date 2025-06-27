@@ -1,8 +1,14 @@
-﻿using Nebula.Shared.Models;
+﻿using System.Globalization;
+using System.Reflection;
+using System.Reflection.Emit;
+using HarmonyLib;
+using Nebula.Shared;
+using Nebula.Shared.Models;
+using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Robust.LoaderApi;
 
-namespace Nebula.Shared.Services;
+namespace Nebula.Runner.Services;
 
 [ServiceRegister]
 public sealed class RunnerService(
@@ -10,9 +16,12 @@ public sealed class RunnerService(
     DebugService debugService,
     ConfigurationService varService,
     EngineService engineService,
-    AssemblyService assemblyService)
+    AssemblyService assemblyService, 
+    ReflectionService reflectionService, 
+    HarmonyService harmonyService)
 {
     private ILogger _logger = debugService.GetLogger("RunnerService");
+    private bool MetricEnabled = false; //TODO: ADD METRIC THINKS LATER
 
     public async Task Run(string[] runArgs, RobustBuildInfo buildInfo, IRedialApi redialApi,
         ILoadingHandler loadingHandler,
@@ -52,11 +61,86 @@ public sealed class RunnerService(
         if (!assemblyService.TryOpenAssembly(varService.GetConfigValue(CurrentConVar.RobustAssemblyName)!, engine,
                 out var clientAssembly))
             throw new Exception("Unable to locate Robust.Client.dll in engine build!");
-
+        
         if (!assemblyService.TryGetLoader(clientAssembly, out var loader))
             return;
+        
+        if(!assemblyService.TryOpenAssembly("Prometheus.NetStandard", engine, out var prometheusAssembly))
+            return;
+        
+        reflectionService.RegisterRobustAssemblies(engine);
+        harmonyService.CreateInstance();
+        
+        IDisposable? metricServer = null;
 
+        if (MetricEnabled)
+        {
+            MetricsEnabledPatcher.ApplyPatch(reflectionService, harmonyService);
+            metricServer = RunHelper.RunMetric(prometheusAssembly);
+        }
+       
+        
         await Task.Run(() => loader.Main(args), cancellationToken);
+        
+        metricServer?.Dispose();
+    }
+}
+
+public static class MetricsEnabledPatcher
+{
+    public static void ApplyPatch(ReflectionService reflectionService, HarmonyService harmonyService)
+    {
+        var harmony = harmonyService.Instance.Harmony;
+
+        // Get the target method: the getter of MetricsEnabled
+        var targetType = reflectionService.GetType("Robust.Shared.GameObjects.EntitySystemManager");
+        var targetMethod = targetType.GetProperty("MetricsEnabled").GetGetMethod();
+
+        // Get MethodInfo for the prefix
+        var prefix = typeof(MetricsEnabledPatcher).GetMethod(nameof(MetricsEnabledGetterPrefix),
+            BindingFlags.Static | BindingFlags.NonPublic);
+
+        // Create HarmonyMethod
+        var prefixMethod = new HarmonyMethod(prefix);
+
+        // Patch it!
+        harmony.Patch(targetMethod, prefix: prefixMethod);
+    }
+
+    // This prefix will override the getter and force return true
+    private static bool MetricsEnabledGetterPrefix(ref bool __result)
+    {
+        __result = true;
+        return false; // Skip original method
+    }
+}
+
+public static class RunHelper
+{
+    public static IDisposable RunMetric(Assembly prometheusAssembly)
+    {
+        var metricServerType = prometheusAssembly.GetType("Prometheus.MetricServer");
+        var collectorRegistryType = prometheusAssembly.GetType("Prometheus.CollectorRegistry");
+        
+        var ctor = metricServerType!.GetConstructor(new Type[]
+        {
+            typeof(string),
+            typeof(int),
+            typeof(string),
+            collectorRegistryType!,
+            typeof(bool)
+        });
+        
+        var hostname = "localhost";
+        var port = 51235;
+        var url = "metrics/";
+        object? registry = null; 
+        var useHttps = false;
+        
+        var metricServerInstance = ctor!.Invoke(new object[] { hostname, port, url, registry!, useHttps });
+        metricServerType.GetMethod("Start")!.Invoke(metricServerInstance, BindingFlags.Default, null, null, CultureInfo.CurrentCulture);
+
+        return (IDisposable)metricServerInstance;
     }
 }
 
