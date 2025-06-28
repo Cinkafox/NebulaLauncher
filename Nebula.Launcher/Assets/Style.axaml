@@ -107,10 +107,10 @@
                  pages|StringUnitConfigControl.ConfigBorder, 
                  pages|IntUnitConfigControl.ConfigBorder, 
                  pages|FloatUnitConfigControl.ConfigBorder">
-    <Setter Property="Background" Value="#333333" />
-    <Setter Property="CornerRadius" Value="5"/>
-    <Setter Property="BorderThickness" Value="1,0,1,2" />
-    <Setter Property="BorderBrush" Value="Azure" />
+    <Setter Property="Background" Value="#33333355" />
+    <Setter Property="CornerRadius" Value="0"/>
+    <Setter Property="BorderThickness" Value="1,0,0,2" />
+    <Setter Property="BorderBrush" Value="#3f3f3f5f" />
 </Style>
 
 </Styles>

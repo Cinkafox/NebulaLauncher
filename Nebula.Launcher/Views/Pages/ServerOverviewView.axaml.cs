@@ -26,10 +26,4 @@ public partial class ServerOverviewView : UserControl
     {
         DataContext = viewModel;
     }
-
-    private void TextBox_OnTextChanged(object? sender, TextChangedEventArgs e)
-    {
-        var context = (ServerOverviewModel?)DataContext;
-        context?.OnSearchChange?.Invoke();
-    }
 }

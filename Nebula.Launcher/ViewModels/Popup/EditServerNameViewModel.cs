@@ -24,12 +24,17 @@ public sealed partial class EditServerNameViewModel : PopupViewModelBase
 
         if (string.IsNullOrWhiteSpace(NameInput))
         {
-            RemoveServerName();
-            Dispose();
+            OnClear();
             return;
         }
         
         AddServerName();
+        Dispose();
+    }
+
+    public void OnClear()
+    {
+        RemoveServerName();
         Dispose();
     }
 

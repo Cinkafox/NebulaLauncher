@@ -45,6 +45,7 @@ filter-roleplay = Roleplay
 filter-language = Language
 favorite-add = Add to favorites
 servername-set = Set server name
+servername-clear = Clear server name
 twofa-enabled = You have two-factor authentication enabled. Please enter the code.
 twofa-set = Proceed
 

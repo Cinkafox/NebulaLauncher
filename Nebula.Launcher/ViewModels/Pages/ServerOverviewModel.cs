@@ -28,8 +28,7 @@ public partial class ServerOverviewModel : ViewModelBase
     [ObservableProperty] private ServerListView _currentServerList = new();
     
     public readonly ServerFilter CurrentFilter = new();
-    
-    public Action? OnSearchChange;
+
     [GenerateProperty] private IServiceProvider ServiceProvider { get; }
     [GenerateProperty] private ConfigurationService ConfigurationService { get; }
     [GenerateProperty] private FavoriteServerListProvider FavoriteServerListProvider { get; }
@@ -71,13 +70,11 @@ public partial class ServerOverviewModel : ViewModelBase
         Items = new ObservableCollection<ServerListTabTemplate>(tempItems);
         
         SelectedItem = Items[0];
-        
-        OnSearchChange += SearchChangeEvent;
     }
 
-    private void SearchChangeEvent()
+    partial void OnSearchTextChanged(string value)
     {
-        CurrentFilter.SearchText = SearchText;
+        CurrentFilter.SearchText = value;
         ApplyFilter();
     }
 

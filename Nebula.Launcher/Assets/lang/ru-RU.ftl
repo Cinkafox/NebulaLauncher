@@ -45,6 +45,7 @@ filter-roleplay = Ролевая игра
 filter-language = Язык
 favorite-add = Добавить в избранное
 servername-set = Установить имя сервера
+servername-clear = Очистить
 twofa-enabled = У вас включена двухфакторная аутентификация. Введите код.
 twofa-set = Продолжить
 

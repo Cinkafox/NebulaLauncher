@@ -71,7 +71,6 @@
             <TextBox
                 Margin="25,0,0,0"
                 Text="{Binding SearchText}"
-                TextChanged="TextBox_OnTextChanged"
                 VerticalAlignment="Center"
                 Watermark="{services:LocaledText 'server-search'}" />
             <Button

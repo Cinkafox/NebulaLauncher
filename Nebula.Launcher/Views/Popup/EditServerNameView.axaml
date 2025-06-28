@@ -23,5 +23,10 @@
                 <customControls:LocalizedLabel HorizontalAlignment="Center" LocalId="servername-set"/> 
             </Button>
         </Border>
+        <Border Background="{StaticResource DefaultSelected}" BoxShadow="{StaticResource DefaultShadow}">
+            <Button Command="{Binding OnClear}" HorizontalAlignment="Stretch">
+                <customControls:LocalizedLabel HorizontalAlignment="Center" LocalId="servername-clear"/> 
+            </Button>
+        </Border>
     </StackPanel>
 </UserControl>

@@ -91,23 +91,18 @@ public static class MetricsEnabledPatcher
     public static void ApplyPatch(ReflectionService reflectionService, HarmonyService harmonyService)
     {
         var harmony = harmonyService.Instance.Harmony;
-
-        // Get the target method: the getter of MetricsEnabled
+        
         var targetType = reflectionService.GetType("Robust.Shared.GameObjects.EntitySystemManager");
         var targetMethod = targetType.GetProperty("MetricsEnabled").GetGetMethod();
-
-        // Get MethodInfo for the prefix
+        
         var prefix = typeof(MetricsEnabledPatcher).GetMethod(nameof(MetricsEnabledGetterPrefix),
             BindingFlags.Static | BindingFlags.NonPublic);
-
-        // Create HarmonyMethod
+        
         var prefixMethod = new HarmonyMethod(prefix);
-
-        // Patch it!
+        
         harmony.Patch(targetMethod, prefix: prefixMethod);
     }
-
-    // This prefix will override the getter and force return true
+    
     private static bool MetricsEnabledGetterPrefix(ref bool __result)
     {
         __result = true;

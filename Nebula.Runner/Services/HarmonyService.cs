@@ -39,7 +39,6 @@ public class HarmonyService(ReflectionService reflectionService)
     
     static bool Prefix()
     {
-        // Returning false skips the execution of the original static constructor
         return false;
     }
 }

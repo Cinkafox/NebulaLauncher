@@ -28,21 +28,14 @@ public sealed class App(RunnerService runnerService, ContentService contentServi
 
         var args = new List<string>
         {
-            // Pass username to launched client.
-            // We don't load username from client_config.toml when launched via launcher.
             "--username", login,
-
-            // Tell game we are launcher
             "--cvar", "launch.launcher=true"
         };
 
         var connectionString = url.ToString();
         if (!string.IsNullOrEmpty(buildInfo.BuildInfo.ConnectAddress))
             connectionString = buildInfo.BuildInfo.ConnectAddress;
-
-        // We are using the launcher. Don't show main menu etc..
-        // Note: --launcher also implied --connect.
-        // For this reason, content bundles do not set --launcher.
+        
         args.Add("--launcher");
 
         args.Add("--connect-address");
