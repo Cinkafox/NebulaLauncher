@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using Nebula.Launcher.ViewModels.Popup;
 
 namespace Nebula.Launcher.Views.Popup;
@@ -86,11 +83,6 @@ public partial class TfaView : UserControl
     {
         var box = (Border)control;
         return (TextBox)box.Child!;
-    }
-
-    public TfaView(TfaViewModel tfaViewModel) : this()
-    {
-        DataContext = tfaViewModel;
     }
 
     private void Button_OnClick(object? sender, RoutedEventArgs e)

@@ -7,6 +7,7 @@ using Nebula.Launcher.Views.Pages;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
+using Nebula.Shared.ViewHelper;
 using AddFavoriteView = Nebula.Launcher.Views.Popup.AddFavoriteView;
 
 namespace Nebula.Launcher.ViewModels.Popup;

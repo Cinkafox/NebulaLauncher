@@ -14,6 +14,7 @@ using Nebula.Launcher.Views.Pages;
 using Nebula.Shared;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
+using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher.ViewModels.Pages;
 
@@ -316,5 +317,3 @@ public sealed class ServerFilter
         return IsMatchByName(name) && IsMatchByTags(itemTags);
     }
 }
-
-public sealed record ServerCustomNameEntry(string Url, string Name);

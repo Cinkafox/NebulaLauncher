@@ -1,5 +1,4 @@
-﻿using System.Data;
-using Nebula.Shared.Models;
+﻿using Nebula.Shared.Models;
 using Nebula.Shared.Services.Logging;
 
 namespace Nebula.Shared.Services;
@@ -27,5 +26,11 @@ public partial class ContentService(
                 new Uri(info.BuildInfo.Build.ManifestDownloadUrl), bi.Build.ManifestHash);
 
         return info;
+    }
+
+    public void RemoveAllContent(ILoadingHandler loadingHandler, CancellationToken cancellationToken)
+    {
+        fileService.RemoveAllFiles("content", loadingHandler, cancellationToken);
+        fileService.RemoveAllFiles("manifest", loadingHandler, cancellationToken);
     }
 }

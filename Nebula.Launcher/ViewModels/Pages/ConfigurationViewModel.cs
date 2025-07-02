@@ -7,13 +7,17 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Nebula.Launcher.Services;
+using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views.Pages;
 using Nebula.Shared;
 using Nebula.Shared.Services;
+using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher.ViewModels.Pages;
 
@@ -26,13 +30,17 @@ public partial class ConfigurationViewModel : ViewModelBase
     [GenerateProperty] private ConfigurationService ConfigurationService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupService { get; } = default!;
     [GenerateProperty] private FileService FileService { get; set; } = default!;
+    [GenerateProperty] private ContentService ContentService { get; set; } = default!;
+    [GenerateProperty] private CancellationService CancellationService { get; set; } = default!;
+    
+    [GenerateProperty] private ViewHelperService ViewHelperService { get; set; } = default!;
 
     public List<(object, Type)> ConVarList = new();
 
     public void AddCvarConf<T>(ConVar<T> cvar)
     {
         ConfigurationVerbose.Add(
-            ConfigControlHelper.GetConfigControl(cvar.Name, ConfigurationService.GetConfigValue(cvar)));
+            ConfigControlHelper.GetConfigControl(cvar.Name, ConfigurationService.GetConfigValue(cvar)!));
         ConVarList.Add((cvar, cvar.Type));
     }
 
@@ -80,7 +88,18 @@ public partial class ConfigurationViewModel : ViewModelBase
         ZipFile.CreateFromDirectory(logPath, Path.Join(path, DateTime.Now.ToString("yyyy-MM-dd") + ".zip"));
         ExplorerHelper.OpenFolder(path);
     }
-    
+
+    public void RemoveAllContent()
+    {
+        Task.Run(() =>
+        {
+            using var loader = ViewHelperService.GetViewModel<LoadingContextViewModel>();
+            loader.LoadingName = "Removing content";
+            PopupService.Popup(loader);
+            ContentService.RemoveAllContent(loader, CancellationService.Token);
+        });
+    }
+
     private void InitConfiguration()
     {
         AddCvarConf(LauncherConVar.ILSpyUrl);

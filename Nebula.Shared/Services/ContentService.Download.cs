@@ -13,10 +13,24 @@ public partial class ContentService
 {
     public readonly IReadWriteFileApi ContentFileApi = fileService.CreateFileApi("content");
     public readonly IReadWriteFileApi ManifestFileApi = fileService.CreateFileApi("manifest");
-    
-    public bool CheckManifestExist(RobustManifestItem item)
+
+    public void SetServerHash(string address, string hash)
     {
-        return ContentFileApi.Has(item.Hash);
+        var dict = varService.GetConfigValue(CurrentConVar.ServerManifestHash)!;
+        if (dict.TryGetValue(address, out var oldHash))
+        {
+            if(oldHash == hash) return;
+            
+            ManifestFileApi.Remove(oldHash);
+        }
+        
+        dict[address] = hash;
+        varService.SetConfigValue(CurrentConVar.ServerManifestHash, dict);
+    }
+    
+    public HashApi CreateHashApi(List<RobustManifestItem> manifestItems)
+    {
+        return new HashApi(manifestItems, ContentFileApi);
     }
 
     public async Task<HashApi> EnsureItems(ManifestReader manifestReader, Uri downloadUri,
@@ -34,7 +48,7 @@ public partial class ContentService
             allItems.Add(item.Value);
         }
 
-        var hashApi = new HashApi(allItems, ContentFileApi);
+        var hashApi = CreateHashApi(allItems);
 
         items = allItems.Where(a=> !hashApi.Has(a)).ToList();
 
@@ -54,6 +68,8 @@ public partial class ContentService
             _logger.Log("Loading manifest from: " + info.Hash);
             return await EnsureItems(new ManifestReader(stream), info.DownloadUri, loadingHandler, cancellationToken);
         }
+        
+        SetServerHash(info.ManifestUri.ToString(), info.Hash);
 
         _logger.Log("Fetching manifest from: " + info.ManifestUri);
 

@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.Views.Popup;
 using Nebula.Shared.Services;
+using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher.ViewModels.Popup;
 

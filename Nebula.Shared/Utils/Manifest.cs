@@ -94,8 +94,16 @@ public class ManifestReader : StreamReader
     {
         var line = ReadLine();
         if (line == null) return null;
-        var splited = line.Split(" ");
-        return new RobustManifestItem(splited[0], line.Substring(splited[0].Length + 1), CurrentId++);
+
+        var firstSpaceIndex = line.IndexOf(' ');
+        if (firstSpaceIndex == -1)
+            return new RobustManifestItem(line, string.Empty, CurrentId++);
+
+        var span = line.AsSpan();
+        var firstPart = span.Slice(0, firstSpaceIndex);
+        var secondPart = span.Slice(firstSpaceIndex + 1);
+
+        return new RobustManifestItem(firstPart.ToString(), secondPart.ToString(), CurrentId++);
     }
 
     public bool TryReadItem([NotNullWhen(true)] out RobustManifestItem? item)

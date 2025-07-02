@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Nebula.Shared.FileApis;
 using Nebula.Shared.FileApis.Interfaces;
 using Nebula.Shared.Models;
+using Nebula.Shared.Services.Logging;
 using Robust.LoaderApi;
 
 namespace Nebula.Shared.Services;
@@ -13,11 +14,11 @@ public class FileService
     public static readonly string RootPath = Path.Join(Environment.GetFolderPath(
         Environment.SpecialFolder.ApplicationData), "Datum");
 
-    private readonly DebugService _debugService;
+    private readonly ILogger _logger;
     
     public FileService(DebugService debugService)
     {
-        _debugService = debugService;
+        _logger = debugService.GetLogger(this);
 
         if(!Directory.Exists(RootPath)) 
             Directory.CreateDirectory(RootPath);
@@ -25,6 +26,7 @@ public class FileService
     
     public IReadWriteFileApi CreateFileApi(string path)
     {
+        _logger.Debug($"Creating file api for {path}");
         return new FileApi(Path.Join(RootPath, path));
     }
     
@@ -32,6 +34,7 @@ public class FileService
     {
         path = Path.Combine(Path.GetTempPath(), "tempThink"+Path.GetRandomFileName());
         Directory.CreateDirectory(path);
+        _logger.Debug($"Ensuring temp directory for {path}");
         return new FileApi(path);
     }
 
@@ -51,6 +54,38 @@ public class FileService
         {
             zipStream?.Dispose();
             throw;
+        }
+    }
+    
+    public void RemoveAllFiles(string fileApiName,ILoadingHandler loadingHandler, CancellationToken cancellationToken)
+    {
+        _logger.Debug($"Deleting files from {fileApiName}");
+        var path = Path.Combine(RootPath, fileApiName);
+        
+        var di = new DirectoryInfo(path);
+
+        var files = di.GetFiles();
+        var dirs = di.GetDirectories();
+        
+        loadingHandler.AppendJob(files.Length);
+        loadingHandler.AppendJob(dirs.Length);
+        
+        if(cancellationToken.IsCancellationRequested)
+            return;
+        
+        foreach (var file in files)
+        {
+            if(cancellationToken.IsCancellationRequested)
+                return;
+            file.Delete(); 
+            loadingHandler.AppendResolvedJob();
+        }
+        foreach (var dir in dirs)
+        {
+            if(cancellationToken.IsCancellationRequested)
+                return;
+            dir.Delete(true); 
+            loadingHandler.AppendResolvedJob();
         }
     }
 }

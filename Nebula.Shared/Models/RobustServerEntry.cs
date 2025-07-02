@@ -36,7 +36,7 @@ public sealed record ServerInfo(
     [property: JsonPropertyName("auth")] AuthInfo Auth,
     [property: JsonPropertyName("build")] BuildInfo Build,
     [property: JsonPropertyName("desc")] string Desc,
-    [property: JsonPropertyName("links")] List<ServerLink> Links);
+    [property: JsonPropertyName("links")] List<ServerLink>? Links);
 
 public sealed record EngineVersionInfo(
     [property: JsonPropertyName("insecure")]

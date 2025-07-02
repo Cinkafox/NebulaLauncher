@@ -22,7 +22,8 @@
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
-            <StackPanel Orientation="Horizontal" Spacing="5">
+            
+            <WrapPanel Orientation="Horizontal">
                 <Button 
                     Classes="ConfigBorder"
                     VerticalAlignment="Bottom" 
@@ -60,7 +61,17 @@
                     Command="{Binding ExportLogs}">
                     <customControls:LocalizedLabel LocalId="config-export-logs"/>
                 </Button>
-            </StackPanel>
+                
+                <Button 
+                    Classes="ConfigBorder"
+                    VerticalAlignment="Bottom" 
+                    HorizontalAlignment="Stretch" 
+                    Padding="5"
+                    Margin="5"
+                    Command="{Binding RemoveAllContent}">
+                    <customControls:LocalizedLabel LocalId="config-remove-content-all"/>
+                </Button>
+            </WrapPanel>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

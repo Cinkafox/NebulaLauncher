@@ -10,10 +10,10 @@ using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views;
-using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
+using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher.ViewModels;
 

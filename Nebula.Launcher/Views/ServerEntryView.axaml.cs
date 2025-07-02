@@ -22,10 +22,7 @@ public partial class ServerEntryView : UserControl
         StartAutoScrolling();
     }
     
-    public ServerEntryView(ServerEntryModelView modelView) : this()
-    {
-        DataContext = modelView;
-    }
+
     
     private void StartAutoScrolling()
     {

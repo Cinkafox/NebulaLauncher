@@ -28,6 +28,8 @@ public static class CurrentConVar
         ConVarBuilder.Build<Dictionary<string, EngineVersionInfo>>("engine.manifest.backup");
     public static readonly ConVar<ModulesInfo> ModuleManifestBackup =
         ConVarBuilder.Build<ModulesInfo>("module.manifest.backup");
+    public static readonly ConVar<Dictionary<string, string>> ServerManifestHash = 
+        ConVarBuilder.Build<Dictionary<string, string>>("server.manifest.hash",[]);
     
     public static readonly ConVar<Dictionary<string,string>> DotnetUrl = ConVarBuilder.Build<Dictionary<string,string>>("dotnet.url",
         new(){

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Nebula.Launcher.Models;
 using Nebula.Launcher.ProcessHelper;
 using Nebula.Launcher.ServerListProviders;
 using Nebula.Launcher.Services;
@@ -16,6 +17,7 @@ using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
+using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher.ViewModels;
 
@@ -217,35 +219,6 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
     }
 }
 
-public sealed class ContentLogConsumer : IProcessLogConsumer
-{
-    private readonly LogPopupModelView _currLog;
-    private readonly PopupMessageService _popupMessageService;
-
-    public ContentLogConsumer(LogPopupModelView currLog, PopupMessageService popupMessageService)
-    {
-        _currLog = currLog;
-        _popupMessageService = popupMessageService;
-    }
-
-    public void Out(string text)
-    {
-        _currLog.Append(text);
-    }
-
-    public void Error(string text)
-    {
-        _currLog.Append(text);
-    }
-
-    public void Fatal(string text)
-    {
-        _popupMessageService.Popup("Fatal error while stop instance:" + text);
-    }
-}
-
-
-
 public class LinkGoCommand : ICommand
 {
     public LinkGoCommand()
@@ -265,9 +238,4 @@ public class LinkGoCommand : ICommand
     }
 
     public event EventHandler? CanExecuteChanged;
-}
-
-public interface IFilterConsumer
-{
-    public void ProcessFilter(ServerFilter? serverFilter);
 }

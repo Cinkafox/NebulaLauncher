@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using Nebula.Launcher.Models;
+using Nebula.Launcher.Models.Auth;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Shared.Services;
 

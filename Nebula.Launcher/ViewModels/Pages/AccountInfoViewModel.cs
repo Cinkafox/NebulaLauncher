@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Http;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Nebula.Launcher.Models.Auth;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views.Pages;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
+using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher.ViewModels.Pages;
 
@@ -323,15 +323,3 @@ public partial class AccountInfoViewModel : ViewModelBase
             Accounts.ToArray());
     }
 }
-
-public sealed record ProfileAuthCredentials(
-    string Login,
-    string Password,
-    string AuthServer,
-    [property: JsonIgnore] ICommand OnSelect = default!,
-    [property: JsonIgnore] ICommand OnDelete = default!);
-    
-public sealed record AuthServerCredentials(
-    string Name, 
-    string[] Servers
-);

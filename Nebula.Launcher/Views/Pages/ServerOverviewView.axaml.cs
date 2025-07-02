@@ -1,11 +1,9 @@
 using Avalonia.Controls;
-using Nebula.Launcher.ViewModels.Pages;
 
 namespace Nebula.Launcher.Views.Pages;
 
 public partial class ServerOverviewView : UserControl
 {
-    // This constructor is used when the view is created by the XAML Previewer
     public ServerOverviewView()
     {
         InitializeComponent();
@@ -18,12 +16,5 @@ public partial class ServerOverviewView : UserControl
         
         LanguageFilters.AddFilter("RU","lang:ru");
         LanguageFilters.AddFilter("EN","lang:en");
-    }
-
-    // This constructor is used when the view is created via dependency injection
-    public ServerOverviewView(ServerOverviewModel viewModel)
-        : this()
-    {
-        DataContext = viewModel;
     }
 }

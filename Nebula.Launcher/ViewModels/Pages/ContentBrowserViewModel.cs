@@ -18,6 +18,7 @@ using Nebula.Shared.FileApis;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Utils;
+using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher.ViewModels.Pages;
 

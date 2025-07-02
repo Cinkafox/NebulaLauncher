@@ -9,7 +9,7 @@ public partial class ContentService
     {
         _logger.Log("Checking migration...");
 
-        var migrationList = ContentFileApi.AllFiles.Where(f => !f.Contains("\\")).ToList();
+        var migrationList = ContentFileApi.AllFiles.Where(f => !f.Contains('\\')).ToList();
         if(migrationList.Count == 0) return false;
         
         _logger.Log($"Found {migrationList.Count} migration files. Starting migration...");

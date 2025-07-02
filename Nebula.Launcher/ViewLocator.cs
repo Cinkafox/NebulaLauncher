@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Nebula.Launcher.ViewModels;
 using Nebula.Launcher.Views;
+using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher;
 

@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewModels="clr-namespace:Nebula.Launcher.ViewModels"
              xmlns:popup="clr-namespace:Nebula.Launcher.ViewModels.Popup"
+             xmlns:models="clr-namespace:Nebula.Launcher.Models"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Nebula.Launcher.Views.Popup.LogPopupView"
              x:DataType="popup:LogPopupModelView">
@@ -17,7 +18,7 @@
             ItemsSource="{Binding Logs}"
             Padding="0">
             <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="{x:Type popup:LogInfo}">
+                <DataTemplate DataType="{x:Type models:LogInfo}">
                     <Border CornerRadius="5" Margin="0,0,0,5">
                         <StackPanel Orientation="Horizontal" Spacing="5" Margin="0">
                             <Border MinWidth="100"

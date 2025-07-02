@@ -9,7 +9,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:pages="clr-namespace:Nebula.Launcher.ViewModels.Pages"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:auth="clr-namespace:Nebula.Launcher.Models.Auth">
     <Design.DataContext>
         <pages:AccountInfoViewModel />
     </Design.DataContext>
@@ -37,7 +38,7 @@
                     ItemsSource="{Binding Accounts}"
                     Padding="0">
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type pages:ProfileAuthCredentials}">
+                        <DataTemplate DataType="{x:Type auth:ProfileAuthCredentials}">
                             <Border
                                 BoxShadow="0 1 15 -2 #121212"
                                 CornerRadius="0,10,0,10"

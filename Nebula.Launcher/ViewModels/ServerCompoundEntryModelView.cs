@@ -6,11 +6,13 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
+using Nebula.Launcher.Models;
 using Nebula.Launcher.ServerListProviders;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.Views;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
+using Nebula.Shared.ViewHelper;
 using BindingFlags = System.Reflection.BindingFlags;
 
 namespace Nebula.Launcher.ViewModels;

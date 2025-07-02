@@ -71,7 +71,7 @@ partial class {className}
             ";
 
             // Add the source code to the compilation.
-            context.AddSource($"{className}.g.cs", SourceText.From(code, Encoding.UTF8));
+            context.AddSource($"{className}_dependencyAuto.g.cs", SourceText.From(code, Encoding.UTF8));
         }
     }
 

@@ -7,6 +7,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Nebula.Launcher.Views;
+using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher;
 

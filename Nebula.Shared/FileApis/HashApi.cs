@@ -55,6 +55,11 @@ public class HashApi : IFileApi
         return _fileApi.Has(GetManifestPath(item));
     }
 
+    public bool Remove(RobustManifestItem item)
+    {
+        return _fileApi.Remove(GetManifestPath(item));
+    }
+
     private string GetManifestPath(RobustManifestItem item){
         return GetManifestPath(item.Hash);
     }

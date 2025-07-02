@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Nebula.Launcher.Models;
 using Nebula.Launcher.ServerListProviders;
 using Nebula.Launcher.ViewModels;
 using Nebula.Launcher.ViewModels.Pages;
