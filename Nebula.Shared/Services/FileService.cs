@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Runtime.InteropServices;
 using Nebula.Shared.FileApis;
 using Nebula.Shared.FileApis.Interfaces;
 using Nebula.Shared.Models;
@@ -11,7 +10,7 @@ namespace Nebula.Shared.Services;
 [ServiceRegister]
 public class FileService
 {
-    public static readonly string RootPath = Path.Join(Environment.GetFolderPath(
+    public static string RootPath = Path.Join(Environment.GetFolderPath(
         Environment.SpecialFolder.ApplicationData), "Datum");
 
     private readonly ILogger _logger;

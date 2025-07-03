@@ -112,7 +112,7 @@ public class ConfigurationService
         return false;
     }
 
-    public void SetConfigValue<T>(ConVar<T> conVar, T value)
+    public void SetConfigValue<T>(ConVar<T> conVar, T? value)
     {
         if (value == null)
         {

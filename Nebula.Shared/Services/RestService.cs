@@ -11,7 +11,7 @@ namespace Nebula.Shared.Services;
 [ServiceRegister]
 public class RestService
 {
-    private readonly HttpClient _client = new();
+    private readonly HttpClient _client;
     private readonly ILogger _logger;
 
     private readonly JsonSerializerOptions _serializerOptions = new()
@@ -20,8 +20,9 @@ public class RestService
         WriteIndented = true
     };
 
-    public RestService(DebugService debug)
+    public RestService(DebugService debug, HttpClient? client = null)
     {
+        _client = client ?? new HttpClient();
         _logger = debug.GetLogger(this);
     }
 

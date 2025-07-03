@@ -40,6 +40,7 @@ config-export-logs = Export logs
 config-open-data = Open data path
 config-reset = Reset to default
 config-save = Save changes
+config-remove-content-all = Remove all content
 
 filter-roleplay = Roleplay
 filter-language = Language

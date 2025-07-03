@@ -40,6 +40,7 @@ config-export-logs = Экспортировать логи
 config-open-data = Открыть путь данных
 config-reset = Сбросить к значениям по умолчанию
 config-save = Сохранить изменения
+config-remove-content-all = Удалить весь контент
 
 filter-roleplay = Ролевая игра
 filter-language = Язык

@@ -32,16 +32,16 @@ public partial class ConfigurationViewModel : ViewModelBase
     [GenerateProperty] private FileService FileService { get; set; } = default!;
     [GenerateProperty] private ContentService ContentService { get; set; } = default!;
     [GenerateProperty] private CancellationService CancellationService { get; set; } = default!;
-    
     [GenerateProperty] private ViewHelperService ViewHelperService { get; set; } = default!;
 
-    public List<(object, Type)> ConVarList = new();
+
+    private readonly List<(object, Type)> _conVarList = new();
 
     public void AddCvarConf<T>(ConVar<T> cvar)
     {
         ConfigurationVerbose.Add(
             ConfigControlHelper.GetConfigControl(cvar.Name, ConfigurationService.GetConfigValue(cvar)!));
-        ConVarList.Add((cvar, cvar.Type));
+        _conVarList.Add((cvar, cvar.Type));
     }
 
     public void InvokeUpdateConfiguration()
@@ -52,7 +52,7 @@ public partial class ConfigurationViewModel : ViewModelBase
             if(!conVarControl.Dirty) 
                 continue;
             
-            var conVar = ConVarList[i];
+            var conVar = _conVarList[i];
             var methodInfo = ConfigurationService.GetType().GetMethod("SetConfigValue")!.MakeGenericMethod(conVar.Item2);
             methodInfo.Invoke(ConfigurationService, [conVar.Item1, conVarControl.GetValue()]);
         }
@@ -60,13 +60,13 @@ public partial class ConfigurationViewModel : ViewModelBase
 
     public void ResetConfig()
     {
-        foreach (var conVar in ConVarList)
+        foreach (var conVar in _conVarList)
         {
             var methodInfo = ConfigurationService.GetType().GetMethod("SetConfigValue")!.MakeGenericMethod(conVar.Item2);
             methodInfo.Invoke(ConfigurationService, [conVar.Item1, null]);
         }
         
-        ConVarList.Clear();
+        _conVarList.Clear();
         ConfigurationVerbose.Clear();
 
         InitConfiguration();
