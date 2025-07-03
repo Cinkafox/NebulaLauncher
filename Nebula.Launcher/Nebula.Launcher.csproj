@@ -64,7 +64,7 @@
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.deps.json" DestinationFolder="$(PublishDir)"/>
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.runtimeconfig.json" DestinationFolder="$(PublishDir)"/>
 
-        <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\0Harmony.dll" DestinationFolder="$(OutDir)"/>
+        <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\0Harmony.dll" DestinationFolder="$(PublishDir)"/>
     </Target>
 
     <ItemGroup>
