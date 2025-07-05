@@ -10,7 +10,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:viewModels="clr-namespace:Nebula.Launcher.ViewModels"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:models1="clr-namespace:Nebula.Launcher.Models">
+    xmlns:models1="clr-namespace:Nebula.Launcher.Models"
+    xmlns:services="clr-namespace:Nebula.Launcher.Services">
     <Design.DataContext>
         <viewModels:MainViewModel />
     </Design.DataContext>
@@ -120,7 +121,20 @@
                                 https://durenko.tatar/nebula/
                             </TextBlock>
                         </Button>
-                        <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Text="{Binding VersionInfo}"/>
+                        <StackPanel Spacing="5" HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                            <Button 
+                                Margin="0" 
+                                Padding="0" 
+                                CornerRadius="0"
+                                Command="{Binding OpenAuthPage}">
+                                <Panel>
+                                    <TextBlock Foreground="#777777" IsVisible="{Binding IsLoggedIn}" Text="{Binding LoginText}"/>
+                                    <TextBlock Foreground="#777777" IsVisible="{Binding !IsLoggedIn}" Text="{services:LocaledText auth-current-login-no-name}"/>
+                                </Panel>
+                            </Button>
+                            <TextBlock>|</TextBlock>
+                            <TextBlock Text="{Binding VersionInfo}"/>
+                        </StackPanel>
                     </Panel>
                 </Label>
             </Border>

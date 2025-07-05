@@ -47,7 +47,7 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
 
     public LogPopupModelView CurrLog;
     public RobustUrl Address { get; private set; }
-    [GenerateProperty] private ConfigurationService ConfigurationService { get; } = default!;
+    [GenerateProperty] private AuthService AuthService { get; }
     [GenerateProperty] private CancellationService CancellationService { get; } = default!;
     [GenerateProperty] private DebugService DebugService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
@@ -163,11 +163,26 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
     public void RunInstance()
     { 
         CurrLog.Clear();
-        Task.Run(RunInstanceAsync);
+        Task.Run(async ()=> await RunInstanceAsync());
     }
 
-    private async void RunInstanceAsync()
+    public void RunInstanceIgnoreAuth()
     {
+        CurrLog.Clear();
+        Task.Run(async ()=> await RunInstanceAsync(true));
+    }
+
+    private async Task RunInstanceAsync(bool ignoreLoginCredentials = false)
+    {
+        if (!ignoreLoginCredentials && AuthService.SelectedAuth is null)
+        {
+            var warningContext = ViewHelperService.GetViewModel<IsLoginCredentialsNullPopupViewModel>()
+                .WithServerEntry(this);
+            
+            PopupMessageService.Popup(warningContext);
+            return;
+        }
+        
         using var loadingContext = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loadingContext.LoadingName = "Loading instance...";
         ((ILoadingHandler)loadingContext).AppendJob();

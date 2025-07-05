@@ -142,6 +142,7 @@ public partial class AccountInfoViewModel : ViewModelBase
         try
         {
             await a();
+            ViewHelperService.GetViewModel<MainViewModel>().InvokeChangeAuth();
         }
         catch (AuthException e)
         {
@@ -200,6 +201,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     {
         IsLogged = false;
         AuthService.ClearAuth();
+        ViewHelperService.GetViewModel<MainViewModel>().InvokeChangeAuth();
     }
 
     private void UpdateAuthMenu()

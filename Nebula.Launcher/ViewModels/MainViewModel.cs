@@ -41,7 +41,17 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _popup;
     [ObservableProperty] private ListItemTemplate? _selectedListItem;
 
+    public bool IsLoggedIn => AuthService.SelectedAuth is not null;
+    public string LoginName => AuthService.SelectedAuth?.Login ?? string.Empty;
+    
+    public string LoginText => Services.LocalisationService.GetString("auth-current-login-name", 
+        new Dictionary<string, object>
+    {
+        { "login", LoginName }
+    });
+
     [GenerateProperty] private LocalisationService LocalisationService { get; }
+    [GenerateProperty] private AuthService AuthService { get; }
     [GenerateProperty] private DebugService DebugService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
     [GenerateProperty] private ContentService ContentService { get; } = default!;
@@ -136,6 +146,12 @@ public partial class MainViewModel : ViewModelBase
         CurrentPage = obj;
     }
 
+    public void InvokeChangeAuth()
+    {
+        OnPropertyChanged(nameof(IsLoggedIn));
+        OnPropertyChanged(nameof(LoginText));
+    }
+
     public void PopupMessage(PopupViewModelBase viewModelBase)
     {
         if (CurrentPopup == null)
@@ -161,6 +177,11 @@ public partial class MainViewModel : ViewModelBase
     {
         IsEnabled = false;
         Popup = true;
+    }
+
+    public void OpenAuthPage()
+    {
+        RequirePage<AccountInfoViewModel>();
     }
 
     public void OpenLink()

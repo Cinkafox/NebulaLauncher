@@ -25,6 +25,8 @@ account-auth-button = Аутентифицировать
 account-auth-save = Сохранить профиль  
 account-auth-hello = Привет,  
 account-auth-logout = Выйти  
+auth-current-login-name = Текущий профиль: {$login}
+auth-current-login-no-name = Профиль не выбран
 
 auth-processing = Обработка запроса аутентификации...  
 auth-error = Произошла ошибка аутентификации.  
@@ -45,6 +47,7 @@ config-remove-content-all = Удалить весь контент
 filter-roleplay = Ролевая игра
 filter-language = Язык
 favorite-add = Добавить в избранное
+popup-add-favorite-invalid-ip = Пожалуйста, введите валидный адрес
 servername-set = Установить имя сервера
 servername-clear = Очистить
 twofa-enabled = У вас включена двухфакторная аутентификация. Введите код.
@@ -57,3 +60,9 @@ serverentry-preset = Режим
 
 content-view-server = Сервер
 content-view-path = Путь
+
+popup-login-credentials-warning = Предупреждение! Учетные данные не указаны!
+popup-login-credentials-warning-label = Предупреждение! Учетные данные не указаны! Серверы не смогут пропустить вас из-за отсутствия авторизации. Пожалуйста, имейте это в виду.
+popup-login-credentials-warning-go-auth = Перейти на страницу авторизации
+popup-login-credentials-warning-cancel = Отмена
+popup-login-credentials-warning-proceed = Продолжить

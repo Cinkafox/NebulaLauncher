@@ -25,6 +25,8 @@ account-auth-button = Authenticate
 account-auth-save = Save Profile  
 account-auth-hello = Hello,  
 account-auth-logout = Log out  
+auth-current-login-name = Current login: {$login}
+auth-current-login-no-name = Profile not selected
 
 auth-processing = Processing authentication request...  
 auth-error = An authentication error has occurred.  
@@ -45,6 +47,7 @@ config-remove-content-all = Remove all content
 filter-roleplay = Roleplay
 filter-language = Language
 favorite-add = Add to favorites
+popup-add-favorite-invalid-ip = Please enter a valid IP
 servername-set = Set server name
 servername-clear = Clear server name
 twofa-enabled = You have two-factor authentication enabled. Please enter the code.
@@ -57,3 +60,9 @@ serverentry-preset = Preset
 
 content-view-server = Server url
 content-view-path = Path
+
+popup-login-credentials-warning = Warning! No credentials provided!
+popup-login-credentials-warning-label = Warning! No credentials provided! The servers will not be able to let you in due to lack of authorization. Please keep this in mind.
+popup-login-credentials-warning-go-auth = Go to auth page
+popup-login-credentials-warning-cancel = Cancel
+popup-login-credentials-warning-proceed = Proceed

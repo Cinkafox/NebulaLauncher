@@ -42,6 +42,9 @@ public partial class AddFavoriteViewModel : PopupViewModelBase
     {
         try
         {
+            if(string.IsNullOrWhiteSpace(IpInput))
+                throw new Exception(LocalisationService.GetString("popup-add-favorite-invalid-ip"));
+            
             var uri = IpInput.ToRobustUrl();
             FavoriteServerListProvider.AddFavorite(uri);
             Dispose();

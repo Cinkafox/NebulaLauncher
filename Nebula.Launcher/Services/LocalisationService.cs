@@ -51,16 +51,15 @@ public partial class LocalisationService
         Initialise();
     }
 
-    public static string GetString(string locale)
+    public static string GetString(string locale, Dictionary<string, object>? options = null)
     {
         if (_currentMessageContext is null)
         {
-            Console.WriteLine("ERROR SHIT BITHC!");
             return locale;
         }
         var message = _currentMessageContext.GetMessage(locale);
         if (message == null) return locale;
-        return _currentMessageContext.Format(message, new Dictionary<string, object>());
+        return _currentMessageContext.Format(message, options ?? []);
     }
 }
 

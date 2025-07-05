@@ -33,6 +33,7 @@
         <entry key="Nebula.Launcher/Views/Popup/ExceptionListView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/ExceptionView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/InfoPopupView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
+        <entry key="Nebula.Launcher/Views/Popup/IsLoginCredentialsNullPopupView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/LoadingContextView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/LogPopupView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/MessagePopupView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
