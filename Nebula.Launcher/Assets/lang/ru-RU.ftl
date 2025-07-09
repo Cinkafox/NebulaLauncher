@@ -66,3 +66,5 @@ popup-login-credentials-warning-label = Предупреждение! Учетн
 popup-login-credentials-warning-go-auth = Перейти на страницу авторизации
 popup-login-credentials-warning-cancel = Отмена
 popup-login-credentials-warning-proceed = Продолжить
+
+goto-path-home = Корн. папка

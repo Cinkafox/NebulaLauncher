@@ -66,3 +66,5 @@ popup-login-credentials-warning-label = Warning! No credentials provided! The se
 popup-login-credentials-warning-go-auth = Go to auth page
 popup-login-credentials-warning-cancel = Cancel
 popup-login-credentials-warning-proceed = Proceed
+
+goto-path-home = Root folder
