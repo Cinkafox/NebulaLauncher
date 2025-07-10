@@ -33,5 +33,10 @@
                 <customControls:LocalizedLabel LocalId="task-cancel"/> 
             </Button>
         </Panel>
+        <Panel>
+            <Border Background="{StaticResource DefaultForeground}" MinHeight="210">
+                <TextBlock TextWrapping="Wrap" Text="{Binding Message}" MaxLines="10" Margin="15"/>
+            </Border>
+        </Panel>
     </StackPanel>
 </UserControl>

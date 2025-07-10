@@ -47,7 +47,7 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
 
     public LogPopupModelView CurrLog;
     public RobustUrl Address { get; private set; }
-    [GenerateProperty] private AuthService AuthService { get; }
+    [GenerateProperty] private AccountInfoViewModel AccountInfoViewModel { get; }
     [GenerateProperty] private CancellationService CancellationService { get; } = default!;
     [GenerateProperty] private DebugService DebugService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
@@ -174,7 +174,7 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
 
     private async Task RunInstanceAsync(bool ignoreLoginCredentials = false)
     {
-        if (!ignoreLoginCredentials && AuthService.SelectedAuth is null)
+        if (!ignoreLoginCredentials && AccountInfoViewModel.Credentials is null)
         {
             var warningContext = ViewHelperService.GetViewModel<IsLoginCredentialsNullPopupViewModel>()
                 .WithServerEntry(this);

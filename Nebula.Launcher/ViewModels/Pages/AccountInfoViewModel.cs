@@ -10,6 +10,7 @@ using Nebula.Launcher.Models.Auth;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views.Pages;
+using Nebula.Shared.Models.Auth;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
@@ -35,9 +36,9 @@ public partial class AccountInfoViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isLogged;
     [ObservableProperty] private bool _doRetryAuth;
+    [ObservableProperty] private AuthTokenCredentials? _credentials;
 
     private bool _isProfilesEmpty;
-    [GenerateProperty] private LocalisationService LocalisationService { get; }
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
     [GenerateProperty] private ConfigurationService ConfigurationService { get; } = default!;
     [GenerateProperty] private DebugService DebugService { get; }
@@ -54,8 +55,8 @@ public partial class AccountInfoViewModel : ViewModelBase
     //Design think
     protected override void InitialiseInDesignMode()
     {
-        AddAccount(new AuthLoginPassword("Binka", "12341", ""));
-        AddAccount(new AuthLoginPassword("Binka", "12341", ""));
+        AddAccount(new AuthTokenCredentials(Guid.Empty, LoginToken.Empty, "Binka", ""));
+        AddAccount(new AuthTokenCredentials(Guid.Empty, LoginToken.Empty, "Binka", ""));
         
         AuthUrls.Add(new AuthServerCredentials("Test",["example.com"]));
     }
@@ -67,13 +68,31 @@ public partial class AccountInfoViewModel : ViewModelBase
         Task.Run(ReadAuthConfig);
     }
 
-    public void AuthByProfile(ProfileAuthCredentials credentials)
+    public async void AuthByProfile(ProfileAuthCredentials credentials)
     {
-        CurrentLogin = credentials.Login;
-        CurrentPassword = credentials.Password;
-        CurrentAuthServer = credentials.AuthServer;
+        var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
+        message.InfoText = LocalisationService.GetString("auth-try-auth-profile");
+        message.IsInfoClosable = false;
+        PopupMessageService.Popup(message);
         
-        DoAuth();
+        try
+        {
+            await CatchAuthError(async () => await TryAuth(credentials.Credentials), () => message.Dispose());
+        }
+        catch (Exception ex)
+        {
+            CurrentLogin = credentials.Credentials.Login;
+            CurrentAuthServer = credentials.Credentials.AuthServer;
+            
+            var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), ex);
+            _logger.Error(unexpectedError);
+            PopupMessageService.Popup(unexpectedError);
+            return;
+        }
+        
+        ConfigurationService.SetConfigValue(LauncherConVar.AuthCurrent, Credentials);
+        
+        message.Dispose();
     }
 
     public void DoAuth(string? code = null)
@@ -117,22 +136,28 @@ public partial class AccountInfoViewModel : ViewModelBase
         });
     }
 
-    private async Task TryAuth(CurrentAuthInfo currentAuthInfo)
+    private async Task TryAuth(AuthTokenCredentials authTokenCredentials)
     {
-        CurrentLogin = currentAuthInfo.Login;
-        CurrentAuthServer = currentAuthInfo.AuthServer;
-        await AuthService.SetAuth(currentAuthInfo);
+        CurrentLogin = authTokenCredentials.Login;
+        CurrentAuthServer = authTokenCredentials.AuthServer;
+        await SetAuth(authTokenCredentials);
         IsLogged = true;
+    }
+
+    private async Task SetAuth(AuthTokenCredentials authTokenCredentials)
+    {
+        await AuthService.EnsureToken(authTokenCredentials);
+        Credentials = authTokenCredentials;
     }
 
     private async Task TryAuth(string login, string password, string authServer, string? code)
     {
-        await AuthService.Auth(new AuthLoginPassword(login, password, authServer), code);
+        Credentials = await AuthService.Auth(login, password, authServer, code);
         CurrentLogin = login;
         CurrentPassword = password;
         CurrentAuthServer = authServer;
         IsLogged = true;
-        ConfigurationService.SetConfigValue(LauncherConVar.AuthCurrent, AuthService.SelectedAuth);
+        ConfigurationService.SetConfigValue(LauncherConVar.AuthCurrent, Credentials);
     }
 
     private async Task CatchAuthError(Func<Task> a, Action? onError)
@@ -142,7 +167,6 @@ public partial class AccountInfoViewModel : ViewModelBase
         try
         {
             await a();
-            ViewHelperService.GetViewModel<MainViewModel>().InvokeChangeAuth();
         }
         catch (AuthException e)
         {
@@ -200,8 +224,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     public void Logout()
     {
         IsLogged = false;
-        AuthService.ClearAuth();
-        ViewHelperService.GetViewModel<MainViewModel>().InvokeChangeAuth();
+        Credentials = null;
     }
 
     private void UpdateAuthMenu()
@@ -212,15 +235,13 @@ public partial class AccountInfoViewModel : ViewModelBase
             AuthViewSpan = 1;
     }
 
-    private void AddAccount(AuthLoginPassword authLoginPassword)
+    private void AddAccount(AuthTokenCredentials credentials)
     {
         var onDelete = new DelegateCommand<ProfileAuthCredentials>(OnDeleteProfile);
         var onSelect = new DelegateCommand<ProfileAuthCredentials>(AuthByProfile);
 
         var alpm = new ProfileAuthCredentials(
-            authLoginPassword.Login,
-            authLoginPassword.Password,
-            authLoginPassword.AuthServer,
+            credentials,
             onSelect,
             onDelete);
 
@@ -238,7 +259,7 @@ public partial class AccountInfoViewModel : ViewModelBase
         PopupMessageService.Popup(message);
         foreach (var profile in
                  ConfigurationService.GetConfigValue(LauncherConVar.AuthProfiles)!)
-            AddAccount(new AuthLoginPassword(profile.Login, profile.Password, profile.AuthServer));
+            AddAccount(profile);
 
         if (Accounts.Count == 0) UpdateAuthMenu();
 
@@ -281,7 +302,9 @@ public partial class AccountInfoViewModel : ViewModelBase
     [RelayCommand]
     private void OnSaveProfile()
     {
-        AddAccount(new AuthLoginPassword(CurrentLogin, CurrentPassword, CurrentAuthServer));
+        if(Credentials is null) return;
+        
+        AddAccount(Credentials);
         _isProfilesEmpty = Accounts.Count == 0;
         UpdateAuthMenu();
         DirtyProfile();
@@ -322,6 +345,6 @@ public partial class AccountInfoViewModel : ViewModelBase
     private void DirtyProfile()
     {
         ConfigurationService.SetConfigValue(LauncherConVar.AuthProfiles,
-            Accounts.ToArray());
+            Accounts.Select(a => a.Credentials).ToArray());
     }
 }

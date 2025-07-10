@@ -41,17 +41,17 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _popup;
     [ObservableProperty] private ListItemTemplate? _selectedListItem;
 
-    public bool IsLoggedIn => AuthService.SelectedAuth is not null;
-    public string LoginName => AuthService.SelectedAuth?.Login ?? string.Empty;
+    public bool IsLoggedIn => AccountInfoViewModel.Credentials is not null;
+    public string LoginName => AccountInfoViewModel.Credentials?.Login ?? string.Empty;
     
-    public string LoginText => Services.LocalisationService.GetString("auth-current-login-name", 
+    public string LoginText => LocalisationService.GetString("auth-current-login-name", 
         new Dictionary<string, object>
     {
         { "login", LoginName }
     });
 
-    [GenerateProperty] private LocalisationService LocalisationService { get; }
-    [GenerateProperty] private AuthService AuthService { get; }
+    [GenerateProperty] private LocalisationService LocalisationService { get; } // Не убирать! Без этой хуйни вся локализация идет в пизду!
+    [GenerateProperty] private AccountInfoViewModel AccountInfoViewModel { get; }
     [GenerateProperty] private DebugService DebugService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
     [GenerateProperty] private ContentService ContentService { get; } = default!;
@@ -66,7 +66,7 @@ public partial class MainViewModel : ViewModelBase
     {
         Items = new ObservableCollection<ListItemTemplate>(_templates.Select(a=>
         {
-            return new ListItemTemplate(a.ModelType, a.IconKey, LocalisationService.GetString(a.Label));
+            return a with { Label = LocalisationService.GetString(a.Label) };
         }
         ));
         RequirePage<AccountInfoViewModel>();
@@ -74,6 +74,15 @@ public partial class MainViewModel : ViewModelBase
 
     protected override void Initialise()
     {
+        AccountInfoViewModel.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName != nameof(AccountInfoViewModel.Credentials)) 
+                return;
+            
+            OnPropertyChanged(nameof(LoginText));
+            OnPropertyChanged(nameof(IsLoggedIn));
+        };
+        
         _logger = DebugService.GetLogger(this);
 
         using var stream = typeof(MainViewModel).Assembly
@@ -88,6 +97,11 @@ public partial class MainViewModel : ViewModelBase
         PopupMessageService.OnCloseRequired += OnPopupCloseRequired;
         
         CheckMigration();
+        
+        var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
+        loadingHandler.LoadingName = LocalisationService.GetString("migration-config-task");
+        loadingHandler.IsCancellable = false;
+        ConfigurationService.MigrateConfigs(loadingHandler);
         
         if (!VCRuntimeDllChecker.AreVCRuntimeDllsPresent())
         {
@@ -146,12 +160,6 @@ public partial class MainViewModel : ViewModelBase
         CurrentPage = obj;
     }
 
-    public void InvokeChangeAuth()
-    {
-        OnPropertyChanged(nameof(IsLoggedIn));
-        OnPropertyChanged(nameof(LoginText));
-    }
-
     public void PopupMessage(PopupViewModelBase viewModelBase)
     {
         if (CurrentPopup == null)
@@ -182,6 +190,11 @@ public partial class MainViewModel : ViewModelBase
     public void OpenAuthPage()
     {
         RequirePage<AccountInfoViewModel>();
+    }
+
+    public void OpenRootPath()
+    {
+        ExplorerHelper.OpenFolder(FileService.RootPath);
     }
 
     public void OpenLink()

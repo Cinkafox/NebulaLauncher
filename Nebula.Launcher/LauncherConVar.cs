@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.Models.Auth;
-using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Shared.Services;
+using Nebula.Shared.Services.ConfigMigrations;
 
 namespace Nebula.Launcher;
 
@@ -11,11 +11,16 @@ public static class LauncherConVar
 {
     public static readonly ConVar<bool> DoMigration =
         ConVarBuilder.Build("migration.doMigrate", true);
-    public static readonly ConVar<ProfileAuthCredentials[]> AuthProfiles =
-        ConVarBuilder.Build<ProfileAuthCredentials[]>("auth.profiles.v2", []);
+    
+    public static readonly ConVar<AuthTokenCredentials[]> AuthProfiles =
+        ConVarBuilder.BuildWithMigration<AuthTokenCredentials[]>("auth.profiles.v3", 
+            MigrationQueueBuilder.Instance
+                .With(new ProfileMigrationV2("auth.profiles.v2","auth.profiles.v3"))
+                .Build(), 
+            []);
 
-    public static readonly ConVar<CurrentAuthInfo?> AuthCurrent =
-        ConVarBuilder.Build<CurrentAuthInfo?>("auth.current.v2");
+    public static readonly ConVar<AuthTokenCredentials?> AuthCurrent =
+        ConVarBuilder.Build<AuthTokenCredentials?>("auth.current.v2");
     
     public static readonly ConVar<string[]> Favorites =
         ConVarBuilder.Build<string[]>("server.favorites", []);

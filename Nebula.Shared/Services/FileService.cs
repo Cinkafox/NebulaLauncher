@@ -122,6 +122,11 @@ public sealed class ConsoleLoadingHandler : ILoadingHandler
         return _resolvedJobs;
     }
 
+    public void SetLoadingMessage(string message)
+    {
+        
+    }
+
     private void UpdatePercent()
     {
         if (_currJobs == 0)

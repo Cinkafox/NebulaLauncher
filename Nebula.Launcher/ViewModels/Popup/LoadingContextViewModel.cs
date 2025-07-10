@@ -15,8 +15,8 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
     [GenerateProperty] public CancellationService CancellationService { get; }
     
     [ObservableProperty] private int _currJobs;
-
     [ObservableProperty] private int _resolvedJobs;
+    [ObservableProperty] private string _message = string.Empty;
 
     public string LoadingName { get; set; } = LocalisationService.GetString("popup-loading");
     public bool IsCancellable { get; set; } = true;
@@ -44,6 +44,11 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
         return ResolvedJobs;
     }
 
+    public void SetLoadingMessage(string message)
+    {
+        Message = message + "\n" + Message;
+    }
+
     public void Cancel(){
         if(!IsCancellable) return;
         CancellationService.Cancel();
@@ -56,5 +61,30 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
 
     protected override void InitialiseInDesignMode()
     {
+        SetJobsCount(5);
+        SetResolvedJobsCount(2);
+        string[] debugMessages = {
+            "Debug: Starting phase 1...",
+            "Debug: Loading assets...",
+            "Debug: Connecting to server...",
+            "Debug: Fetching user data...",
+            "Debug: Applying configurations...",
+            "Debug: Starting phase 2...",
+            "Debug: Rendering UI...",
+            "Debug: Preparing scene...",
+            "Debug: Initializing components...",
+            "Debug: Running diagnostics...",
+            "Debug: Checking dependencies...",
+            "Debug: Verifying files...",
+            "Debug: Cleaning up cache...",
+            "Debug: Finalizing setup...",
+            "Debug: Setup complete.",
+            "Debug: Ready for launch."
+        };
+
+        foreach (string message in debugMessages)
+        {
+            SetLoadingMessage(message);
+        }
     }
 }

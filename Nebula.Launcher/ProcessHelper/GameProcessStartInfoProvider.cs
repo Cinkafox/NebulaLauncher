@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Shared;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
@@ -10,7 +11,7 @@ using Nebula.Shared.Services;
 namespace Nebula.Launcher.ProcessHelper;
 
 [ServiceRegister(isSingleton:false)]
-public sealed class GameProcessStartInfoProvider(DotnetResolverService resolverService, AuthService authService) : 
+public sealed class GameProcessStartInfoProvider(DotnetResolverService resolverService, AccountInfoViewModel accountInfoViewModel) : 
     DotnetProcessStartInfoProviderBase(resolverService)
 {
     private string? _publicKey;
@@ -34,7 +35,7 @@ public sealed class GameProcessStartInfoProvider(DotnetResolverService resolverS
     {
         var baseStart = await base.GetProcessStartInfo();
         
-        var authProv = authService.SelectedAuth;
+        var authProv = accountInfoViewModel.Credentials;
         if(authProv is null) 
             throw new Exception("Client is without selected auth");
 

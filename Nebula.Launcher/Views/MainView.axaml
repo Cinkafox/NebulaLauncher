@@ -127,10 +127,30 @@
                                 Padding="0" 
                                 CornerRadius="0"
                                 Command="{Binding OpenAuthPage}">
-                                <Panel>
-                                    <TextBlock Foreground="#777777" IsVisible="{Binding IsLoggedIn}" Text="{Binding LoginText}"/>
-                                    <TextBlock Foreground="#777777" IsVisible="{Binding !IsLoggedIn}" Text="{services:LocaledText auth-current-login-no-name}"/>
-                                </Panel>
+                                <StackPanel Spacing="5" Orientation="Horizontal">
+                                    <Svg
+                                        Height="40"
+                                        Path="/Assets/svg/user.svg"
+                                        Width="10" />
+                                    <Panel>
+                                        <TextBlock Foreground="#777777" IsVisible="{Binding IsLoggedIn}" Text="{Binding LoginText}"/>
+                                        <TextBlock Foreground="#777777" IsVisible="{Binding !IsLoggedIn}" Text="{services:LocaledText auth-current-login-no-name}"/>
+                                    </Panel>
+                                </StackPanel>
+                            </Button>
+                            <TextBlock>|</TextBlock>
+                            <Button 
+                                Margin="0" 
+                                Padding="0" 
+                                CornerRadius="0"
+                                Command="{Binding OpenRootPath}">
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <Svg
+                                        Height="40"
+                                        Path="/Assets/svg/folder.svg"
+                                        Width="10" />
+                                    <TextBlock Foreground="#777777" Text="{services:LocaledText goto-path-home}"/>
+                                </StackPanel>
                             </Button>
                             <TextBlock>|</TextBlock>
                             <TextBlock Text="{Binding VersionInfo}"/>

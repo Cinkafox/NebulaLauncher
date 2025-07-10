@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Nebula.Shared.Models.Auth;
 using Nebula.Shared.Services.Logging;
@@ -15,15 +14,10 @@ public class AuthService(
     CancellationService cancellationService)
 {
     private readonly HttpClient _httpClient = new();
-    public CurrentAuthInfo? SelectedAuth { get; private set; }
     private readonly ILogger _logger = debugService.GetLogger("AuthService");
 
-    public async Task Auth(AuthLoginPassword authLoginPassword, string? code = null)
+    public async Task<AuthTokenCredentials> Auth(string login, string password, string authServer, string? code = null)
     {
-        var authServer = authLoginPassword.AuthServer;
-        var login = authLoginPassword.Login;
-        var password = authLoginPassword.Password;
-
         _logger.Debug($"Auth to {authServer}api/auth/authenticate {login}");
 
         var authUrl = new Uri($"{authServer}api/auth/authenticate");
@@ -34,8 +28,8 @@ public class AuthService(
                 await restService.PostAsync<AuthenticateResponse, AuthenticateRequest>(
                     new AuthenticateRequest(login, null, password, code), authUrl, cancellationService.Token);
 
-            SelectedAuth = new CurrentAuthInfo(result.UserId,
-                new LoginToken(result.Token, result.ExpireTime), authLoginPassword.Login, authLoginPassword.AuthServer);
+            return new AuthTokenCredentials(result.UserId,
+                new LoginToken(result.Token, result.ExpireTime), login, authServer);
         }
         catch (RestRequestException e)
         {
@@ -48,32 +42,17 @@ public class AuthService(
         }
     }
 
-    public void ClearAuth()
+    public async Task EnsureToken(AuthTokenCredentials tokenCredentials)
     {
-        SelectedAuth = null;
-    }
-
-    public async Task SetAuth(CurrentAuthInfo info)
-    {
-        SelectedAuth = info;
-        await EnsureToken();
-    }
-
-    public async Task EnsureToken()
-    {
-        if (SelectedAuth is null) throw new Exception("Auth info is not set!");
-
-        var authUrl = new Uri($"{SelectedAuth.AuthServer}api/auth/ping");
+        var authUrl = new Uri($"{tokenCredentials.AuthServer}api/auth/ping");
 
         using var requestMessage = new HttpRequestMessage(HttpMethod.Get, authUrl);
-        requestMessage.Headers.Authorization = new AuthenticationHeaderValue("SS14Auth", SelectedAuth.Token.Token);
+        requestMessage.Headers.Authorization = new AuthenticationHeaderValue("SS14Auth", tokenCredentials.Token.Token);
         using var resp = await _httpClient.SendAsync(requestMessage, cancellationService.Token);
     }
 }
 
-public sealed record CurrentAuthInfo(Guid UserId, LoginToken Token, string Login, string AuthServer);
-
-public record AuthLoginPassword(string Login, string Password, string AuthServer);
+public sealed record AuthTokenCredentials(Guid UserId, LoginToken Token, string Login, string AuthServer);
 
 public sealed record AuthDenyError(string[] Errors, AuthenticateDenyCode Code);
 

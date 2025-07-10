@@ -7,6 +7,7 @@ public interface ILoadingHandler
 
     public void SetResolvedJobsCount(int count);
     public int GetResolvedJobsCount();
+    public void SetLoadingMessage(string message);
 
     public void AppendJob(int count = 1)
     {

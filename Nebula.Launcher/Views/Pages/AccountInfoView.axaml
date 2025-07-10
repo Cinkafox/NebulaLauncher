@@ -53,7 +53,7 @@
                                 <Panel>
                                     <StackPanel Margin="10,5,5,5" Orientation="Horizontal">
                                         <Label>
-                                            <TextBlock Text="{Binding Login}" />
+                                            <TextBlock Text="{Binding Credentials.Login}" />
                                         </Label>
                                     </StackPanel>
                                     <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
@@ -154,14 +154,6 @@
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Center">
                                 <customControls:LocalizedLabel LocalId="account-auth-button"/>
-                            </Button>
-                        </Border>
-                        <Border BoxShadow="{StaticResource DefaultShadow}">
-                            <Button 
-                                Command="{Binding SaveProfileCommand}" 
-                                HorizontalAlignment="Stretch"
-                                HorizontalContentAlignment="Center">
-                                <customControls:LocalizedLabel LocalId="account-auth-save"/>
                             </Button>
                         </Border>
                         <Button Command="{Binding ExpandAuthViewCommand}" HorizontalAlignment="Right">

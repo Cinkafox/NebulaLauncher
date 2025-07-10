@@ -52,6 +52,7 @@ public partial class ContentService
 
         items = allItems.Where(a=> !hashApi.Has(a)).ToList();
 
+        loadingHandler.SetLoadingMessage("Download Count:" + items.Count);
         _logger.Log("Download Count:" + items.Count);
         await Download(downloadUri, items, hashApi, loadingHandler, cancellationToken);
 
@@ -62,6 +63,7 @@ public partial class ContentService
         CancellationToken cancellationToken)
     {
         _logger.Log("Getting manifest: " + info.Hash);
+        loadingHandler.SetLoadingMessage("Getting manifest: " + info.Hash);
 
         if (ManifestFileApi.TryOpen(info.Hash, out var stream))
         {
@@ -72,6 +74,7 @@ public partial class ContentService
         SetServerHash(info.ManifestUri.ToString(), info.Hash);
 
         _logger.Log("Fetching manifest from: " + info.ManifestUri);
+        loadingHandler.SetLoadingMessage("Fetching manifest from: " + info.ManifestUri);
 
         var response = await _http.GetAsync(info.ManifestUri, cancellationToken);
         if (!response.IsSuccessStatusCode) throw new Exception();
@@ -127,6 +130,7 @@ public partial class ContentService
 
         var downloadJobWatch = loadingHandler.GetQueryJob();
 
+        loadingHandler.SetLoadingMessage("Downloading from: " + contentCdn);
         _logger.Log("Downloading from: " + contentCdn);
 
         var requestBody = new byte[toDownload.Count * 4];
@@ -151,7 +155,7 @@ public partial class ContentService
 
         if (cancellationToken.IsCancellationRequested)
         {
-            _logger.Log("Downloading is cancelled!");
+            _logger.Log("Downloading cancelled!");
             return;
         }
 
@@ -201,7 +205,7 @@ public partial class ContentService
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    _logger.Log("Downloading is cancelled!");
+                    _logger.Log("Downloading cancelled!");
                     decompressContext?.Dispose();
                     compressContext?.Dispose();
                     return;
