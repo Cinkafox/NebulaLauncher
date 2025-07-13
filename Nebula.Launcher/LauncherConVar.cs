@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.Models.Auth;
+using Nebula.Shared.ConfigMigrations;
 using Nebula.Shared.Services;
-using Nebula.Shared.Services.ConfigMigrations;
 
 namespace Nebula.Launcher;
 

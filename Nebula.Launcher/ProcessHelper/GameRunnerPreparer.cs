@@ -9,7 +9,7 @@ using Nebula.Shared.Services;
 namespace Nebula.Launcher.ProcessHelper;
 
 [ServiceRegister]
-public sealed class GameRunnerPreparer(IServiceProvider provider, ContentService contentService, EngineService engineService, DebugService debugService)
+public sealed class GameRunnerPreparer(IServiceProvider provider, ContentService contentService, EngineService engineService)
 {
     public async Task<ProcessRunHandler<GameProcessStartInfoProvider>> GetGameProcessStartInfoProvider(RobustUrl address, ILoadingHandler loadingHandler, CancellationToken cancellationToken = default)
     {

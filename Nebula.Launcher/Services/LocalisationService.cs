@@ -14,7 +14,8 @@ namespace Nebula.Launcher.Services;
 public partial class LocalisationService
 {
     [GenerateProperty] private ConfigurationService ConfigurationService { get; }
-
+    [GenerateProperty] private DebugService DebugService { get; }
+    
     private CultureInfo _currentCultureInfo = CultureInfo.CurrentCulture;
     private static MessageContext? _currentMessageContext;
 
@@ -42,6 +43,7 @@ public partial class LocalisationService
 
             _currentMessageContext = mc;
         } catch (Exception e) {
+            DebugService.GetLogger("localisationService").Error(e);
             LoadLanguage(CultureInfo.GetCultureInfo("en-US"));
         }
     }

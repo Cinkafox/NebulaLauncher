@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nebula.Shared;
-using Nebula.Shared.Services;
 
 namespace Nebula.Runner;
 

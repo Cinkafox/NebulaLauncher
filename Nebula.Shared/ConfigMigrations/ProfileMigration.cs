@@ -1,7 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nebula.Shared.Models;
+using Nebula.Shared.Services;
 
-namespace Nebula.Shared.Services.ConfigMigrations;
+namespace Nebula.Shared.ConfigMigrations;
 
 public class ProfileMigrationV2(string oldName, string newName)
     : BaseConfigurationMigration<ProfileAuthCredentialsV2[], AuthTokenCredentials[]>(oldName, newName)

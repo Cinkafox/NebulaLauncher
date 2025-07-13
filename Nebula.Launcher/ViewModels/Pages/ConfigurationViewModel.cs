@@ -7,7 +7,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -195,7 +194,7 @@ public sealed class ComplexUnitConfigControl : Border, IConfigControl
             
             var propValue = propInfo.GetValue(value);
 
-            var control = ConfigControlHelper.GetConfigControl(propInfo.Name, propValue);
+            var control = ConfigControlHelper.GetConfigControl(propInfo.Name, propValue!);
             
             ((Control)control).Margin = new Thickness(5);
             _panel.Children.Add((Control)control);
@@ -211,7 +210,7 @@ public sealed class ComplexUnitConfigControl : Border, IConfigControl
             fieldInfo.SetValue(obj, configControl.GetValue());
         }
 
-        return obj;
+        return obj!;
     }
 }
 
