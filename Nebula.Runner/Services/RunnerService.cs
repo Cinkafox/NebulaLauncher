@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
 using System.Reflection;
-using System.Reflection.Emit;
 using HarmonyLib;
 using Nebula.Shared;
 using Nebula.Shared.Models;
@@ -18,9 +17,10 @@ public sealed class RunnerService(
     EngineService engineService,
     AssemblyService assemblyService, 
     ReflectionService reflectionService, 
-    HarmonyService harmonyService)
+    HarmonyService harmonyService, 
+    ScriptService scriptService)
 {
-    private ILogger _logger = debugService.GetLogger("RunnerService");
+    private readonly ILogger _logger = debugService.GetLogger("RunnerService");
     private bool MetricEnabled = false; //TODO: ADD METRIC THINKS LATER
 
     public async Task Run(string[] runArgs, RobustBuildInfo buildInfo, IRedialApi redialApi,
@@ -58,6 +58,24 @@ public sealed class RunnerService(
         
         var args = new MainArgs(runArgs, engine, redialApi, extraMounts);
 
+
+        var assemblyManifest = hashApi.Manifest.Where(p => 
+                p.Key.StartsWith("Assemblies/"))
+            .Select(p =>
+            {
+                return p.Value with { Path = Path.GetFileNameWithoutExtension(p.Key) };
+            }).ToList();
+        
+        var assembliesHash = contentService.CreateHashApi(assemblyManifest);
+        
+        var contentAssemblyApi = assemblyService.Mount(assembliesHash);
+
+        foreach (var file in contentAssemblyApi.AllFiles.Where(p => Path.GetExtension(p) == ".dll"))
+        {
+            var newExt = Path.GetFileNameWithoutExtension(file);
+            if(!assemblyService.TryOpenAssembly(newExt, contentAssemblyApi, out _)) throw new Exception("Assembly not found: " + newExt);
+        }
+
         if (!assemblyService.TryOpenAssembly(varService.GetConfigValue(CurrentConVar.RobustAssemblyName)!, engine,
                 out var clientAssembly))
             throw new Exception("Unable to locate Robust.Client.dll in engine build!");
@@ -68,7 +86,6 @@ public sealed class RunnerService(
         if(!assemblyService.TryOpenAssembly("Prometheus.NetStandard", engine, out var prometheusAssembly))
             return;
         
-        reflectionService.RegisterRobustAssemblies(engine);
         harmonyService.CreateInstance();
         
         IDisposable? metricServer = null;
@@ -78,11 +95,17 @@ public sealed class RunnerService(
             MetricsEnabledPatcher.ApplyPatch(reflectionService, harmonyService);
             metricServer = RunHelper.RunMetric(prometheusAssembly);
         }
-       
+        
+        scriptService.LoadScripts();
         
         await Task.Run(() => loader.Main(args), cancellationToken);
         
         metricServer?.Dispose();
+    }
+
+    private void CacheAssembly()
+    {
+        
     }
 }
 

@@ -12,14 +12,22 @@ namespace Nebula.Shared.Services;
 [ServiceRegister]
 public class AssemblyService
 {
-    private readonly List<Assembly> _assemblies = new();
+    private readonly Dictionary<string, Assembly> _assemblyCache = new();
     private readonly ILogger _logger;
 
     private readonly HashSet<string> _resolvingAssemblies = new();
 
+    private List<AssemblyApi> _mountedApis = [];
+    
+    public Action<Assembly>? OnAssemblyLoaded;
+    public IReadOnlyList<Assembly> Assemblies => _assemblyCache.Values.ToList().AsReadOnly();
+
     public AssemblyService(DebugService debugService)
     {
         _logger = debugService.GetLogger(this);
+        
+        AssemblyLoadContext.Default.ResolvingUnmanagedDll += LoadContextOnResolvingUnmanaged;
+        AssemblyLoadContext.Default.Resolving += (context, name) => OnAssemblyResolving(context, name);
         
         ZstdImportResolver.ResolveLibrary += (name, assembly1, path) =>
         {
@@ -36,21 +44,41 @@ public class AssemblyService
         };
     }
 
-    public IReadOnlyList<Assembly> Assemblies => _assemblies;
+    private Assembly? OnAssemblyResolving(AssemblyLoadContext context, AssemblyName name)
+    {
+        if (_resolvingAssemblies.Contains(name.FullName))
+        {
+            _logger.Debug($"Already resolving {name.Name}, skipping.");
+            return null; // Prevent recursive resolution
+        }
+        
+        Assembly? assembly;
+
+        if (_assemblyCache.TryGetValue(name.Name ?? "", out assembly))
+        {
+            return assembly;
+        }
+        
+        foreach (var api in _mountedApis)
+        {
+            if((assembly = OnAssemblyResolving(context, name, api)) != null)
+                return assembly;
+        }
+        
+        return null;
+    }
 
     public AssemblyApi Mount(IFileApi fileApi)
     {
         var asmApi = new AssemblyApi(fileApi);
-        AssemblyLoadContext.Default.Resolving += (context, name) => OnAssemblyResolving(context, name, asmApi);
-        AssemblyLoadContext.Default.ResolvingUnmanagedDll += LoadContextOnResolvingUnmanaged;
-
+        _mountedApis.Add(asmApi);
         return asmApi;
     }
 
     public bool TryGetLoader(Assembly clientAssembly, [NotNullWhen(true)] out ILoaderEntryPoint? loader)
     {
         loader = null;
-        // Find ILoaderEntryPoint with the LoaderEntryPointAttribute
+    
         var attrib = clientAssembly.GetCustomAttribute<LoaderEntryPointAttribute>();
         if (attrib == null)
         {
@@ -79,9 +107,11 @@ public class AssemblyService
 
         assembly = AssemblyLoadContext.Default.LoadFromStream(asm, pdb);
         _logger.Log("LOADED ASSEMBLY " + name);
-
-
-        if (!_assemblies.Contains(assembly)) _assemblies.Add(assembly);
+        
+        if (_assemblyCache.TryAdd(name, assembly))
+        {
+            OnAssemblyLoaded?.Invoke(assembly);
+        }
 
         asm.Dispose();
         pdb?.Dispose();
@@ -103,21 +133,18 @@ public class AssemblyService
 
     private Assembly? OnAssemblyResolving(AssemblyLoadContext context, AssemblyName name, AssemblyApi assemblyApi)
     {
-        if (_resolvingAssemblies.Contains(name.FullName))
+        lock (_resolvingAssemblies)
         {
-            _logger.Debug($"Already resolving {name.Name}, skipping.");
-            return null; // Prevent recursive resolution
-        }
-
-        try
-        {
-            _resolvingAssemblies.Add(name.FullName);
-            _logger.Debug($"Resolving assembly from FileAPI: {name.Name}");
-            return TryOpenAssembly(name.Name!, assemblyApi, out var assembly) ? assembly : null;
-        }
-        finally
-        {
-            _resolvingAssemblies.Remove(name.FullName);
+            try
+            {
+                _resolvingAssemblies.Add(name.FullName);
+                _logger.Debug($"Resolving assembly from FileAPI: {name.Name}");
+                return TryOpenAssembly(name.Name!, assemblyApi, out var assembly) ? assembly : null;
+            }
+            finally
+            {
+                _resolvingAssemblies.Remove(name.FullName);
+            }
         }
     }
 

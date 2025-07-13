@@ -23,7 +23,7 @@ public class FileService
             Directory.CreateDirectory(RootPath);
     }
     
-    public IReadWriteFileApi CreateFileApi(string path)
+    public FileApi CreateFileApi(string path)
     {
         _logger.Debug($"Creating file api for {path}");
         return new FileApi(Path.Join(RootPath, path));

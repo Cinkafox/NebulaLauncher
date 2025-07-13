@@ -1,11 +1,10 @@
-using System.Data;
 using HarmonyLib;
 using Nebula.Shared;
 
 namespace Nebula.Runner.Services;
 
 [ServiceRegister]
-public class HarmonyService(ReflectionService reflectionService)
+public class HarmonyService
 {
     private HarmonyInstance? _instance;
 
@@ -25,21 +24,6 @@ public class HarmonyService(ReflectionService reflectionService)
             throw new Exception();
         
         _instance = new HarmonyInstance();
-        UnShittyWizard();
-    }
-
-    /// <summary>
-    /// Я помню пенис большой,Я помню пенис большой, Я помню пенис большой, я помню....
-    /// </summary>
-    private void UnShittyWizard()
-    {
-        var method = reflectionService.GetType("Robust.Client.GameController").TypeInitializer;
-        _instance!.Harmony.Patch(method, new HarmonyMethod(Prefix));
-    }
-    
-    static bool Prefix()
-    {
-        return false;
     }
 }
 
