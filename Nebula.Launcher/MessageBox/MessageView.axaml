@@ -2,16 +2,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:Nebula.Launcher.Views"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             Width="600"
-             Height="400"
+            
              x:Class="Nebula.Launcher.MessageBox.MessageView">
-    <Grid RowDefinitions="50,*" ColumnDefinitions="*">
-        <Border Grid.Column="0" Background="#222222" Padding="10" BorderBrush="#444444" BorderThickness="0,0,0,3">
-            <Label VerticalAlignment="Center" x:Name="Title">Text</Label>
-        </Border>
-        <Panel Margin="5" Grid.Row="1">
-            <Label x:Name="Message">Message</Label>
-        </Panel>
-    </Grid>
+    <views:VisualErrorView x:Name="ErrorView"/>
 </UserControl>

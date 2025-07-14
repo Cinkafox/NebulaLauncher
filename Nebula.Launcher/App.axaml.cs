@@ -28,14 +28,16 @@ public class App : Application
             {
                 case IClassicDesktopStyleApplicationLifetime desktop:
                     DisableAvaloniaDataAnnotationValidation();
-                    desktop.MainWindow = new MessageWindow(out provider);
+                    desktop.MainWindow = (Window)(provider = new MessageWindow());
                     break;
                 case ISingleViewApplicationLifetime singleViewPlatform:
-                    singleViewPlatform.MainView = new MessageView(out provider);
+                    singleViewPlatform.MainView = (Control)(provider = new MessageView());
                     break;
             }
             
-            provider?.ShowMessage("Launcher is already running.","hey shithead!");
+            provider?.ShowMessage(
+                "Error: An instance of the application is already running. Please close the existing instance before launching a new one.", 
+                "Duplicate instance detected.");
             
             return;
         }

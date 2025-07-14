@@ -45,6 +45,7 @@
         <entry key="Nebula.Launcher/Views/ServerListView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Tabs/AccountInfoTab.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Tabs/ServerListTab.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
+        <entry key="Nebula.Launcher/Views/VisualErrorView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.UpdateResolver/App.axaml" value="Nebula.UpdateResolver/Nebula.UpdateResolver.csproj" />
         <entry key="Nebula.UpdateResolver/MainWindow.axaml" value="Nebula.UpdateResolver/Nebula.UpdateResolver.csproj" />
       </map>

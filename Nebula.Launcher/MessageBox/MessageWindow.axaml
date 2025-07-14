@@ -3,10 +3,52 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:messageBox="clr-namespace:Nebula.Launcher.MessageBox"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        SystemDecorations="BorderOnly"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="260"
         Width="600"
-        Height="400"
+        Height="260"
+        CanResize="False"
         x:Class="Nebula.Launcher.MessageBox.MessageWindow"
         Title="MessageWindow">
-    
+     <Grid ColumnDefinitions="*" RowDefinitions="30,*">
+            <messageBox:MessageView
+                Grid.Column="0"
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                x:Name="MessageView" />
+            <Border
+                
+                BorderThickness="0,0,0,2"
+                CornerRadius="0"
+                Grid.Column="0"
+                Grid.Row="0">
+                <Border.BorderBrush>
+                    <LinearGradientBrush EndPoint="100%,50%" StartPoint="0%,50%">
+                        <GradientStop Color="#222222" Offset="0.0" />
+                        <GradientStop Color="#442222" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Border.BorderBrush>
+                <Panel
+                    Height="30"
+                    PointerPressed="InputElement_OnPointerPressed">
+                    <TextBlock
+                        FontSize="10"
+                        Foreground="White"
+                        IsVisible="False"
+                        Margin="15,0"
+                        Text="Nebula Launcher"
+                        VerticalAlignment="Center" />
+                    <StackPanel
+                        HorizontalAlignment="Right"
+                        Margin="5,0,5,0"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            Click="Close_Click"
+                            Content="🗙"
+                            Foreground="Azure" />
+                    </StackPanel>
+                </Panel>
+            </Border>
+        </Grid>
 </Window>

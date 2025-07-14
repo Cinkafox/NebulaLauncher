@@ -1,21 +1,22 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
+using Nebula.Launcher.ViewModels;
 
 namespace Nebula.Launcher.MessageBox;
 
 public partial class MessageView : UserControl, IMessageContainerProvider
 {
-    public MessageView(out IMessageContainerProvider provider)
+    private readonly VisualErrorViewModel _context;
+    public MessageView()
     {
         InitializeComponent();
-        provider = this;
+        _context = new VisualErrorViewModel();
+        ErrorView.Content = _context;
     }
 
     public void ShowMessage(string message, string title)
     {
-        Title.Content = title;
-        Message.Content = message;
+        _context.Title = title;
+        _context.Description = message;
     }
 }
 

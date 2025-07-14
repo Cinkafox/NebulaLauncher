@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Nebula.Launcher.ViewModels"
+             xmlns:converters="clr-namespace:Nebula.Launcher.Converters"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="viewModels:VisualErrorViewModel"
+             x:Class="Nebula.Launcher.Views.VisualErrorView">
+    <Design.DataContext>
+        <viewModels:VisualErrorViewModel />
+    </Design.DataContext>
+    <Grid RowDefinitions="30,*" ColumnDefinitions="200,*">
+        <Border Grid.Row="1" Grid.Column="0" 
+                CornerRadius="10,0,0,10" 
+                BorderThickness="0,0,2,0" 
+                BorderBrush="{StaticResource DefaultForeground}">
+            <Image Source="{Binding ImgPath, Converter={x:Static converters:TypeConverters.ImageConverter}}" Width="200" Height="200"/>
+        </Border>
+        <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" CornerRadius="10,10,0,0">
+            <Border.Background>
+                <LinearGradientBrush EndPoint="100%,50%" StartPoint="10%,20%">
+                    <GradientStop Color="#FF6B6B" Offset="0.0" />
+                    <GradientStop Color="#FF8E53" Offset="0.3" />
+                    <GradientStop Color="#FF5E3A" Offset="0.6" />
+                    <GradientStop Color="#FF5e5e" Offset="1.0" />
+                </LinearGradientBrush>
+            </Border.Background>
+            <Label HorizontalAlignment="Center"><TextBlock Text="{Binding Title}"/></Label>
+        </Border>
+        <TextBlock 
+            Grid.Row="1" 
+            Grid.Column="1" 
+            Margin="15" 
+            HorizontalAlignment="Center" 
+            TextWrapping="Wrap"
+            Text="{Binding Description}"/>
+    </Grid>
+</UserControl>
