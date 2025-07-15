@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nebula.Launcher.Models.Auth;
@@ -23,20 +26,15 @@ namespace Nebula.Launcher.ViewModels.Pages;
 public partial class AccountInfoViewModel : ViewModelBase
 {
     [ObservableProperty] private bool _authMenuExpand;
-
     [ObservableProperty] private bool _authUrlConfigExpand;
-
     [ObservableProperty] private int _authViewSpan = 1;
-
     [ObservableProperty] private string _currentAuthServer = string.Empty;
-
     [ObservableProperty] private string _currentLogin = string.Empty;
-
     [ObservableProperty] private string _currentPassword = string.Empty;
-
     [ObservableProperty] private bool _isLogged;
     [ObservableProperty] private bool _doRetryAuth;
     [ObservableProperty] private AuthTokenCredentials? _credentials;
+    [ObservableProperty] private AuthServerCredentials _authItemSelect;
 
     private bool _isProfilesEmpty;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
@@ -47,18 +45,22 @@ public partial class AccountInfoViewModel : ViewModelBase
 
     public ObservableCollection<ProfileAuthCredentials> Accounts { get; } = new();
     public ObservableCollection<AuthServerCredentials> AuthUrls { get; } = new();
-
-    [ObservableProperty] private AuthServerCredentials _authItemSelect;
+    public string CurrentAuthServerName => GetServerAuthName(Credentials);
 
     private ILogger _logger;
+    
+    partial void OnCredentialsChanged(AuthTokenCredentials? value)
+    {
+        OnPropertyChanged(nameof(CurrentAuthServerName));
+    }
 
     //Design think
     protected override void InitialiseInDesignMode()
     {
-        AddAccount(new AuthTokenCredentials(Guid.Empty, LoginToken.Empty, "Binka", ""));
-        AddAccount(new AuthTokenCredentials(Guid.Empty, LoginToken.Empty, "Binka", ""));
-        
         AuthUrls.Add(new AuthServerCredentials("Test",["example.com"]));
+        
+        AddAccount(new AuthTokenCredentials(Guid.Empty, LoginToken.Empty, "Binka", "example.com"));
+        AddAccount(new AuthTokenCredentials(Guid.Empty, LoginToken.Empty, "Binka", ""));
     }
 
     //Real think
@@ -225,6 +227,13 @@ public partial class AccountInfoViewModel : ViewModelBase
     {
         IsLogged = false;
         Credentials = null;
+        CurrentAuthServer = "";
+    }
+
+    public string GetServerAuthName(AuthTokenCredentials? credentials)
+    {
+        if (credentials is null) return "";
+        return AuthUrls.FirstOrDefault(p => p.Servers.Contains(credentials.AuthServer))?.Name ?? "CustomAuth";
     }
 
     private void UpdateAuthMenu()
@@ -239,9 +248,13 @@ public partial class AccountInfoViewModel : ViewModelBase
     {
         var onDelete = new DelegateCommand<ProfileAuthCredentials>(OnDeleteProfile);
         var onSelect = new DelegateCommand<ProfileAuthCredentials>(AuthByProfile);
+        
+        var serverName = GetServerAuthName(credentials);
 
         var alpm = new ProfileAuthCredentials(
             credentials,
+            serverName, 
+            ColorUtils.GetColorFromString(credentials.AuthServer),
             onSelect,
             onDelete);
 
@@ -257,16 +270,18 @@ public partial class AccountInfoViewModel : ViewModelBase
         message.InfoText = LocalisationService.GetString("auth-config-read");
         message.IsInfoClosable = false;
         PopupMessageService.Popup(message);
+        
+        AuthUrls.Clear();
+        var authUrls = ConfigurationService.GetConfigValue(LauncherConVar.AuthServers)!;
+        foreach (var url in authUrls) AuthUrls.Add(url);
+        if(authUrls.Length > 0) AuthItemSelect = authUrls[0];
+        
         foreach (var profile in
                  ConfigurationService.GetConfigValue(LauncherConVar.AuthProfiles)!)
             AddAccount(profile);
 
         if (Accounts.Count == 0) UpdateAuthMenu();
-
-        AuthUrls.Clear();
-        var authUrls = ConfigurationService.GetConfigValue(LauncherConVar.AuthServers)!;
-        foreach (var url in authUrls) AuthUrls.Add(url);
-        if(authUrls.Length > 0) AuthItemSelect = authUrls[0];
+        
         message.Dispose();
 
         DoCurrentAuth();
@@ -346,5 +361,19 @@ public partial class AccountInfoViewModel : ViewModelBase
     {
         ConfigurationService.SetConfigValue(LauncherConVar.AuthProfiles,
             Accounts.Select(a => a.Credentials).ToArray());
+    }
+}
+
+public static class ColorUtils
+{
+    public static Color GetColorFromString(string input)
+    {
+        var hash = MD5.HashData(Encoding.UTF8.GetBytes(input));
+        
+        var r = byte.Clamp(hash[0], 10, 200);
+        var g = byte.Clamp(hash[1], 10, 100);
+        var b = byte.Clamp(hash[2], 10, 100);
+
+        return Color.FromArgb(Byte.MaxValue, r, g, b);
     }
 }

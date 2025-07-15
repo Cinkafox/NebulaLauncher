@@ -1,6 +1,6 @@
 <UserControl
     d:DesignHeight="450"
-    d:DesignWidth="800"
+    d:DesignWidth="1000"
     mc:Ignorable="d"
     x:Class="Nebula.Launcher.Views.Pages.AccountInfoView"
     x:DataType="pages:AccountInfoViewModel"
@@ -39,39 +39,56 @@
                     Padding="0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type auth:ProfileAuthCredentials}">
-                            <Border
-                                BoxShadow="0 1 15 -2 #121212"
-                                CornerRadius="0,10,0,10"
-                                Margin="5,5,5,0"
-                                VerticalAlignment="Center">
-                                <Border.Background>
-                                    <LinearGradientBrush EndPoint="50%,100%" StartPoint="50%,0%">
-                                        <GradientStop Color="#292222" Offset="0.0" />
-                                        <GradientStop Color="#222222" Offset="1.0" />
-                                    </LinearGradientBrush>
-                                </Border.Background>
-                                <Panel>
-                                    <StackPanel Margin="10,5,5,5" Orientation="Horizontal">
+                            <Grid ColumnDefinitions="4*,*">
+                                <Border 
+                                    BoxShadow="0 1 15 -2 #121212"
+                                    CornerRadius="0,10,0,10"
+                                    Margin="5,5,5,0">
+                                    <Border.Background>
+                                        <LinearGradientBrush EndPoint="100%,50%" StartPoint="20%,50%">
+                                            <GradientStop Color="{Binding Color}" Offset="0.0" />
+                                            <GradientStop Color="#222222" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Label>
+                                        <TextBlock Text="{Binding AuthName}" Margin="5"/>
+                                    </Label>
+                                </Border>
+                                <Border Grid.Column="0"
+                                    CornerRadius="0,10,0,10"
+                                    Margin="5,5,5,0">
+                                    <Border.Background>
+                                        <LinearGradientBrush EndPoint="100%,50%" StartPoint="20%,50%">
+                                            <GradientStop Color="#aa222222" Offset="0.0" />
+                                            <GradientStop Color="#222222" Offset="0.4" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Button 
+                                        HorizontalAlignment="Stretch" 
+                                        Command="{Binding OnSelect}">
                                         <Label>
-                                            <TextBlock Text="{Binding Credentials.Login}" />
+                                            <TextBlock Text="{Binding Credentials.Login}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,5,0"/>
                                         </Label>
-                                    </StackPanel>
-                                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                                        <Button
-                                            Command="{Binding OnSelect}"
-                                            CornerRadius="0,0,0,10"
-                                            Padding="5">
-                                            <customControls:LocalizedLabel LocalId="account-profile-select"/>
-                                        </Button>
-                                        <Button
-                                            Command="{Binding OnDelete}"
-                                            CornerRadius="0,10,0,0"
-                                            Padding="5">
-                                            <customControls:LocalizedLabel LocalId="account-profile-delete"/>
-                                        </Button>
-                                    </StackPanel>
-                                </Panel>
-                            </Border>
+                                    </Button>
+                                </Border>
+                                <Border 
+                                    BoxShadow="0 1 15 -2 #121212"
+                                    CornerRadius="0,10,0,10"
+                                    Margin="0,5,5,0" Grid.Column="1" Padding="0">
+                                    <Border.Background>
+                                        <LinearGradientBrush EndPoint="100%,50%" StartPoint="20%,50%">
+                                            <GradientStop Color="#292222" Offset="1.0" />
+                                            <GradientStop Color="#222222" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Button Command="{Binding OnDelete}" CornerRadius="0,10,0,10" HorizontalAlignment="Stretch">
+                                        <Svg
+                                            Height="15"
+                                            Path="/Assets/svg/delete.svg"
+                                            Width="15" />
+                                    </Button>
+                                </Border>
+                            </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -169,9 +186,15 @@
                             Margin="0,0,0,20"
                             Path="/Assets/svg/user.svg" />
                         <Label>
-                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                                <customControls:LocalizedLabel LocalId="account-auth-hello"/>
-                                <TextBlock Text="{Binding CurrentLogin}" />
+                            <StackPanel>
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="5">
+                                    <customControls:LocalizedLabel LocalId="account-auth-hello"/>
+                                    <TextBlock Text="{Binding CurrentLogin}" />
+                                </StackPanel>
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="5">
+                                    <customControls:LocalizedLabel LocalId="account-auth-current-server"/>
+                                    <TextBlock Text="{Binding CurrentAuthServerName}" />
+                                </StackPanel>
                             </StackPanel>
                         </Label>
                         <StackPanel

@@ -42,12 +42,12 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private ListItemTemplate? _selectedListItem;
 
     public bool IsLoggedIn => AccountInfoViewModel.Credentials is not null;
-    public string LoginName => AccountInfoViewModel.Credentials?.Login ?? string.Empty;
     
     public string LoginText => LocalisationService.GetString("auth-current-login-name", 
         new Dictionary<string, object>
     {
-        { "login", LoginName }
+        { "login", AccountInfoViewModel.Credentials?.Login ?? "" },
+        { "auth_server", AccountInfoViewModel.CurrentAuthServerName}
     });
 
     [GenerateProperty] private LocalisationService LocalisationService { get; } // Не убирать! Без этой хуйни вся локализация идет в пизду!

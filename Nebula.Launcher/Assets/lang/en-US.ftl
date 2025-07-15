@@ -24,8 +24,9 @@ account-auth-server = Authentication Server
 account-auth-button = Authenticate  
 account-auth-save = Save Profile  
 account-auth-hello = Hello,  
+account-auth-current-server = Current server auth:
 account-auth-logout = Log out  
-auth-current-login-name = Current login: {$login}
+auth-current-login-name = Current login {$auth_server}: {$login}
 auth-current-login-no-name = Profile not selected
 
 auth-processing = Processing authentication request...  
@@ -37,6 +38,7 @@ auth-name-resolution-error = Failed to resolve server address. Check your networ
 auth-secure-error = Failed to cinnect to the server using SSL
 auth-config-read = Reading authentication configuration...  
 auth-try-auth-config = Attempting to authenticate using saved configuration.
+auth-try-auth-profile = Attempting to authenticate using profile
 
 config-export-logs = Export logs
 config-open-data = Open data path
