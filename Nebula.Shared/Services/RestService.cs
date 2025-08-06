@@ -46,8 +46,7 @@ public class RestService
             return defaultValue;
         }
     }
-
-    [Pure]
+    
     public async Task<K> PostAsync<K, T>(T information, Uri uri, CancellationToken cancellationToken) where K : notnull
     {
         var json = JsonSerializer.Serialize(information, _serializerOptions);
@@ -57,11 +56,11 @@ public class RestService
     }
 
     [Pure]
-    public async Task<T> PostAsync<T>(Stream stream, Uri uri, CancellationToken cancellationToken) where T : notnull
+    public async Task<T> PostAsync<T>(Stream stream, string fileName, Uri uri, CancellationToken cancellationToken) where T : notnull
     {
         using var multipartFormContent =
             new MultipartFormDataContent("Upload----" + DateTime.Now.ToString(CultureInfo.InvariantCulture));
-        multipartFormContent.Add(new StreamContent(stream), "formFile", "image.png");
+        multipartFormContent.Add(new StreamContent(stream), "formFile", fileName);
         var response = await _client.PostAsync(uri, multipartFormContent, cancellationToken);
         return await ReadResult<T>(response, cancellationToken, uri);
     }
@@ -76,9 +75,12 @@ public class RestService
     [Pure]
     private async Task<T> ReadResult<T>(HttpResponseMessage response, CancellationToken cancellationToken, Uri uri) where T : notnull
     {
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (typeof(T) == typeof(NullResponse) && new NullResponse() is T nullResponse)
+        {
+            return nullResponse;
+        }
         
-        if (typeof(T) == typeof(string) && content is T t)
+        if (typeof(T) == typeof(string) && await response.Content.ReadAsStringAsync(cancellationToken) is T t)
             return t;
         
         if (response.IsSuccessStatusCode)
@@ -88,6 +90,10 @@ public class RestService
         
         throw new RestRequestException(response.Content, response.StatusCode, $"Error while processing {uri.ToString()}: {response.ReasonPhrase}");
     }
+}
+
+public sealed class NullResponse
+{
 }
 
 public sealed class RestRequestException(HttpContent content, HttpStatusCode statusCode, string message) : Exception(message)

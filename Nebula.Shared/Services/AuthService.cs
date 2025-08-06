@@ -50,6 +50,21 @@ public class AuthService(
         requestMessage.Headers.Authorization = new AuthenticationHeaderValue("SS14Auth", tokenCredentials.Token.Token);
         using var resp = await _httpClient.SendAsync(requestMessage, cancellationService.Token);
     }
+    
+    public async Task Logout(AuthTokenCredentials tokenCredentials)
+    {
+        var authUrl = new Uri($"{tokenCredentials.AuthServer}api/auth/logout");
+        await restService.PostAsync<NullResponse, TokenRequest>(TokenRequest.From(tokenCredentials), authUrl, cancellationService.Token);
+    }
+
+    public async Task<AuthTokenCredentials> Refresh(AuthTokenCredentials tokenCredentials)
+    {
+        var authUrl = new Uri($"{tokenCredentials.AuthServer}api/auth/refresh");
+        var newToken = await restService.PostAsync<LoginToken, TokenRequest>(
+            TokenRequest.From(tokenCredentials), authUrl, cancellationService.Token);
+        
+        return tokenCredentials with { Token = newToken };
+    }
 }
 
 public sealed record AuthTokenCredentials(Guid UserId, LoginToken Token, string Login, string AuthServer);
@@ -70,4 +85,15 @@ public enum AuthenticateDenyCode
         TfaRequired        =  3,
         TfaInvalid         =  4,
         AccountLocked      =  5,
+}
+
+public sealed record TokenRequest(string Token)
+{
+    public static TokenRequest From(AuthTokenCredentials authTokenCredentials)
+    {
+        return new TokenRequest(authTokenCredentials.Token.Token);
+    }
+    
+    public static TokenRequest Empty { get; } = new TokenRequest("");
+    
 }

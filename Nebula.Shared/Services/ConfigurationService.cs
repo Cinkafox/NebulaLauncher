@@ -1,106 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
+using Nebula.Shared.Configurations;
+using Nebula.Shared.Configurations.Migrations;
 using Nebula.Shared.FileApis.Interfaces;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services.Logging;
-using Robust.LoaderApi;
 
 namespace Nebula.Shared.Services;
-
-public class ConVar<T>
-{
-    internal ConfigurationService.OnConfigurationChangedDelegate<T?>? OnValueChanged;
-    
-    public ConVar(string name, T? defaultValue = default)
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        DefaultValue = defaultValue;
-    }
-
-    public string Name { get; }
-    public Type Type => typeof(T);
-    public T? DefaultValue { get; }
-}
-
-public static class ConVarBuilder
-{
-    public static ConVar<T> Build<T>(string name, T? defaultValue = default)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("ConVar name cannot be null or whitespace.", nameof(name));
-
-        return new ConVar<T>(name, defaultValue);
-    }
-
-    public static ConVar<T> BuildWithMigration<T>(string name, IConfigurationMigration migration, T? defaultValue = default)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("ConVar name cannot be null or whitespace.", nameof(name));
-        
-        ConfigurationService.AddConfigurationMigration(migration);
-
-        return new ConVar<T>(name, defaultValue);
-    }
-}
-
-public interface IConfigurationMigration
-{
-    public Task DoMigrate(ConfigurationService configurationService, IServiceProvider serviceProvider, ILoadingHandler loadingHandler);
-}
-
-public abstract class BaseConfigurationMigration<T1,T2> : IConfigurationMigration
-{
-    protected ConVar<T1> OldConVar;
-    protected ConVar<T2> NewConVar;
-    
-    public BaseConfigurationMigration(string oldName, string newName)
-    {
-        OldConVar = ConVarBuilder.Build<T1>(oldName);
-        NewConVar = ConVarBuilder.Build<T2>(newName);
-    }
-
-    public async Task DoMigrate(ConfigurationService configurationService, IServiceProvider serviceProvider, ILoadingHandler loadingHandler)
-    {
-        var oldValue = configurationService.GetConfigValue(OldConVar);
-        if(oldValue == null) return;
-        
-        var newValue = await Migrate(serviceProvider, oldValue, loadingHandler);
-        configurationService.SetConfigValue(NewConVar, newValue);
-        configurationService.ClearConfigValue(OldConVar);
-    }
-
-    protected abstract Task<T2> Migrate(IServiceProvider serviceProvider, T1 oldValue, ILoadingHandler loadingHandler);
-}
-
-public class MigrationQueue(List<IConfigurationMigration> migrations) : IConfigurationMigration
-{
-    public async Task DoMigrate(ConfigurationService configurationService, IServiceProvider serviceProvider , ILoadingHandler loadingHandler)
-    {
-        foreach (var migration in migrations)
-        {
-            await migration.DoMigrate(configurationService, serviceProvider, loadingHandler);
-        }
-    }
-}
-
-public class MigrationQueueBuilder
-{
-    public static MigrationQueueBuilder Instance => new();
-    
-    private readonly List<IConfigurationMigration> _migrations = [];
-
-    public MigrationQueueBuilder With(IConfigurationMigration migration)
-    {
-        _migrations.Add(migration);
-        return this;
-    }
-
-    public MigrationQueue Build()
-    {
-        return new MigrationQueue(_migrations);
-    }
-}
 
 [ServiceRegister]
 public class ConfigurationService
@@ -142,15 +48,22 @@ public class ConfigurationService
         });
     }
 
-    public ConfigChangeSubscriberDisposable<T> SubscribeVarChanged<T>(ConVar<T> convar, OnConfigurationChangedDelegate<T?> @delegate, bool invokeNow = false)
+    public ConVarObserver<T> SubscribeVarChanged<T>(ConVar<T> convar, OnConfigurationChangedDelegate<T?> @delegate, bool invokeNow = false)
     {
         convar.OnValueChanged += @delegate;
         if (invokeNow)
         {
             @delegate(GetConfigValue(convar));
         }
-        
-        return new ConfigChangeSubscriberDisposable<T>(convar, @delegate);
+
+        var delegation = SubscribeVarChanged<T>(convar);
+        delegation.PropertyChanged += (_, _) => @delegate(delegation.Value);
+        return delegation;
+    }
+
+    public ConVarObserver<T> SubscribeVarChanged<T>(ConVar<T> convar)
+    {
+        return new ConVarObserver<T>(convar, this);
     }
     
     public T? GetConfigValue<T>(ConVar<T> conVar)
@@ -251,21 +164,5 @@ public class ConfigurationService
     private static string GetFileName<T>(ConVar<T> conVar)
     {
         return $"{conVar.Name}.json";
-    }
-}
-
-public sealed class ConfigChangeSubscriberDisposable<T> : IDisposable
-{
-    private readonly ConVar<T> _convar;
-    private readonly ConfigurationService.OnConfigurationChangedDelegate<T> _delegate;
-
-    public ConfigChangeSubscriberDisposable(ConVar<T> convar, ConfigurationService.OnConfigurationChangedDelegate<T> @delegate)
-    {
-        _convar = convar;
-        _delegate = @delegate;
-    }
-    public void Dispose()
-    {
-        _convar.OnValueChanged -= _delegate;
     }
 }

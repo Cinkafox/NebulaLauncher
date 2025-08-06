@@ -3,16 +3,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Http;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
-using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Nebula.Launcher.Models.Auth;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views.Pages;
+using Nebula.Shared.Configurations;
 using Nebula.Shared.Models.Auth;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
@@ -33,7 +30,6 @@ public partial class AccountInfoViewModel : ViewModelBase
     [ObservableProperty] private string _currentPassword = string.Empty;
     [ObservableProperty] private bool _isLogged;
     [ObservableProperty] private bool _doRetryAuth;
-    [ObservableProperty] private AuthTokenCredentials? _credentials;
     [ObservableProperty] private AuthServerCredentials _authItemSelect;
 
     private bool _isProfilesEmpty;
@@ -45,15 +41,12 @@ public partial class AccountInfoViewModel : ViewModelBase
 
     public ObservableCollection<ProfileAuthCredentials> Accounts { get; } = new();
     public ObservableCollection<AuthServerCredentials> AuthUrls { get; } = new();
-    public string CurrentAuthServerName => GetServerAuthName(Credentials);
+    public string CurrentAuthServerName => GetServerAuthName(Credentials.Value);
+
+    public ComplexConVarBinder<AuthTokenCredentials?> Credentials;
 
     private ILogger _logger;
     
-    partial void OnCredentialsChanged(AuthTokenCredentials? value)
-    {
-        OnPropertyChanged(nameof(CurrentAuthServerName));
-    }
-
     //Design think
     protected override void InitialiseInDesignMode()
     {
@@ -62,41 +55,15 @@ public partial class AccountInfoViewModel : ViewModelBase
         AddAccount(new AuthTokenCredentials(Guid.Empty, LoginToken.Empty, "Binka", "example.com"));
         AddAccount(new AuthTokenCredentials(Guid.Empty, LoginToken.Empty, "Binka", ""));
     }
-
+    
     //Real think
     protected override void Initialise()
     {
         _logger = DebugService.GetLogger(this);
+        Credentials = new AuthTokenCredentialsVar(this);
         Task.Run(ReadAuthConfig);
     }
-
-    public async void AuthByProfile(ProfileAuthCredentials credentials)
-    {
-        var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
-        message.InfoText = LocalisationService.GetString("auth-try-auth-profile");
-        message.IsInfoClosable = false;
-        PopupMessageService.Popup(message);
-        
-        try
-        {
-            await CatchAuthError(async () => await TryAuth(credentials.Credentials), () => message.Dispose());
-        }
-        catch (Exception ex)
-        {
-            CurrentLogin = credentials.Credentials.Login;
-            CurrentAuthServer = credentials.Credentials.AuthServer;
-            
-            var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), ex);
-            _logger.Error(unexpectedError);
-            PopupMessageService.Popup(unexpectedError);
-            return;
-        }
-        
-        ConfigurationService.SetConfigValue(LauncherConVar.AuthCurrent, Credentials);
-        
-        message.Dispose();
-    }
-
+    
     public void DoAuth(string? code = null)
     {
         var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
@@ -114,52 +81,31 @@ public partial class AccountInfoViewModel : ViewModelBase
         Task.Run(async () =>
         {
             Exception? exception = null;
+            AuthTokenCredentials? credentials = null;
+            
             foreach (var server in serverCandidates)
             {
                 try
                 {
-                    await CatchAuthError(async () => await TryAuth(CurrentLogin, CurrentPassword, server, code), ()=> message.Dispose());
+                    credentials = await AuthService.Auth(CurrentLogin, CurrentPassword, server, code);        
                     break;
                 }
                 catch (Exception ex)
                 {
-                    var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), ex);
-                    _logger.Error(unexpectedError);
-                    PopupMessageService.Popup(unexpectedError);
+                    exception = new Exception(LocalisationService.GetString("auth-error"), ex);
                 }
             }
             
             message.Dispose();
 
-            if (!IsLogged)
+            if (credentials is null)
             {
                 PopupMessageService.Popup(exception ?? new Exception(LocalisationService.GetString("auth-error")));
+                return;
             }
+            
+            Credentials.Value = credentials;
         });
-    }
-
-    private async Task TryAuth(AuthTokenCredentials authTokenCredentials)
-    {
-        CurrentLogin = authTokenCredentials.Login;
-        CurrentAuthServer = authTokenCredentials.AuthServer;
-        await SetAuth(authTokenCredentials);
-        IsLogged = true;
-    }
-
-    private async Task SetAuth(AuthTokenCredentials authTokenCredentials)
-    {
-        await AuthService.EnsureToken(authTokenCredentials);
-        Credentials = authTokenCredentials;
-    }
-
-    private async Task TryAuth(string login, string password, string authServer, string? code)
-    {
-        Credentials = await AuthService.Auth(login, password, authServer, code);
-        CurrentLogin = login;
-        CurrentPassword = password;
-        CurrentAuthServer = authServer;
-        IsLogged = true;
-        ConfigurationService.SetConfigValue(LauncherConVar.AuthCurrent, Credentials);
     }
 
     private async Task CatchAuthError(Func<Task> a, Action? onError)
@@ -185,8 +131,18 @@ public partial class AccountInfoViewModel : ViewModelBase
                 case AuthenticateDenyCode.InvalidCredentials:
                     PopupError(LocalisationService.GetString("auth-invalid-credentials"), e);
                     break;
+                case AuthenticateDenyCode.AccountLocked:
+                    PopupError(LocalisationService.GetString("auth-account-locked"), e);
+                    break;
+                case AuthenticateDenyCode.AccountUnconfirmed:
+                    PopupError(LocalisationService.GetString("auth-account-unconfirmed"), e);
+                    break;
+                case AuthenticateDenyCode.None:
+                    PopupError(LocalisationService.GetString("auth-none"),e);
+                    break;
                 default:
-                    throw;
+                    PopupError(LocalisationService.GetString("auth-error-fuck"), e);
+                    break;
             }
         }
         catch (HttpRequestException e)
@@ -198,17 +154,41 @@ public partial class AccountInfoViewModel : ViewModelBase
                     PopupError(LocalisationService.GetString("auth-connection-error"), e);
                     DoRetryAuth = true;
                     break;
-
                 case HttpRequestError.NameResolutionError:
                     PopupError(LocalisationService.GetString("auth-name-resolution-error"), e);
                     DoRetryAuth = true;
                     break;
-                
                 case HttpRequestError.SecureConnectionError:
                     PopupError(LocalisationService.GetString("auth-secure-error"), e);
                     DoRetryAuth = true;
                     break;
-
+                case HttpRequestError.UserAuthenticationError:
+                    PopupError(LocalisationService.GetString("auth-user-authentication-error"), e);
+                    break;
+                case HttpRequestError.Unknown:
+                    PopupError(LocalisationService.GetString("auth-unknown"), e);
+                    break;
+                case HttpRequestError.HttpProtocolError:
+                    PopupError(LocalisationService.GetString("auth-http-protocol-error"), e);
+                    break;
+                case HttpRequestError.ExtendedConnectNotSupported:
+                    PopupError(LocalisationService.GetString("auth-extended-connect-not-support"), e);
+                    break;
+                case HttpRequestError.VersionNegotiationError:
+                    PopupError(LocalisationService.GetString("auth-version-negotiation-error"), e);
+                    break;
+                case HttpRequestError.ProxyTunnelError:
+                    PopupError(LocalisationService.GetString("auth-proxy-tunnel-error"), e);
+                    break;
+                case HttpRequestError.InvalidResponse:
+                    PopupError(LocalisationService.GetString("auth-invalid-response"), e);
+                    break;
+                case HttpRequestError.ResponseEnded:
+                    PopupError(LocalisationService.GetString("auth-response-ended"), e);
+                    break;
+                case HttpRequestError.ConfigurationLimitExceeded:
+                    PopupError(LocalisationService.GetString("auth-configuration-limit-exceeded"), e);
+                    break;
                 default:
                     var authError = new Exception(LocalisationService.GetString("auth-error"), e);
                     _logger.Error(authError);
@@ -225,8 +205,7 @@ public partial class AccountInfoViewModel : ViewModelBase
 
     public void Logout()
     {
-        IsLogged = false;
-        Credentials = null;
+        Credentials.Value = null;
         CurrentAuthServer = "";
     }
 
@@ -247,14 +226,13 @@ public partial class AccountInfoViewModel : ViewModelBase
     private void AddAccount(AuthTokenCredentials credentials)
     {
         var onDelete = new DelegateCommand<ProfileAuthCredentials>(OnDeleteProfile);
-        var onSelect = new DelegateCommand<ProfileAuthCredentials>(AuthByProfile);
+        var onSelect = new DelegateCommand<ProfileAuthCredentials>((p) => Credentials.Value = p.Credentials);
         
         var serverName = GetServerAuthName(credentials);
 
         var alpm = new ProfileAuthCredentials(
             credentials,
             serverName, 
-            ColorUtils.GetColorFromString(credentials.AuthServer),
             onSelect,
             onDelete);
 
@@ -264,62 +242,77 @@ public partial class AccountInfoViewModel : ViewModelBase
         Accounts.Add(alpm);
     }
 
-    private void ReadAuthConfig()
+    private async void ReadAuthConfig()
     {
         var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
         message.InfoText = LocalisationService.GetString("auth-config-read");
         message.IsInfoClosable = false;
         PopupMessageService.Popup(message);
         
+        _logger.Log("Reading auth config");
+        
         AuthUrls.Clear();
         var authUrls = ConfigurationService.GetConfigValue(LauncherConVar.AuthServers)!;
         foreach (var url in authUrls) AuthUrls.Add(url);
         if(authUrls.Length > 0) AuthItemSelect = authUrls[0];
         
+        var profileCandidates = new List<AuthTokenCredentials>();
+
         foreach (var profile in
                  ConfigurationService.GetConfigValue(LauncherConVar.AuthProfiles)!)
-            AddAccount(profile);
+        {
+            _logger.Log($"Reading profile {profile.Login}");
+            var checkedCredit = await CheckOrRenewToken(profile);
+            if(checkedCredit is null)
+            {
+                _logger.Error($"Profile {profile.Login} is not available");
+                continue;
+            }
+            
+            _logger.Log($"Profile {profile.Login} is available");
+            profileCandidates.Add(checkedCredit);
+            AddAccount(checkedCredit);
+        }
+        
+        ConfigurationService.SetConfigValue(LauncherConVar.AuthProfiles, profileCandidates.ToArray());
 
         if (Accounts.Count == 0) UpdateAuthMenu();
         
         message.Dispose();
-
-        DoCurrentAuth();
     }
 
-    public async void DoCurrentAuth()
+    public void DoCurrentAuth()
     {
-        var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
-        message.InfoText = LocalisationService.GetString("auth-try-auth-config");
-        message.IsInfoClosable = false;
-        PopupMessageService.Popup(message);
-
-        var currProfile = ConfigurationService.GetConfigValue(LauncherConVar.AuthCurrent);
-
-        if (currProfile != null)
-        {
-            try
-            {
-                await CatchAuthError(async () => await TryAuth(currProfile), () => message.Dispose());
-            }
-            catch (Exception ex)
-            {
-                var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), ex);
-                _logger.Error(unexpectedError);
-                PopupMessageService.Popup(unexpectedError);
-                return;
-            }
-        }
-
-        message.Dispose();
+        DoAuth();
     }
 
-    [RelayCommand]
-    private void OnSaveProfile()
+    private async Task<AuthTokenCredentials?> CheckOrRenewToken(AuthTokenCredentials? authTokenCredentials)
     {
-        if(Credentials is null) return;
+        if(authTokenCredentials is null) 
+            return null;
         
-        AddAccount(Credentials);
+        if (authTokenCredentials.Token.ExpireTime < DateTime.Now.AddDays(2)) 
+            return authTokenCredentials;
+        
+        try
+        {
+            _logger.Log($"Renewing token for {authTokenCredentials.Login}");
+            return await AuthService.Refresh(authTokenCredentials);
+        }
+        catch (Exception e)
+        {
+            var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), e);
+            _logger.Error(unexpectedError);
+            PopupMessageService.Popup(unexpectedError);
+            return null;
+        }
+    }
+    
+    public void OnSaveProfile()
+    {
+        if(Credentials.Value is null) return;
+        
+        AddAccount(Credentials.Value);
         _isProfilesEmpty = Accounts.Count == 0;
         UpdateAuthMenu();
         DirtyProfile();
@@ -343,15 +336,13 @@ public partial class AccountInfoViewModel : ViewModelBase
         messageView.IsInfoClosable = true;
         PopupMessageService.Popup(messageView);
     }
-
-    [RelayCommand]
-    private void OnExpandAuthUrl()
+    
+    public void OnExpandAuthUrl()
     {
         AuthUrlConfigExpand = !AuthUrlConfigExpand;
     }
-
-    [RelayCommand]
-    private void OnExpandAuthView()
+    
+    public void OnExpandAuthView()
     {
         AuthMenuExpand = !AuthMenuExpand;
         UpdateAuthMenu();
@@ -362,18 +353,65 @@ public partial class AccountInfoViewModel : ViewModelBase
         ConfigurationService.SetConfigValue(LauncherConVar.AuthProfiles,
             Accounts.Select(a => a.Credentials).ToArray());
     }
-}
-
-public static class ColorUtils
-{
-    public static Color GetColorFromString(string input)
+    
+    public sealed class AuthTokenCredentialsVar(AccountInfoViewModel accountInfoViewModel)
+        : ComplexConVarBinder<AuthTokenCredentials?>(
+            accountInfoViewModel.ConfigurationService.SubscribeVarChanged(LauncherConVar.AuthCurrent))
     {
-        var hash = MD5.HashData(Encoding.UTF8.GetBytes(input));
+        protected override async Task<AuthTokenCredentials?> OnValueChange(AuthTokenCredentials? currProfile)
+        {
+            if (currProfile is null)
+            {
+                accountInfoViewModel.IsLogged = false;
+                accountInfoViewModel._logger.Log("clearing credentials");
+                accountInfoViewModel.OnPropertyChanged(nameof(CurrentAuthServerName));
+                return null;
+            }
         
-        var r = byte.Clamp(hash[0], 10, 200);
-        var g = byte.Clamp(hash[1], 10, 100);
-        var b = byte.Clamp(hash[2], 10, 100);
+            var message = accountInfoViewModel.ViewHelperService.GetViewModel<InfoPopupViewModel>();
+            message.InfoText = LocalisationService.GetString("auth-try-auth-config");
+            message.IsInfoClosable = false;
+            accountInfoViewModel.PopupMessageService.Popup(message);
+      
+            accountInfoViewModel._logger.Log($"trying auth with {currProfile.Login}");
 
-        return Color.FromArgb(Byte.MaxValue, r, g, b);
+            var errorRun = false;
+
+            //currProfile = await CheckOrRenewToken(currProfile);
+            
+            try
+            {
+                await accountInfoViewModel.CatchAuthError(async () =>
+                {
+                    await accountInfoViewModel.AuthService.EnsureToken(currProfile);
+                }, () =>
+                {
+                    message.Dispose();
+                    errorRun = true;
+                });
+                message.Dispose();
+            }
+            catch (Exception ex)
+            {
+                accountInfoViewModel.CurrentLogin = currProfile.Login;
+                accountInfoViewModel.CurrentAuthServer = currProfile.AuthServer;
+                var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), ex);
+                accountInfoViewModel._logger.Error(unexpectedError);
+                accountInfoViewModel.PopupMessageService.Popup(unexpectedError);
+                errorRun = true;
+            }
+
+            if (errorRun)
+            {
+                accountInfoViewModel.IsLogged = false;
+                return null;
+            }
+        
+            accountInfoViewModel.IsLogged = true;
+            accountInfoViewModel.OnPropertyChanged(nameof(CurrentAuthServerName));
+
+            return currProfile;
+        }
     }
 }
+

@@ -41,12 +41,12 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _popup;
     [ObservableProperty] private ListItemTemplate? _selectedListItem;
 
-    public bool IsLoggedIn => AccountInfoViewModel.Credentials is not null;
+    public bool IsLoggedIn => AccountInfoViewModel.Credentials.Value is not null;
     
     public string LoginText => LocalisationService.GetString("auth-current-login-name", 
         new Dictionary<string, object>
     {
-        { "login", AccountInfoViewModel.Credentials?.Login ?? "" },
+        { "login", AccountInfoViewModel.Credentials.Value?.Login ?? "" },
         { "auth_server", AccountInfoViewModel.CurrentAuthServerName}
     });
 

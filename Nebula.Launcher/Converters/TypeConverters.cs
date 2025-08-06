@@ -2,6 +2,8 @@ using System;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Avalonia.Platform;
+using Nebula.Launcher.ViewModels.Pages;
+using Color = System.Drawing.Color;
 
 namespace Nebula.Launcher.Converters;
 
@@ -20,4 +22,7 @@ public static class TypeConverters
             if (iconKey == null) return null;
             return new Avalonia.Media.Imaging.Bitmap(AssetLoader.Open(new Uri($"avares://Nebula.Launcher/Assets/error_presentation/{iconKey}.png")));
         });
+
+    public static FuncValueConverter<string, Avalonia.Media.Color> NameColorRepresentation { get; } =
+        new(ColorUtils.GetColorFromString);
 }

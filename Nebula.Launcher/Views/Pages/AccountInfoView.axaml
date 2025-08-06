@@ -10,7 +10,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:pages="clr-namespace:Nebula.Launcher.ViewModels.Pages"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:auth="clr-namespace:Nebula.Launcher.Models.Auth">
+    xmlns:auth="clr-namespace:Nebula.Launcher.Models.Auth"
+    xmlns:converters="clr-namespace:Nebula.Launcher.Converters">
     <Design.DataContext>
         <pages:AccountInfoViewModel />
     </Design.DataContext>
@@ -46,7 +47,8 @@
                                     Margin="5,5,5,0">
                                     <Border.Background>
                                         <LinearGradientBrush EndPoint="100%,50%" StartPoint="20%,50%">
-                                            <GradientStop Color="{Binding Color}" Offset="0.0" />
+                                            <GradientStop Color="{Binding Credentials.AuthServer, 
+                                            Converter={x:Static converters:TypeConverters.NameColorRepresentation}}" Offset="0.0" />
                                             <GradientStop Color="#222222" Offset="1.0" />
                                         </LinearGradientBrush>
                                     </Border.Background>
@@ -138,7 +140,7 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <customControls:LocalizedLabel VerticalAlignment="Center" LocalId="account-auth-server"/>
-                                <Button Command="{Binding ExpandAuthUrlCommand}" VerticalAlignment="Stretch">
+                                <Button Command="{Binding OnExpandAuthUrl}" VerticalAlignment="Stretch">
                                     <Label>+</Label>
                                 </Button>
                             </StackPanel>
@@ -173,7 +175,7 @@
                                 <customControls:LocalizedLabel LocalId="account-auth-button"/>
                             </Button>
                         </Border>
-                        <Button Command="{Binding ExpandAuthViewCommand}" HorizontalAlignment="Right">
+                        <Button Command="{Binding OnExpandAuthView}" HorizontalAlignment="Right">
                             <Label>
                                 >
                             </Label>
@@ -208,7 +210,7 @@
                                 </Button>
                             </Border>
                             <Border BoxShadow="{StaticResource DefaultShadow}">
-                                <Button Command="{Binding SaveProfileCommand}">
+                                <Button Command="{Binding OnSaveProfile}">
                                     <customControls:LocalizedLabel LocalId="account-auth-save"/>
                                 </Button>
                             </Border>

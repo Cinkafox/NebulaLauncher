@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Nebula.Shared.Configurations;
 using Nebula.Shared.Services;
 
 namespace Nebula.UnitTest.NebulaSharedTests;

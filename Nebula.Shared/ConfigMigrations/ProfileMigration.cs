@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Nebula.Shared.Configurations.Migrations;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 

@@ -174,7 +174,7 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
 
     private async Task RunInstanceAsync(bool ignoreLoginCredentials = false)
     {
-        if (!ignoreLoginCredentials && AccountInfoViewModel.Credentials is null)
+        if (!ignoreLoginCredentials && AccountInfoViewModel.Credentials.Value is null)
         {
             var warningContext = ViewHelperService.GetViewModel<IsLoginCredentialsNullPopupViewModel>()
                 .WithServerEntry(this);

@@ -15,6 +15,7 @@ using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views.Pages;
 using Nebula.Shared;
+using Nebula.Shared.Configurations;
 using Nebula.Shared.Services;
 using Nebula.Shared.ViewHelper;
 

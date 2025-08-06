@@ -35,7 +35,7 @@ public sealed class GameProcessStartInfoProvider(DotnetResolverService resolverS
     {
         var baseStart = await base.GetProcessStartInfo();
         
-        var authProv = accountInfoViewModel.Credentials;
+        var authProv = accountInfoViewModel.Credentials.Value;
         if(authProv is null) 
             throw new Exception("Client is without selected auth");
 

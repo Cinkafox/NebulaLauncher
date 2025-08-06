@@ -8,6 +8,5 @@ namespace Nebula.Launcher.Models.Auth;
 public sealed record ProfileAuthCredentials(
     AuthTokenCredentials Credentials, 
     string AuthName,
-    Color Color,
     [property: JsonIgnore] ICommand OnSelect = default!,
     [property: JsonIgnore] ICommand OnDelete = default!);
