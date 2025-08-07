@@ -1,7 +1,10 @@
+using System;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Nebula.Shared.Configurations;
 
-namespace Nebula.Shared.Configurations;
+namespace Nebula.Launcher.Configurations;
 
 public abstract class ComplexConVarBinder<T> : INotifyPropertyChanged, INotifyPropertyChanging
 {
@@ -21,6 +24,17 @@ public abstract class ComplexConVarBinder<T> : INotifyPropertyChanged, INotifyPr
         set
         {
             _ = SetValueAsync(value);
+        }
+    }
+    
+    public bool HasValue
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _baseConVar.HasValue;
+            }
         }
     }
 
@@ -55,11 +69,13 @@ public abstract class ComplexConVarBinder<T> : INotifyPropertyChanged, INotifyPr
 
     private void BaseConVarOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasValue)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
     }
     
     private void BaseConVarOnPropertyChanging(object? sender, PropertyChangingEventArgs e)
     {
+        PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(nameof(HasValue)));
         PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(nameof(Value)));
     }
     

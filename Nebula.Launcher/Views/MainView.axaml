@@ -133,8 +133,9 @@
                                         Path="/Assets/svg/user.svg"
                                         Width="10" />
                                     <Panel>
-                                        <TextBlock Foreground="#777777" IsVisible="{Binding IsLoggedIn}" Text="{Binding LoginText}"/>
-                                        <TextBlock Foreground="#777777" IsVisible="{Binding !IsLoggedIn}" Text="{services:LocaledText auth-current-login-no-name}"/>
+                                        <TextBlock 
+                                            Foreground="#777777" 
+                                            Text="{Binding LoginText}"/>
                                     </Panel>
                                 </StackPanel>
                             </Button>

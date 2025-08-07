@@ -40,16 +40,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _isPopupClosable = true;
     [ObservableProperty] private bool _popup;
     [ObservableProperty] private ListItemTemplate? _selectedListItem;
-
-    public bool IsLoggedIn => AccountInfoViewModel.Credentials.Value is not null;
+    [ObservableProperty] private string? _loginText = LocalisationService.GetString("auth-current-login-no-name");
     
-    public string LoginText => LocalisationService.GetString("auth-current-login-name", 
-        new Dictionary<string, object>
-    {
-        { "login", AccountInfoViewModel.Credentials.Value?.Login ?? "" },
-        { "auth_server", AccountInfoViewModel.CurrentAuthServerName}
-    });
-
     [GenerateProperty] private LocalisationService LocalisationService { get; } // Не убирать! Без этой хуйни вся локализация идет в пизду!
     [GenerateProperty] private AccountInfoViewModel AccountInfoViewModel { get; }
     [GenerateProperty] private DebugService DebugService { get; } = default!;
@@ -74,15 +66,29 @@ public partial class MainViewModel : ViewModelBase
 
     protected override void Initialise()
     {
-        AccountInfoViewModel.PropertyChanged += (sender, args) =>
+        AccountInfoViewModel.Credentials.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName != nameof(AccountInfoViewModel.Credentials)) 
-                return;
+            if (args.PropertyName is not nameof(AccountInfoViewModel.Credentials.Value)) return;
             
-            OnPropertyChanged(nameof(LoginText));
-            OnPropertyChanged(nameof(IsLoggedIn));
+            if(AccountInfoViewModel.Credentials.HasValue)
+            {
+                LoginText =
+                    LocalisationService.GetString("auth-current-login-name",
+                        new Dictionary<string, object>
+                        {
+                            { "login", AccountInfoViewModel.Credentials.Value?.Login ?? "" },
+                            {
+                                "auth_server",
+                                AccountInfoViewModel.GetServerAuthName(AccountInfoViewModel.Credentials.Value) ?? ""
+                            }
+                        });
+            }
+            else
+            {
+                LoginText =  LocalisationService.GetString("auth-current-login-no-name");
+            }
         };
-        
+
         _logger = DebugService.GetLogger(this);
 
         using var stream = typeof(MainViewModel).Assembly

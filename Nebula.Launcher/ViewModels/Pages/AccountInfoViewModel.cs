@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Nebula.Launcher.Configurations;
 using Nebula.Launcher.Models.Auth;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Popup;
@@ -41,9 +42,8 @@ public partial class AccountInfoViewModel : ViewModelBase
 
     public ObservableCollection<ProfileAuthCredentials> Accounts { get; } = new();
     public ObservableCollection<AuthServerCredentials> AuthUrls { get; } = new();
-    public string CurrentAuthServerName => GetServerAuthName(Credentials.Value);
 
-    public ComplexConVarBinder<AuthTokenCredentials?> Credentials;
+    public ComplexConVarBinder<AuthTokenCredentials?> Credentials { get; private set; }
 
     private ILogger _logger;
     
@@ -303,8 +303,8 @@ public partial class AccountInfoViewModel : ViewModelBase
         {
             var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), e);
             _logger.Error(unexpectedError);
-            PopupMessageService.Popup(unexpectedError);
-            return null;
+            //PopupMessageService.Popup(unexpectedError);
+            return authTokenCredentials;
         }
     }
     
@@ -364,7 +364,6 @@ public partial class AccountInfoViewModel : ViewModelBase
             {
                 accountInfoViewModel.IsLogged = false;
                 accountInfoViewModel._logger.Log("clearing credentials");
-                accountInfoViewModel.OnPropertyChanged(nameof(CurrentAuthServerName));
                 return null;
             }
         
@@ -408,8 +407,7 @@ public partial class AccountInfoViewModel : ViewModelBase
             }
         
             accountInfoViewModel.IsLogged = true;
-            accountInfoViewModel.OnPropertyChanged(nameof(CurrentAuthServerName));
-
+            
             return currProfile;
         }
     }

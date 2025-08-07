@@ -68,12 +68,16 @@ public partial class LocalisationService
 public class LocaledText : MarkupExtension
 {
     public string Key { get; set; } 
+    public Dictionary<string, object>? Options { get; set; }
 
     public LocaledText(string key) => Key = key;
 
+    public LocaledText()
+    {
+    }
+
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
-        // Fetch the localized string using the key
-        return LocalisationService.GetString(Key);
+        return LocalisationService.GetString(Key, Options);
     }
 }

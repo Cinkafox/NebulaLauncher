@@ -191,11 +191,11 @@
                             <StackPanel>
                                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="5">
                                     <customControls:LocalizedLabel LocalId="account-auth-hello"/>
-                                    <TextBlock Text="{Binding CurrentLogin}" />
+                                    <TextBlock Text="{Binding Credentials.Value.Login}" />
                                 </StackPanel>
                                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="5">
                                     <customControls:LocalizedLabel LocalId="account-auth-current-server"/>
-                                    <TextBlock Text="{Binding CurrentAuthServerName}" />
+                                    <TextBlock Text="{Binding Credentials.Value.AuthServer}" />
                                 </StackPanel>
                             </StackPanel>
                         </Label>

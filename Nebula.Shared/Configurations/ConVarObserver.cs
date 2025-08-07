@@ -12,6 +12,8 @@ public sealed class ConVarObserver<T> : IDisposable, INotifyPropertyChanged, INo
     private T? _value;
     private ConfigurationService.OnConfigurationChangedDelegate<T> _delegate;
 
+    public bool HasValue => Value != null;
+
     public T? Value
     {
         get => _value; 
@@ -31,6 +33,7 @@ public sealed class ConVarObserver<T> : IDisposable, INotifyPropertyChanged, INo
     private void OnValueChanged(T? value)
     {
         OnPropertyChanging(nameof(Value));
+        OnPropertyChanging(nameof(HasValue));
         
         if(value is null && _value is null)
             return;
@@ -39,16 +42,12 @@ public sealed class ConVarObserver<T> : IDisposable, INotifyPropertyChanged, INo
         
         _value = value;
         OnPropertyChanged(nameof(Value));
+        OnPropertyChanged(nameof(HasValue));
     }
 
     public void Dispose()
     {
         _convar.OnValueChanged -= OnValueChanged;
-    }
-
-    public bool HasValue()
-    {
-        return Value != null;
     }
     
     public static implicit operator T? (ConVarObserver<T> convar) => convar.Value;
