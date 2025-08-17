@@ -32,20 +32,6 @@ public class RestService
         var response = await _client.GetAsync(uri, cancellationToken);
         return await ReadResult<T>(response, cancellationToken, uri);
     }
-
-    [Pure]
-    public async Task<T> GetAsyncDefault<T>(Uri uri, T defaultValue, CancellationToken cancellationToken) where T : notnull
-    {
-        try
-        {
-            return await GetAsync<T>(uri, cancellationToken);
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e);
-            return defaultValue;
-        }
-    }
     
     public async Task<K> PostAsync<K, T>(T information, Uri uri, CancellationToken cancellationToken) where K : notnull
     {
@@ -70,6 +56,20 @@ public class RestService
     {
         var response = await _client.DeleteAsync(uri, cancellationToken);
         return await ReadResult<T>(response, cancellationToken, uri);
+    }
+    
+    [Pure]
+    public async Task<T> GetAsyncDefault<T>(Uri uri, T defaultValue, CancellationToken cancellationToken) where T : notnull
+    {
+        try
+        {
+            return await GetAsync<T>(uri, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            _logger.Error(e);
+            return defaultValue;
+        }
     }
 
     [Pure]

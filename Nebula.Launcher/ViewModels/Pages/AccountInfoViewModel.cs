@@ -62,6 +62,7 @@ public partial class AccountInfoViewModel : ViewModelBase
         _logger = DebugService.GetLogger(this);
         Credentials = new AuthTokenCredentialsVar(this);
         Task.Run(ReadAuthConfig);
+        Credentials.Value = Credentials.Value;
     }
     
     public void DoAuth(string? code = null)
@@ -81,13 +82,15 @@ public partial class AccountInfoViewModel : ViewModelBase
         Task.Run(async () =>
         {
             Exception? exception = null;
-            AuthTokenCredentials? credentials = null;
             
             foreach (var server in serverCandidates)
             {
                 try
                 {
-                    credentials = await AuthService.Auth(CurrentLogin, CurrentPassword, server, code);        
+                    await CatchAuthError(async() =>
+                    {
+                        Credentials.Value = await AuthService.Auth(CurrentLogin, CurrentPassword, server, code);
+                    }, ()=> message.Dispose());        
                     break;
                 }
                 catch (Exception ex)
@@ -98,13 +101,10 @@ public partial class AccountInfoViewModel : ViewModelBase
             
             message.Dispose();
 
-            if (credentials is null)
+            if (exception != null)
             {
-                PopupMessageService.Popup(exception ?? new Exception(LocalisationService.GetString("auth-error")));
-                return;
+                PopupMessageService.Popup(new Exception("Error while auth", exception));
             }
-            
-            Credentials.Value = credentials;
         });
     }
 
@@ -124,7 +124,6 @@ public partial class AccountInfoViewModel : ViewModelBase
                 case AuthenticateDenyCode.TfaRequired:
                 case AuthenticateDenyCode.TfaInvalid:
                     var p = ViewHelperService.GetViewModel<TfaViewModel>();
-                    p.OnTfaEntered += OnTfaEntered;
                     PopupMessageService.Popup(p);
                     _logger.Log("TFA required");
                     break;
@@ -242,7 +241,7 @@ public partial class AccountInfoViewModel : ViewModelBase
         Accounts.Add(alpm);
     }
 
-    private async void ReadAuthConfig()
+    private async Task ReadAuthConfig()
     {
         var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
         message.InfoText = LocalisationService.GetString("auth-config-read");
@@ -290,20 +289,27 @@ public partial class AccountInfoViewModel : ViewModelBase
     {
         if(authTokenCredentials is null) 
             return null;
+
+        var daysLeft = (int)(authTokenCredentials.Token.ExpireTime - DateTime.Now).TotalDays;
         
-        if (authTokenCredentials.Token.ExpireTime < DateTime.Now.AddDays(2)) 
+        if(daysLeft >= 4)
+        {
+            _logger.Log("Token " + authTokenCredentials.Login + " is active, "+daysLeft+" days left, undo renewing!");
             return authTokenCredentials;
+        }
         
         try
         {
             _logger.Log($"Renewing token for {authTokenCredentials.Login}");
-            return await AuthService.Refresh(authTokenCredentials);
+            return await ExceptionHelper.TryRun(() => AuthService.Refresh(authTokenCredentials),3, (attempt, e) =>
+            {
+                _logger.Error(new Exception("Error while renewing, attempts: " + attempt, e));
+            });
         }
         catch (Exception e)
         {
             var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), e);
             _logger.Error(unexpectedError);
-            //PopupMessageService.Popup(unexpectedError);
             return authTokenCredentials;
         }
     }
@@ -376,7 +382,19 @@ public partial class AccountInfoViewModel : ViewModelBase
 
             var errorRun = false;
 
-            //currProfile = await CheckOrRenewToken(currProfile);
+            currProfile = await accountInfoViewModel.CheckOrRenewToken(currProfile);
+
+            if (currProfile is null)
+            {
+                message.Dispose();
+                
+                accountInfoViewModel._logger.Log("profile credentials update required!");
+                
+                accountInfoViewModel.PopupMessageService.Popup("profile credentials update required!");
+                
+                accountInfoViewModel.IsLogged = false;
+                return null;
+            }
             
             try
             {

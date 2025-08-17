@@ -74,6 +74,19 @@ public sealed record AuthDenyError(string[] Errors, AuthenticateDenyCode Code);
 public sealed class AuthException(AuthDenyError error) : Exception
 {
     public AuthDenyError Error { get; } = error;
+
+    public override string Message
+    {
+        get
+        {
+            var str = "Error while logging in. Please try again. " + Error.Code;
+            foreach (var error in Error.Errors)
+            {
+                str += "\n" + error;
+            }
+            return str;
+        }
+    }
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

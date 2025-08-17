@@ -12,6 +12,9 @@ public abstract class PopupViewModelBase : ViewModelBase, IDisposable
 
     public void Dispose()
     {
+        OnDispose();
         PopupMessageService.ClosePopup(this);
     }
+
+    protected virtual void OnDispose(){}
 }

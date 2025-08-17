@@ -1,5 +1,6 @@
 using System;
 using Nebula.Launcher.Services;
+using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.Views.Popup;
 using Nebula.Shared.Services;
 using Nebula.Shared.ViewHelper;
@@ -9,7 +10,10 @@ namespace Nebula.Launcher.ViewModels.Popup;
 [ConstructGenerator, ViewModelRegister(typeof(TfaView))]
 public partial class TfaViewModel : PopupViewModelBase
 {
-    public Action<string>? OnTfaEntered;
+    [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
+    [GenerateProperty] public AccountInfoViewModel AccountInfo { get; }
+    public override string Title => LocalisationService.GetString("popup-twofa");
+    public override bool IsClosable => true;
     
     protected override void InitialiseInDesignMode()
     {
@@ -21,11 +25,7 @@ public partial class TfaViewModel : PopupViewModelBase
 
     public void OnTfaEnter(string code)
     {
-        OnTfaEntered?.Invoke(code);
+        AccountInfo.DoAuth(code);
         Dispose();
     }
-
-    [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
-    public override string Title => LocalisationService.GetString("popup-twofa");
-    public override bool IsClosable => true;
 }
