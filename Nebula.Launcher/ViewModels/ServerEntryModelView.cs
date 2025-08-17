@@ -174,6 +174,7 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
 
     private async Task RunInstanceAsync(bool ignoreLoginCredentials = false)
     {
+        _logger.Log("Running instance..." + RealName);
         if (!ignoreLoginCredentials && AccountInfoViewModel.Credentials.Value is null)
         {
             var warningContext = ViewHelperService.GetViewModel<IsLoginCredentialsNullPopupViewModel>()
@@ -182,20 +183,31 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
             PopupMessageService.Popup(warningContext);
             return;
         }
-        
-        using var loadingContext = ViewHelperService.GetViewModel<LoadingContextViewModel>();
-        loadingContext.LoadingName = "Loading instance...";
-        ((ILoadingHandler)loadingContext).AppendJob();
 
-        PopupMessageService.Popup(loadingContext);
-        _currentInstance = 
-            await GameRunnerPreparer.GetGameProcessStartInfoProvider(Address, loadingContext, CancellationService.Token);
-            
-        _currentInstance.RegisterLogger(_currentContentLogConsumer);
-        _currentInstance.RegisterLogger(new DebugLoggerBridge(DebugService.GetLogger($"PROCESS_{Random.Shared.Next(65535)}")));
-        _currentInstance.OnProcessExited += OnProcessExited;
-        RunVisible = false;
-        _currentInstance.Start();
+        try
+        {
+            using var loadingContext = ViewHelperService.GetViewModel<LoadingContextViewModel>();
+            loadingContext.LoadingName = "Loading instance...";
+            ((ILoadingHandler)loadingContext).AppendJob();
+
+            PopupMessageService.Popup(loadingContext);
+            _currentInstance = 
+                await GameRunnerPreparer.GetGameProcessStartInfoProvider(Address, loadingContext, CancellationService.Token);
+            _logger.Log("Preparing instance...");
+            _currentInstance.RegisterLogger(_currentContentLogConsumer);
+            _currentInstance.RegisterLogger(new DebugLoggerBridge(DebugService.GetLogger($"PROCESS_{Random.Shared.Next(65535)}")));
+            _currentInstance.OnProcessExited += OnProcessExited;
+            RunVisible = false;
+            _currentInstance.Start();
+            _logger.Log("Starting instance..." + RealName);
+        }
+        catch (Exception e)
+        {
+            var error = new Exception("Error while attempt run instance", e);
+            _logger.Error(error);
+            PopupMessageService.Popup(error);
+            RunVisible = true;
+        }
     }
 
     private void OnProcessExited(ProcessRunHandler<GameProcessStartInfoProvider> obj)
