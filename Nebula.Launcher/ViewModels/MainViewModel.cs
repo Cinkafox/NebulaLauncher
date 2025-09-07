@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using Avalonia.Logging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nebula.Launcher.Models;
@@ -68,26 +69,12 @@ public partial class MainViewModel : ViewModelBase
     {
         AccountInfoViewModel.Credentials.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName is not nameof(AccountInfoViewModel.Credentials.Value)) return;
-            
-            if(AccountInfoViewModel.Credentials.HasValue)
-            {
-                LoginText =
-                    LocalisationService.GetString("auth-current-login-name",
-                        new Dictionary<string, object>
-                        {
-                            { "login", AccountInfoViewModel.Credentials.Value?.Login ?? "" },
-                            {
-                                "auth_server",
-                                AccountInfoViewModel.GetServerAuthName(AccountInfoViewModel.Credentials.Value) ?? ""
-                            }
-                        });
-            }
-            else
-            {
-                LoginText =  LocalisationService.GetString("auth-current-login-no-name");
-            }
+            if (args.PropertyName is not nameof(AccountInfoViewModel.Credentials.Value)) 
+                return;
+            UpdateCredentialsInfo();
         };
+
+        UpdateCredentialsInfo();
 
         _logger = DebugService.GetLogger(this);
 
@@ -113,6 +100,27 @@ public partial class MainViewModel : ViewModelBase
         {
             OnPopupRequired(LocalisationService.GetString("vcruntime-check-error"));
             Helper.OpenBrowser("https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170");
+        }
+    }
+
+    private void UpdateCredentialsInfo()
+    {
+        if(AccountInfoViewModel.Credentials.HasValue)
+        {
+            LoginText =
+                LocalisationService.GetString("auth-current-login-name",
+                    new Dictionary<string, object>
+                    {
+                        { "login", AccountInfoViewModel.Credentials.Value?.Login ?? "" },
+                        {
+                            "auth_server",
+                            AccountInfoViewModel.GetServerAuthName(AccountInfoViewModel.Credentials.Value) ?? ""
+                        }
+                    });
+        }
+        else
+        {
+            LoginText =  LocalisationService.GetString("auth-current-login-no-name");
         }
     }
 
