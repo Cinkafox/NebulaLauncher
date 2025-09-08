@@ -416,7 +416,20 @@ public abstract class BaseFolderContentEntry : ViewModelBase, IContentEntry
     private Dictionary<string, IContentEntry> _childs = [];
 
     public string IconPath => "/Assets/svg/folder.svg";
-    public IContentHolder Holder { get; private set; }
+    
+    private IContentHolder? _holder = null;
+    public IContentHolder Holder
+    {
+        get
+        {
+            if(_holder == null) 
+                throw new InvalidOperationException(
+                    GetType().Name + " was not initialised! Call Init(IContentHolder holder, string? name = null) before using it.");
+            
+            return _holder;
+        }
+    }
+
     public IContentEntry? Parent { get; set; }
     public string? Name { get; private set; }
     
@@ -432,7 +445,7 @@ public abstract class BaseFolderContentEntry : ViewModelBase, IContentEntry
     public void Init(IContentHolder holder, string? name = null)
     {
         Name = name;
-        Holder = holder;
+        _holder = holder;
     }
 
     public T AddChild<T>(T child) where T: IContentEntry

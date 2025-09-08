@@ -72,10 +72,6 @@ public class LocaledText : MarkupExtension
 
     public LocaledText(string key) => Key = key;
 
-    public LocaledText()
-    {
-    }
-
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
         return LocalisationService.GetString(Key, Options);

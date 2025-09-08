@@ -93,7 +93,8 @@ public static class MetricsEnabledPatcher
         var harmony = harmonyService.Instance.Harmony;
         
         var targetType = reflectionService.GetType("Robust.Shared.GameObjects.EntitySystemManager");
-        var targetMethod = targetType.GetProperty("MetricsEnabled").GetGetMethod();
+        var targetMethod = targetType.GetProperty("MetricsEnabled")?.GetGetMethod() ?? 
+                           throw new Exception("target method is null.. huh.. do we have patch a right think?");
         
         var prefix = typeof(MetricsEnabledPatcher).GetMethod(nameof(MetricsEnabledGetterPrefix),
             BindingFlags.Static | BindingFlags.NonPublic);
