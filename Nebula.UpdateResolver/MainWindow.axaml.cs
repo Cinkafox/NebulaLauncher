@@ -36,8 +36,9 @@ public partial class MainWindow : Window
             Console.WriteLine(messageOut);
             LogStr += messageOut + "\n";
         };
+        LogStandalone.Log("Starting up");
         if (!Design.IsDesignMode)
-            Task.Run(()=> Start());
+            _ = Start();
         else
             LogStandalone.Log("Debug information", 51);
     }
