@@ -114,7 +114,7 @@ public partial class MainViewModel : ViewModelBase
                         { "login", AccountInfoViewModel.Credentials.Value?.Login ?? "" },
                         {
                             "auth_server",
-                            AccountInfoViewModel.GetServerAuthName(AccountInfoViewModel.Credentials.Value) ?? ""
+                            AccountInfoViewModel.GetServerAuthName(AccountInfoViewModel.Credentials.Value?.AuthServer) ?? ""
                         }
                     });
         }

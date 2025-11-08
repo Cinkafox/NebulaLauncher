@@ -74,6 +74,7 @@ public sealed partial class HubServerListProvider : IServerListProvider
         catch (Exception e)
         {
             _errors.Add(new Exception($"Some error while loading server list from {HubUrl}. See inner exception", e));
+            _errors.Add(e);
         }
         
         IsLoaded = true;

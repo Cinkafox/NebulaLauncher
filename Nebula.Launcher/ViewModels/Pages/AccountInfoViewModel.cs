@@ -34,13 +34,13 @@ public partial class AccountInfoViewModel : ViewModelBase
     [ObservableProperty] private AuthServerCredentials _authItemSelect;
 
     private bool _isProfilesEmpty;
-    [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
-    [GenerateProperty] private ConfigurationService ConfigurationService { get; } = default!;
+    [GenerateProperty] private PopupMessageService PopupMessageService { get; }
+    [GenerateProperty] private ConfigurationService ConfigurationService { get; } 
     [GenerateProperty] private DebugService DebugService { get; }
-    [GenerateProperty] private AuthService AuthService { get; } = default!;
-    [GenerateProperty, DesignConstruct] private ViewHelperService ViewHelperService { get; } = default!;
+    [GenerateProperty] private AuthService AuthService { get; } 
+    [GenerateProperty, DesignConstruct] private ViewHelperService ViewHelperService { get; } 
 
-    public ObservableCollection<ProfileAuthCredentials> Accounts { get; } = new();
+    public ObservableCollection<ProfileEntry> Accounts { get; } = new();
     public ObservableCollection<AuthServerCredentials> AuthUrls { get; } = new();
 
     public ComplexConVarBinder<AuthTokenCredentials?> Credentials { get; private set; }
@@ -50,10 +50,10 @@ public partial class AccountInfoViewModel : ViewModelBase
     //Design think
     protected override void InitialiseInDesignMode()
     {
-        AuthUrls.Add(new AuthServerCredentials("Test",["example.com"]));
+        AuthUrls.Add(new AuthServerCredentials("Test",["example.com","variant.lab"]));
         
-        AddAccount(new AuthTokenCredentials(Guid.Empty, LoginToken.Empty, "Binka", "example.com"));
-        AddAccount(new AuthTokenCredentials(Guid.Empty, LoginToken.Empty, "Binka", ""));
+        AddAccount(new ProfileAuthCredentials("Binka", "","example.com"));
+        AddAccount(new ProfileAuthCredentials("Vilka","", "variant.lab"));
     }
     
     //Real think
@@ -197,21 +197,16 @@ public partial class AccountInfoViewModel : ViewModelBase
         }
     }
 
-    private void OnTfaEntered(string code)
-    {
-        DoAuth(code);
-    }
-
     public void Logout()
     {
         Credentials.Value = null;
         CurrentAuthServer = "";
     }
 
-    public string GetServerAuthName(AuthTokenCredentials? credentials)
+    public string GetServerAuthName(string? url)
     {
-        if (credentials is null) return "";
-        return AuthUrls.FirstOrDefault(p => p.Servers.Contains(credentials.AuthServer))?.Name ?? "CustomAuth";
+        if (url is null) return "";
+        return AuthUrls.FirstOrDefault(p => p.Servers.Contains(url))?.Name ?? "CustomAuth";
     }
 
     private void UpdateAuthMenu()
@@ -222,14 +217,20 @@ public partial class AccountInfoViewModel : ViewModelBase
             AuthViewSpan = 1;
     }
 
-    private void AddAccount(AuthTokenCredentials credentials)
+    private void AddAccount(ProfileAuthCredentials credentials)
     {
-        var onDelete = new DelegateCommand<ProfileAuthCredentials>(OnDeleteProfile);
-        var onSelect = new DelegateCommand<ProfileAuthCredentials>((p) => Credentials.Value = p.Credentials);
+        var onDelete = new DelegateCommand<ProfileEntry>(OnDeleteProfile);
+        var onSelect = new DelegateCommand<ProfileEntry>((p) =>
+        {
+            CurrentLogin = p.Credentials.Login;
+            CurrentPassword = p.Credentials.Password;
+            CurrentAuthServer = p.Credentials.AuthServer;
+            DoAuth();
+        });
         
-        var serverName = GetServerAuthName(credentials);
+        var serverName = GetServerAuthName(credentials.AuthServer);
 
-        var alpm = new ProfileAuthCredentials(
+        var alpm = new ProfileEntry(
             credentials,
             serverName, 
             onSelect,
@@ -255,22 +256,28 @@ public partial class AccountInfoViewModel : ViewModelBase
         foreach (var url in authUrls) AuthUrls.Add(url);
         if(authUrls.Length > 0) AuthItemSelect = authUrls[0];
         
-        var profileCandidates = new List<AuthTokenCredentials>();
+        var profileCandidates = new List<string>();
 
-        foreach (var profile in
+        foreach (var profileRaw in
                  ConfigurationService.GetConfigValue(LauncherConVar.AuthProfiles)!)
         {
-            _logger.Log($"Reading profile {profile.Login}");
-            var checkedCredit = await CheckOrRenewToken(profile);
-            if(checkedCredit is null)
+            _logger.Log($"Decrypting profile...");
+            try
             {
-                _logger.Error($"Profile {profile.Login} is not available");
-                continue;
-            }
+                var decoded =
+                    await CryptographicStore.Decrypt<ProfileAuthCredentials>(profileRaw,
+                        CryptographicStore.GetComputerKey());
             
-            _logger.Log($"Profile {profile.Login} is available");
-            profileCandidates.Add(checkedCredit);
-            AddAccount(checkedCredit);
+                _logger.Log($"Decrypted profile: {decoded.Login}");
+            
+                profileCandidates.Add(profileRaw);
+                AddAccount(decoded);
+            }
+            catch (Exception e)
+            {
+                _logger.Error("Error while decrypting profile");
+                _logger.Error(e);
+            }
         }
         
         ConfigurationService.SetConfigValue(LauncherConVar.AuthProfiles, profileCandidates.ToArray());
@@ -297,14 +304,17 @@ public partial class AccountInfoViewModel : ViewModelBase
             _logger.Log("Token " + authTokenCredentials.Login + " is active, "+daysLeft+" days left, undo renewing!");
             return authTokenCredentials;
         }
-        
+
         try
         {
             _logger.Log($"Renewing token for {authTokenCredentials.Login}");
-            return await ExceptionHelper.TryRun(() => AuthService.Refresh(authTokenCredentials),3, (attempt, e) =>
-            {
-                _logger.Error(new Exception("Error while renewing, attempts: " + attempt, e));
-            });
+            return await ExceptionHelper.TryRun(() => AuthService.Refresh(authTokenCredentials), 3,
+                (attempt, e) => { _logger.Error(new Exception("Error while renewing, attempts: " + attempt, e)); });
+        }
+        catch (AuthTokenExpiredException e)
+        {
+            _logger.Error(e);
+            return null;
         }
         catch (Exception e)
         {
@@ -316,15 +326,16 @@ public partial class AccountInfoViewModel : ViewModelBase
     
     public void OnSaveProfile()
     {
-        if(Credentials.Value is null) return;
+        if(Credentials.Value is null || 
+           string.IsNullOrEmpty(CurrentPassword)) return;
         
-        AddAccount(Credentials.Value);
+        AddAccount(new ProfileAuthCredentials(CurrentLogin, CurrentPassword, Credentials.Value.AuthServer));
         _isProfilesEmpty = Accounts.Count == 0;
         UpdateAuthMenu();
         DirtyProfile();
     }
 
-    private void OnDeleteProfile(ProfileAuthCredentials account)
+    private void OnDeleteProfile(ProfileEntry account)
     {
         Accounts.Remove(account);
         _isProfilesEmpty = Accounts.Count == 0;
@@ -357,7 +368,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     private void DirtyProfile()
     {
         ConfigurationService.SetConfigValue(LauncherConVar.AuthProfiles,
-            Accounts.Select(a => a.Credentials).ToArray());
+            Accounts.Select(a => CryptographicStore.Encrypt(a.Credentials, CryptographicStore.GetComputerKey())).ToArray());
     }
     
     public sealed class AuthTokenCredentialsVar(AccountInfoViewModel accountInfoViewModel)

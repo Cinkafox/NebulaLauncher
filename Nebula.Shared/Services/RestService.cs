@@ -29,7 +29,12 @@ public class RestService
     [Pure]
     public async Task<T> GetAsync<T>(Uri uri, CancellationToken cancellationToken) where T : notnull
     {
-        var response = await _client.GetAsync(uri, cancellationToken);
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, uri)
+        {
+            Version = HttpVersion.Version10,
+        };
+        
+        var response = await _client.SendAsync(httpRequestMessage, cancellationToken).ConfigureAwait(false);
         return await ReadResult<T>(response, cancellationToken, uri);
     }
     
@@ -85,10 +90,15 @@ public class RestService
         
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.AsJson<T>();
+            var data = await response.Content.AsJson<T>();
+            response.Dispose();
+            return data;
         }
+
+        var ex = new RestRequestException(response.Content, response.StatusCode,
+            $"Error while processing {uri.ToString()}: {response.ReasonPhrase}");
         
-        throw new RestRequestException(response.Content, response.StatusCode, $"Error while processing {uri.ToString()}: {response.ReasonPhrase}");
+        throw ex;
     }
 }
 
@@ -96,8 +106,13 @@ public sealed class NullResponse
 {
 }
 
-public sealed class RestRequestException(HttpContent content, HttpStatusCode statusCode, string message) : Exception(message)
+public sealed class RestRequestException(HttpContent content, HttpStatusCode statusCode, string message) : Exception(message), IDisposable
 {
     public HttpStatusCode StatusCode { get; } = statusCode;
     public HttpContent Content { get; } = content;
+
+    public void Dispose()
+    {
+        Content.Dispose();
+    }
 }

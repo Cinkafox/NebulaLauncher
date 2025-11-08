@@ -38,6 +38,7 @@ public class AuthService(
             var err = await e.Content.AsJson<AuthDenyError>();
             
             if (err is null) throw;
+            e.Dispose();
             throw new AuthException(err);
         }
     }
@@ -60,14 +61,36 @@ public class AuthService(
     public async Task<AuthTokenCredentials> Refresh(AuthTokenCredentials tokenCredentials)
     {
         var authUrl = new Uri($"{tokenCredentials.AuthServer}api/auth/refresh");
-        var newToken = await restService.PostAsync<LoginToken, TokenRequest>(
-            TokenRequest.From(tokenCredentials), authUrl, cancellationService.Token);
-        
-        return tokenCredentials with { Token = newToken };
+        try
+        {
+            var newToken = await restService.PostAsync<LoginToken, TokenRequest>(
+                TokenRequest.From(tokenCredentials), authUrl, cancellationService.Token);
+
+            return tokenCredentials with { Token = newToken };
+        }
+        catch (RestRequestException e)
+        {
+            if (e.StatusCode == HttpStatusCode.Unauthorized)
+                throw new AuthTokenExpiredException(tokenCredentials);
+            
+            e.Dispose();
+            throw;
+        }
+    }
+}
+
+public sealed class AuthTokenExpiredException : Exception
+{
+    public AuthTokenExpiredException(AuthTokenCredentials credentials): base("Taken token is expired. Login: " + credentials.Login)
+    {
     }
 }
 
 public sealed record AuthTokenCredentials(Guid UserId, LoginToken Token, string Login, string AuthServer);
+public sealed record ProfileAuthCredentials(
+    string Login,
+    string Password,
+    string AuthServer);
 
 public sealed record AuthDenyError(string[] Errors, AuthenticateDenyCode Code);
 
@@ -108,5 +131,4 @@ public sealed record TokenRequest(string Token)
     }
     
     public static TokenRequest Empty { get; } = new TokenRequest("");
-    
 }

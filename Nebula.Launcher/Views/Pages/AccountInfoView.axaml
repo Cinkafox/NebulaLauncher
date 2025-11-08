@@ -39,7 +39,7 @@
                     ItemsSource="{Binding Accounts}"
                     Padding="0">
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type auth:ProfileAuthCredentials}">
+                        <DataTemplate DataType="{x:Type auth:ProfileEntry}">
                             <Grid ColumnDefinitions="4*,*">
                                 <Border 
                                     BoxShadow="0 1 15 -2 #121212"
@@ -209,7 +209,9 @@
                                     <customControls:LocalizedLabel LocalId="account-auth-logout"/>
                                 </Button>
                             </Border>
-                            <Border BoxShadow="{StaticResource DefaultShadow}">
+                            <Border BoxShadow="{StaticResource DefaultShadow}" 
+                                    IsVisible="{Binding CurrentPassword, 
+                                        Converter={x:Static converters:TypeConverters.StringIsNotEmpty}}">
                                 <Button Command="{Binding OnSaveProfile}">
                                     <customControls:LocalizedLabel LocalId="account-auth-save"/>
                                 </Button>

@@ -25,4 +25,7 @@ public static class TypeConverters
 
     public static FuncValueConverter<string, Avalonia.Media.Color> NameColorRepresentation { get; } =
         new((str)=>ColorUtils.GetColorFromString(str ?? throw new ArgumentNullException(nameof(str),"Name of color is null!")));
+    
+    public static FuncValueConverter<string, bool> StringIsNotEmpty { get; } =
+        new(iconKey => !string.IsNullOrEmpty(iconKey));
 }

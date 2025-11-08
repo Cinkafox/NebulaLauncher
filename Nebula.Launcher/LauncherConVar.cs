@@ -14,10 +14,11 @@ public static class LauncherConVar
     public static readonly ConVar<bool> DoMigration =
         ConVarBuilder.Build("migration.doMigrate", true);
     
-    public static readonly ConVar<AuthTokenCredentials[]> AuthProfiles =
-        ConVarBuilder.BuildWithMigration<AuthTokenCredentials[]>("auth.profiles.v3", 
+    public static readonly ConVar<string[]> AuthProfiles =
+        ConVarBuilder.BuildWithMigration<string[]>("auth.profiles.v4", 
             MigrationQueueBuilder.Instance
-                .With(new ProfileMigrationV2("auth.profiles.v2","auth.profiles.v3"))
+                .With(new ProfileMigrationV2("auth.profiles.v2","auth.profiles.v4"))
+                .With(new ProfileMigrationV3V4("auth.profiles.v3","auth.profiles.v4"))
                 .Build(), 
             []);
 
