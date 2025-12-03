@@ -10,7 +10,7 @@ public class CryptographicTest
     public async Task EncryptDecrypt()
     {
         var key = CryptographicStore.GetComputerKey();
-        Console.WriteLine($"Key: {key}");
+        Console.WriteLine($"Key: {Convert.ToBase64String(key)}");
         var entry = new TestEncryptEntry("Hello", "World");
         Console.WriteLine($"Raw data: {entry}");
         var encrypt = CryptographicStore.Encrypt(entry, key);
