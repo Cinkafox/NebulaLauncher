@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Nebula.Launcher.Services;
@@ -12,9 +11,13 @@ namespace Nebula.Launcher.ViewModels.Popup;
 
 [ViewModelRegister(typeof(LoadingContextView), false)]
 [ConstructGenerator]
-public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadingHandlerFactory
+public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadingHandlerFactory, IConnectionSpeedHandler
 {
     public ObservableCollection<LoadingContext> LoadingContexts { get;  } = [];
+    public ObservableCollection<double> Values { get; } = [];
+    [ObservableProperty] private string _speedText = "";
+    [ObservableProperty] private bool _showSpeed;
+    [ObservableProperty] private int _loadingColumnSize = 2;
     [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
     [GenerateProperty] public CancellationService CancellationService { get; }
 
@@ -29,6 +32,18 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
         if (!IsCancellable) return;
         CancellationService.Cancel();
         Dispose();
+    }
+
+    public void PasteSpeed(int speed)
+    {
+        if (Values.Count == 0)
+        {
+            ShowSpeed = true;
+            LoadingColumnSize = 1;
+        }
+        SpeedText = FileLoadingFormater.FormatBytes(speed) + " / s";
+        Values.Add(speed);
+        if(Values.Count > 10) Values.RemoveAt(0);
     }
 
     public ILoadingHandler CreateLoadingContext(ILoadingFormater? loadingFormater = null)
@@ -59,6 +74,11 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
         ctx1.SetJobsCount(1020120);
         ctx1.SetResolvedJobsCount(12331);
         ctx1.SetLoadingMessage("File data");
+        
+        for (var i = 0; i < 14; i++)
+        {
+            PasteSpeed(Random.Shared.Next(10000000));
+        }
     }
 }
 

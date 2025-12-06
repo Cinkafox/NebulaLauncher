@@ -189,22 +189,18 @@ public partial class ContentService
 
             foreach (var item in toDownload)
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    _logger.Log("Downloading cancelled!");
-                    decompressContext?.Dispose();
-                    compressContext?.Dispose();
-                    return;
-                }
+                cancellationToken.ThrowIfCancellationRequested();
+                
+                if (loadingHandlerFactory is IConnectionSpeedHandler speedHandler)
+                    speedHandler.PasteSpeed((int)bandwidthStream.CalcCurrentAvg());
 
                 // Read file header.
                 await stream.ReadExactAsync(fileHeader, cancellationToken);
 
                 var length = BinaryPrimitives.ReadInt32LittleEndian(fileHeader.AsSpan(0, 4));
-
-          
+                
                 var fileLoadingHandler = loadingHandlerFactory.CreateLoadingContext(new FileLoadingFormater());
-                fileLoadingHandler.SetLoadingMessage(item.Path);
+                fileLoadingHandler.SetLoadingMessage(item.Path.Split("/").Last());
 
                 var blockFileLoadHandle = length <= 100000;
                 

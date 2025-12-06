@@ -41,6 +41,11 @@ public interface ILoadingHandlerFactory
     public ILoadingHandler CreateLoadingContext(ILoadingFormater? loadingFormater = null);
 }
 
+public interface IConnectionSpeedHandler
+{
+    public void PasteSpeed(int speed);
+}
+
 public sealed class DefaultLoadingFormater : ILoadingFormater
 {
     public static DefaultLoadingFormater Instance = new DefaultLoadingFormater();

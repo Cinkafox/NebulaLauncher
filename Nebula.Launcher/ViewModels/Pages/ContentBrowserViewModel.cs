@@ -307,7 +307,7 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
         IsLoading = true;
         var loading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loading.LoadingName = "Loading entry";
-        var mainLoading = loading.CreateLoadingContext();
+        loading.CreateLoadingContext();
         PopupService.Popup(loading);
         ServerUrl = serverUrl;
 
