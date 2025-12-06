@@ -33,6 +33,7 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
     [GenerateProperty] private FileService FileService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupService { get; } = default!;
     [GenerateProperty] private IServiceProvider ServiceProvider { get; }
+    [GenerateProperty] private CancellationService CancellationService { get; set; } = default!;
     [GenerateProperty, DesignConstruct] private ViewHelperService ViewHelperService { get; } = default!;
 
 
@@ -57,7 +58,11 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
         loading.LoadingName = "Unpacking entry";
         PopupService.Popup(loading);
 
-        Task.Run(() => ContentService.Unpack(serverEntry.FileApi, myTempDir, loading));
+        Task.Run(() =>
+        {
+            ContentService.Unpack(serverEntry.FileApi, myTempDir, loading.CreateLoadingContext());
+            loading.Dispose();
+        });
         ExplorerHelper.OpenFolder(tmpDir);
     }
 
@@ -74,7 +79,7 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
         {
             var cur = ServiceProvider.GetService<ServerFolderContentEntry>()!;
             cur.Init(this, ServerText.ToRobustUrl());
-            var curContent = cur.Go(new ContentPath(SearchText));
+            var curContent = cur.Go(new ContentPath(SearchText), CancellationService.Token);
             if(curContent == null) 
                 throw new NullReferenceException($"{SearchText} not found in {ServerText}");
             
@@ -144,11 +149,11 @@ public interface IContentEntry
     public string IconPath { get; }
     public ContentPath FullPath => Parent?.FullPath.With(Name) ?? new ContentPath(Name);
     
-    public IContentEntry? Go(ContentPath path);
+    public IContentEntry? Go(ContentPath path, CancellationToken cancellationToken);
     
     public void GoCurrent()
     {
-        var entry = Go(ContentPath.Empty);
+        var entry = Go(ContentPath.Empty, CancellationToken.None);
         if(entry is not null) Holder.CurrentEntry = entry;
     }
     
@@ -178,7 +183,7 @@ public sealed class LazyContentEntry : IContentEntry
         _lazyEntry = entry;
         _lazyEntryInit = lazyEntryInit;
     }
-    public IContentEntry? Go(ContentPath path)
+    public IContentEntry? Go(ContentPath path, CancellationToken cancellationToken)
     {
         _lazyEntryInit?.Invoke();
         return _lazyEntry;
@@ -196,13 +201,13 @@ public sealed class ExtContentExecutor
         _decompilerService = decompilerService;
     }
 
-    public bool TryExecute(RobustManifestItem manifestItem)
+    public bool TryExecute(RobustManifestItem manifestItem, CancellationToken cancellationToken)
     {
         var ext = Path.GetExtension(manifestItem.Path);
 
         if (ext == ".dll")
         {
-            _decompilerService.OpenServerDecompiler(_root.ServerUrl);
+            _decompilerService.OpenServerDecompiler(_root.ServerUrl, cancellationToken);
             return true;
         }
 
@@ -231,9 +236,9 @@ public sealed partial class ManifestContentEntry : IContentEntry
         _extContentExecutor = executor;
     }
     
-    public IContentEntry? Go(ContentPath path)
+    public IContentEntry? Go(ContentPath path, CancellationToken cancellationToken)
     {
-        if (_extContentExecutor.TryExecute(_manifestItem)) 
+        if (_extContentExecutor.TryExecute(_manifestItem, cancellationToken)) 
             return null;
         
         var ext = Path.GetExtension(_manifestItem.Path);
@@ -319,7 +324,7 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
             {
                 CreateContent(new ContentPath(path), item);
             }
-
+            
             IsLoading = false;
             loading.Dispose();
         });
@@ -433,11 +438,11 @@ public abstract class BaseFolderContentEntry : ViewModelBase, IContentEntry
     public IContentEntry? Parent { get; set; }
     public string? Name { get; private set; }
     
-    public IContentEntry? Go(ContentPath path)
+    public IContentEntry? Go(ContentPath path, CancellationToken cancellationToken)
     {
         if (path.IsEmpty()) return this;
         if (_childs.TryGetValue(path.GetNext(), out var child)) 
-            return child.Go(path);
+            return child.Go(path, cancellationToken);
         
         return null;
     }

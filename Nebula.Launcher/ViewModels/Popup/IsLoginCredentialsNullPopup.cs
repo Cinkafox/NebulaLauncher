@@ -45,6 +45,6 @@ public partial class IsLoginCredentialsNullPopupViewModel : PopupViewModelBase
         Dispose();
     }
     
-    public override string Title => LocalisationService.GetString("popup-login-credentials-warning");
+    public override string Title => LocalizationService.GetString("popup-login-credentials-warning");
     public override bool IsClosable => true;
 }

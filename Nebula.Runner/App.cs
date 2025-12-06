@@ -49,7 +49,7 @@ public sealed class App(RunnerService runnerService, ContentService contentServi
             args.Add("--ss14-address");
             args.Add(url.ToString());
 
-            await runnerService.Run(args.ToArray(), buildInfo, this, new ConsoleLoadingHandler(), cancelTokenSource.Token);
+            await runnerService.Run(args.ToArray(), buildInfo, this, new ConsoleLoadingHandlerFactory(), cancelTokenSource.Token);
         }
         catch (Exception e)
         {

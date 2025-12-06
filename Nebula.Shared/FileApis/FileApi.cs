@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Nebula.Shared.FileApis.Interfaces;
+using Nebula.Shared.Models;
+using Nebula.Shared.Utils;
 
 namespace Nebula.Shared.FileApis;
 
@@ -31,7 +33,7 @@ public sealed class FileApi : IReadWriteFileApi
         return false;
     }
 
-    public bool Save(string path, Stream input)
+    public bool Save(string path, Stream input, ILoadingHandler? loadingHandler = null)
     {
         var currPath = Path.Join(RootPath, path);
 
@@ -41,6 +43,13 @@ public sealed class FileApi : IReadWriteFileApi
             if (!dirInfo.Exists) dirInfo.Create();
 
             using var stream = new FileStream(currPath, FileMode.Create, FileAccess.Write, FileShare.None);
+
+            if (loadingHandler != null)
+            {
+                input.CopyTo(stream, loadingHandler);
+                return true;
+            }
+            
             input.CopyTo(stream);
             return true;
         }

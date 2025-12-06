@@ -108,11 +108,13 @@ public sealed class EngineService
         return info != null;
     }
 
-    public async Task<AssemblyApi?> EnsureEngine(string version)
+    public async Task<AssemblyApi?> EnsureEngine(string version, ILoadingHandlerFactory loadingHandlerFactory, CancellationToken cancellationToken = default)
     {
         _logger.Log("Ensure engine " + version);
+        using var loadingHandler = loadingHandlerFactory.CreateLoadingContext(new FileLoadingFormater());
+        loadingHandler.SetLoadingMessage("Ensuring engine " + version);
 
-        if (!TryOpen(version)) await DownloadEngine(version);
+        if (!TryOpen(version)) await DownloadEngine(version, loadingHandler, cancellationToken);
 
         try
         {
@@ -128,15 +130,24 @@ public sealed class EngineService
         return null;
     }
 
-    public async Task DownloadEngine(string version)
+    public async Task DownloadEngine(string version, ILoadingHandler loadingHandler, CancellationToken cancellationToken = default)
     {
         if (!TryGetVersionInfo(version, out var info))
             return;
 
         _logger.Log("Downloading engine version " + version);
+        loadingHandler.SetLoadingMessage("Downloading engine version " + version);
+        loadingHandler.Clear();
+        
         using var client = new HttpClient();
-        var s = await client.GetStreamAsync(info.Url);
-        _engineFileApi.Save(version, s);
+        
+        var response = await client.GetAsync(info.Url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        loadingHandler.SetJobsCount(response.Content.Headers.ContentLength ?? 0);
+        
+        await using var streamContent = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var s = await client.GetStreamAsync(info.Url, cancellationToken);
+        _engineFileApi.Save(version, s, loadingHandler);
         await s.DisposeAsync();
     }
 
@@ -176,7 +187,7 @@ public sealed class EngineService
     {
         GetEngineInfo(out var modulesInfo, out var engineVersionInfo);
 
-        var engineVersionObj = Version.Parse(engineVersion);
+        var engineVersionObj = Version.Parse(engineVersion.Split("-")[0]);
         var module = modulesInfo.Modules[moduleName];
         var selectedVersion = module.Versions.Select(kv => new { Version = Version.Parse(kv.Key), kv.Key, kv })
             .Where(kv => engineVersionObj >= kv.Version)
@@ -187,15 +198,18 @@ public sealed class EngineService
         return selectedVersion.Key;
     }
 
-    public async Task<AssemblyApi?> EnsureEngineModules(string moduleName, string engineVersion)
+    public async Task<AssemblyApi?> EnsureEngineModules(string moduleName, ILoadingHandlerFactory loadingHandlerFactory, string engineVersion)
     {
         var moduleVersion = ResolveModuleVersion(moduleName, engineVersion);
         if (!TryGetModuleBuildInfo(moduleName, moduleVersion, out var buildInfo))
             return null;
 
         var fileName = ConcatName(moduleName, moduleVersion);
+        
+        using var loadingHandler = loadingHandlerFactory.CreateLoadingContext(new FileLoadingFormater());
+        loadingHandler.SetLoadingMessage("Ensuring engine module " + fileName);
 
-        if (!TryOpen(fileName)) await DownloadEngineModule(moduleName, moduleVersion);
+        if (!TryOpen(fileName)) await DownloadEngineModule(moduleName, loadingHandler, moduleVersion);
 
         try
         {
@@ -210,19 +224,20 @@ public sealed class EngineService
         }
     }
 
-    public async Task DownloadEngineModule(string moduleName, string moduleVersion)
+    public async Task DownloadEngineModule(string moduleName, ILoadingHandler loadingHandler, string moduleVersion)
     {
         if (!TryGetModuleBuildInfo(moduleName, moduleVersion, out var info))
             return;
 
         _logger.Log("Downloading engine module version " + moduleVersion);
+        loadingHandler.SetLoadingMessage("Downloading engine module version " + moduleVersion);
         using var client = new HttpClient();
         var s = await client.GetStreamAsync(info.Url);
-        _engineFileApi.Save(ConcatName(moduleName, moduleVersion), s);
+        _engineFileApi.Save(ConcatName(moduleName, moduleVersion), s, loadingHandler);
         await s.DisposeAsync();
     }
 
-    public string ConcatName(string moduleName, string moduleVersion)
+    private string ConcatName(string moduleName, string moduleVersion)
     {
         return moduleName + "" + moduleVersion;
     }

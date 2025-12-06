@@ -12,7 +12,7 @@ namespace Nebula.Launcher.ViewModels.Popup;
 public sealed partial class ExceptionListViewModel : PopupViewModelBase
 {
     [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
-    public override string Title => LocalisationService.GetString("popup-exception");
+    public override string Title => LocalizationService.GetString("popup-exception");
     public override bool IsClosable => true;
 
     public ObservableCollection<Exception> Errors { get; } = new();

@@ -29,10 +29,7 @@ public class RestService
     [Pure]
     public async Task<T> GetAsync<T>(Uri uri, CancellationToken cancellationToken) where T : notnull
     {
-        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, uri)
-        {
-            Version = HttpVersion.Version10,
-        };
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
         
         var response = await _client.SendAsync(httpRequestMessage, cancellationToken).ConfigureAwait(false);
         return await ReadResult<T>(response, cancellationToken, uri);

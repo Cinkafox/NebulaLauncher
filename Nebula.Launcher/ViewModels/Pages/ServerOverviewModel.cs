@@ -66,7 +66,7 @@ public partial class ServerOverviewModel : ViewModelBase
             tempItems.Add(new ServerListTabTemplate(ServiceProvider.GetService<HubServerListProvider>()!.With(record.MainUrl), record.Name));
         }
         
-        tempItems.Add(new ServerListTabTemplate(FavoriteServerListProvider, "Favorite"));
+        tempItems.Add(new ServerListTabTemplate(FavoriteServerListProvider, LocalizationService.GetString("tab-favorite")));
         
         Items = new ObservableCollection<ServerListTabTemplate>(tempItems);
         

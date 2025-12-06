@@ -32,6 +32,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     [ObservableProperty] private bool _isLogged;
     [ObservableProperty] private bool _doRetryAuth;
     [ObservableProperty] private AuthServerCredentials _authItemSelect;
+    [ObservableProperty] private string _authServerName;
 
     private bool _isProfilesEmpty;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; }
@@ -68,7 +69,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     public void DoAuth(string? code = null)
     {
         var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
-        message.InfoText = LocalisationService.GetString("auth-processing");
+        message.InfoText = LocalizationService.GetString("auth-processing");
         message.IsInfoClosable = false;
         PopupMessageService.Popup(message);
 
@@ -95,7 +96,7 @@ public partial class AccountInfoViewModel : ViewModelBase
                 }
                 catch (Exception ex)
                 {
-                    exception = new Exception(LocalisationService.GetString("auth-error"), ex);
+                    exception = new Exception(LocalizationService.GetString("auth-error"), ex);
                 }
             }
             
@@ -128,19 +129,19 @@ public partial class AccountInfoViewModel : ViewModelBase
                     _logger.Log("TFA required");
                     break;
                 case AuthenticateDenyCode.InvalidCredentials:
-                    PopupError(LocalisationService.GetString("auth-invalid-credentials"), e);
+                    PopupError(LocalizationService.GetString("auth-invalid-credentials"), e);
                     break;
                 case AuthenticateDenyCode.AccountLocked:
-                    PopupError(LocalisationService.GetString("auth-account-locked"), e);
+                    PopupError(LocalizationService.GetString("auth-account-locked"), e);
                     break;
                 case AuthenticateDenyCode.AccountUnconfirmed:
-                    PopupError(LocalisationService.GetString("auth-account-unconfirmed"), e);
+                    PopupError(LocalizationService.GetString("auth-account-unconfirmed"), e);
                     break;
                 case AuthenticateDenyCode.None:
-                    PopupError(LocalisationService.GetString("auth-none"),e);
+                    PopupError(LocalizationService.GetString("auth-none"),e);
                     break;
                 default:
-                    PopupError(LocalisationService.GetString("auth-error-fuck"), e);
+                    PopupError(LocalizationService.GetString("auth-error-fuck"), e);
                     break;
             }
         }
@@ -150,46 +151,46 @@ public partial class AccountInfoViewModel : ViewModelBase
             switch (e.HttpRequestError)
             {
                 case HttpRequestError.ConnectionError:
-                    PopupError(LocalisationService.GetString("auth-connection-error"), e);
+                    PopupError(LocalizationService.GetString("auth-connection-error"), e);
                     DoRetryAuth = true;
                     break;
                 case HttpRequestError.NameResolutionError:
-                    PopupError(LocalisationService.GetString("auth-name-resolution-error"), e);
+                    PopupError(LocalizationService.GetString("auth-name-resolution-error"), e);
                     DoRetryAuth = true;
                     break;
                 case HttpRequestError.SecureConnectionError:
-                    PopupError(LocalisationService.GetString("auth-secure-error"), e);
+                    PopupError(LocalizationService.GetString("auth-secure-error"), e);
                     DoRetryAuth = true;
                     break;
                 case HttpRequestError.UserAuthenticationError:
-                    PopupError(LocalisationService.GetString("auth-user-authentication-error"), e);
+                    PopupError(LocalizationService.GetString("auth-user-authentication-error"), e);
                     break;
                 case HttpRequestError.Unknown:
-                    PopupError(LocalisationService.GetString("auth-unknown"), e);
+                    PopupError(LocalizationService.GetString("auth-unknown"), e);
                     break;
                 case HttpRequestError.HttpProtocolError:
-                    PopupError(LocalisationService.GetString("auth-http-protocol-error"), e);
+                    PopupError(LocalizationService.GetString("auth-http-protocol-error"), e);
                     break;
                 case HttpRequestError.ExtendedConnectNotSupported:
-                    PopupError(LocalisationService.GetString("auth-extended-connect-not-support"), e);
+                    PopupError(LocalizationService.GetString("auth-extended-connect-not-support"), e);
                     break;
                 case HttpRequestError.VersionNegotiationError:
-                    PopupError(LocalisationService.GetString("auth-version-negotiation-error"), e);
+                    PopupError(LocalizationService.GetString("auth-version-negotiation-error"), e);
                     break;
                 case HttpRequestError.ProxyTunnelError:
-                    PopupError(LocalisationService.GetString("auth-proxy-tunnel-error"), e);
+                    PopupError(LocalizationService.GetString("auth-proxy-tunnel-error"), e);
                     break;
                 case HttpRequestError.InvalidResponse:
-                    PopupError(LocalisationService.GetString("auth-invalid-response"), e);
+                    PopupError(LocalizationService.GetString("auth-invalid-response"), e);
                     break;
                 case HttpRequestError.ResponseEnded:
-                    PopupError(LocalisationService.GetString("auth-response-ended"), e);
+                    PopupError(LocalizationService.GetString("auth-response-ended"), e);
                     break;
                 case HttpRequestError.ConfigurationLimitExceeded:
-                    PopupError(LocalisationService.GetString("auth-configuration-limit-exceeded"), e);
+                    PopupError(LocalizationService.GetString("auth-configuration-limit-exceeded"), e);
                     break;
                 default:
-                    var authError = new Exception(LocalisationService.GetString("auth-error"), e);
+                    var authError = new Exception(LocalizationService.GetString("auth-error"), e);
                     _logger.Error(authError);
                     PopupMessageService.Popup(authError);
                     break;
@@ -245,7 +246,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     private async Task ReadAuthConfig()
     {
         var message = ViewHelperService.GetViewModel<InfoPopupViewModel>();
-        message.InfoText = LocalisationService.GetString("auth-config-read");
+        message.InfoText = LocalizationService.GetString("auth-config-read");
         message.IsInfoClosable = false;
         PopupMessageService.Popup(message);
         
@@ -318,7 +319,7 @@ public partial class AccountInfoViewModel : ViewModelBase
         }
         catch (Exception e)
         {
-            var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), e);
+            var unexpectedError = new Exception(LocalizationService.GetString("auth-error"), e);
             _logger.Error(unexpectedError);
             return authTokenCredentials;
         }
@@ -345,7 +346,7 @@ public partial class AccountInfoViewModel : ViewModelBase
 
     private void PopupError(string message, Exception e)
     {
-        message = LocalisationService.GetString("auth-error-occured") + message;
+        message = LocalizationService.GetString("auth-error-occured") + message;
         _logger.Error(new Exception(message, e));
 
         var messageView = ViewHelperService.GetViewModel<InfoPopupViewModel>();
@@ -385,7 +386,7 @@ public partial class AccountInfoViewModel : ViewModelBase
             }
         
             var message = accountInfoViewModel.ViewHelperService.GetViewModel<InfoPopupViewModel>();
-            message.InfoText = LocalisationService.GetString("auth-try-auth-config");
+            message.InfoText = LocalizationService.GetString("auth-try-auth-config");
             message.IsInfoClosable = false;
             accountInfoViewModel.PopupMessageService.Popup(message);
       
@@ -423,7 +424,7 @@ public partial class AccountInfoViewModel : ViewModelBase
             {
                 accountInfoViewModel.CurrentLogin = currProfile.Login;
                 accountInfoViewModel.CurrentAuthServer = currProfile.AuthServer;
-                var unexpectedError = new Exception(LocalisationService.GetString("auth-error"), ex);
+                var unexpectedError = new Exception(LocalizationService.GetString("auth-error"), ex);
                 accountInfoViewModel._logger.Error(unexpectedError);
                 accountInfoViewModel.PopupMessageService.Popup(unexpectedError);
                 errorRun = true;
@@ -436,6 +437,8 @@ public partial class AccountInfoViewModel : ViewModelBase
             }
         
             accountInfoViewModel.IsLogged = true;
+
+            accountInfoViewModel.AuthServerName = accountInfoViewModel.GetServerAuthName(currProfile.AuthServer);
             
             return currProfile;
         }

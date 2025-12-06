@@ -10,33 +10,71 @@
     <Design.DataContext>
         <popup:LoadingContextViewModel />
     </Design.DataContext>
-    <StackPanel Margin="25" Spacing="15">
-        <ProgressBar Height="40" Maximum="{Binding CurrJobs}" Value="{Binding ResolvedJobs}" />
-        <Panel>
-            <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Left" VerticalAlignment="Center">
-                <Label>
-                    <TextBlock Text="{Binding ResolvedJobs}" />
+    <StackPanel Margin="25" Spacing="15" >
+        <Panel Margin="5">
+            <Border Padding="15" Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
+                <Label VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LoadingName}"/>
                 </Label>
-                <Label>
-                    /
-                </Label>
-                <Label>
-                    <TextBlock Text="{Binding CurrJobs}" />
-                </Label>
-            </StackPanel>
-
+            </Border>
             <Button 
                 HorizontalAlignment="Right" 
                 VerticalAlignment="Center" 
                 Command="{Binding Cancel}" 
                 IsVisible="{Binding IsCancellable}">
-                <customControls:LocalizedLabel LocalId="task-cancel"/> 
+                <Border Padding="15" Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
+                    <customControls:LocalizedLabel LocalId="task-cancel"/> 
+                </Border>
             </Button>
         </Panel>
-        <Panel>
-            <Border Background="{StaticResource DefaultForeground}" MinHeight="210">
-                <TextBlock TextWrapping="Wrap" Text="{Binding Message}" MaxLines="10" Margin="15"/>
-            </Border>
-        </Panel>
+        <Grid ColumnDefinitions="*,*">
+            <ScrollViewer Grid.Column="0" Grid.ColumnSpan="{Binding LoadingColumnSize}">
+                <ItemsControl
+                    Background="#00000000"
+                    ItemsSource="{Binding LoadingContexts}"
+                    Padding="0" >
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Vertical" Spacing="5" Margin="5" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type popup:LoadingContext}">
+                            <Border Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
+                                <StackPanel Margin="15">
+                                    <ProgressBar Height="40" Maximum="{Binding CurrJobs}" Value="{Binding ResolvedJobs}" />
+                                    <Panel Margin="5 15 5 5">
+                                        <Label HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding LoadingText}" />
+                                        </Label>
+                                        <Label HorizontalAlignment="Right" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Message}" />
+                                        </Label>
+                                    </Panel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            
+            <StackPanel 
+                Grid.Column="1" 
+                Margin="10" Spacing="15"
+                IsVisible="{Binding ShowSpeed}">
+                <customControls:SimpleGraph Values="{Binding Values}" 
+                                            Height="167" 
+                                            GridBrush="{StaticResource DefaultForeground}"/>
+                <Border Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
+                    <Panel Margin="10">
+                        <Label>Speed</Label>
+                        <Label HorizontalAlignment="Right">
+                            <TextBlock Text="{Binding SpeedText}" />
+                        </Label>
+                    </Panel>
+                </Border>
+            </StackPanel>
+        </Grid>
     </StackPanel>
 </UserControl>

@@ -89,14 +89,26 @@ public class FileService
     }
 }
 
+public sealed class ConsoleLoadingHandlerFactory : ILoadingHandlerFactory
+{
+    public ILoadingHandler CreateLoadingContext(ILoadingFormater? loadingFormater = null)
+    {
+        return new ConsoleLoadingHandler();
+    }
+
+    public void Dispose()
+    {
+    }
+}
+
 public sealed class ConsoleLoadingHandler : ILoadingHandler
 {
-    private int _currJobs;
+    private long _currJobs;
 
     private float _percent;
-    private int _resolvedJobs;
+    private long _resolvedJobs;
 
-    public void SetJobsCount(int count)
+    public void SetJobsCount(long count)
     {
         _currJobs = count;
 
@@ -104,12 +116,12 @@ public sealed class ConsoleLoadingHandler : ILoadingHandler
         Draw();
     }
 
-    public int GetJobsCount()
+    public long GetJobsCount()
     {
         return _currJobs;
     }
 
-    public void SetResolvedJobsCount(int count)
+    public void SetResolvedJobsCount(long count)
     {
         _resolvedJobs = count;
 
@@ -117,7 +129,7 @@ public sealed class ConsoleLoadingHandler : ILoadingHandler
         Draw();
     }
 
-    public int GetResolvedJobsCount()
+    public long GetResolvedJobsCount()
     {
         return _resolvedJobs;
     }
@@ -153,5 +165,10 @@ public sealed class ConsoleLoadingHandler : ILoadingHandler
         for (var i = 0; i < emptyCount; i++) Console.Write(" ");
 
         Console.Write($"\t {_resolvedJobs}/{_currJobs}");
+    }
+
+    public void Dispose()
+    {
+        
     }
 }

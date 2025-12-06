@@ -11,7 +11,7 @@ using Nebula.Shared.Services;
 namespace Nebula.Launcher.Services;
 
 [ConstructGenerator, ServiceRegister]
-public partial class LocalisationService
+public partial class LocalizationService
 {
     [GenerateProperty] private ConfigurationService ConfigurationService { get; }
     [GenerateProperty] private DebugService DebugService { get; }
@@ -74,6 +74,6 @@ public class LocaledText : MarkupExtension
 
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
-        return LocalisationService.GetString(Key, Options);
+        return LocalizationService.GetString(Key, Options);
     }
 }

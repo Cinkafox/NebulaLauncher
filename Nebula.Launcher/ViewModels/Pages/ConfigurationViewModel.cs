@@ -89,7 +89,7 @@ public partial class ConfigurationViewModel : ViewModelBase
             using var loader = ViewHelperService.GetViewModel<LoadingContextViewModel>();
             loader.LoadingName = "Removing content";
             PopupService.Popup(loader);
-            ContentService.RemoveAllContent(loader, CancellationService.Token);
+            ContentService.RemoveAllContent(loader.CreateLoadingContext(), CancellationService.Token);
         });
     }
 
