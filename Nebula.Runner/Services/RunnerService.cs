@@ -6,6 +6,7 @@ using Nebula.Shared;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
+using Nebula.Shared.Utils;
 using Robust.LoaderApi;
 
 namespace Nebula.Runner.Services;
@@ -24,12 +25,13 @@ public sealed class RunnerService(
     private bool MetricEnabled = false; //TODO: ADD METRIC THINKS LATER
 
     public async Task Run(string[] runArgs, RobustBuildInfo buildInfo, IRedialApi redialApi,
-        ILoadingHandler loadingHandler,
+        ILoadingHandlerFactory loadingHandler,
         CancellationToken cancellationToken)
     {
         _logger.Log("Start Content!");
 
-        var engine = await engineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion);
+        var mainLoadingHandler = loadingHandler.CreateLoadingContext();
+        var engine = await engineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion, loadingHandler, cancellationToken);
 
         if (engine is null)
             throw new Exception("Engine version not found: " + buildInfo.BuildInfo.Build.EngineVersion);
@@ -48,7 +50,7 @@ public sealed class RunnerService(
             foreach (var moduleStr in modules)
             {
                 var module =
-                    await engineService.EnsureEngineModules(moduleStr, buildInfo.BuildInfo.Build.EngineVersion);
+                    await engineService.EnsureEngineModules(moduleStr, loadingHandler, buildInfo.BuildInfo.Build.EngineVersion);
                 if (module is not null)
                     extraMounts.Add(new ApiMount(module, "/"));
             }
@@ -78,7 +80,7 @@ public sealed class RunnerService(
             MetricsEnabledPatcher.ApplyPatch(reflectionService, harmonyService);
             metricServer = RunHelper.RunMetric(prometheusAssembly);
         }
-       
+        mainLoadingHandler.Dispose();
         
         await Task.Run(() => loader.Main(args), cancellationToken);
         
@@ -140,44 +142,3 @@ public static class RunHelper
     }
 }
 
-public static class ContentManifestParser
-{
-    public static List<string> ExtractModules(Stream manifestStream)
-    {
-        using var reader = new StreamReader(manifestStream);
-        return ExtractModules(reader.ReadToEnd());
-    }
-    
-    public static List<string> ExtractModules(string manifestContent)
-    {
-        var modules = new List<string>();
-        var lines = manifestContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-        bool inModulesSection = false;
-
-        foreach (var rawLine in lines)
-        {
-            var line = rawLine.Trim();
-
-            if (line.StartsWith("modules:"))
-            {
-                inModulesSection = true;
-                continue;
-            }
-
-            if (inModulesSection)
-            {
-                if (line.StartsWith("- "))
-                {
-                    modules.Add(line.Substring(2).Trim());
-                }
-                else if (!line.StartsWith(" "))
-                {
-                    break;
-                }
-            }
-        }
-
-        return modules;
-    }
-}

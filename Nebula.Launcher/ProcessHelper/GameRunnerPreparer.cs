@@ -5,27 +5,50 @@ using Microsoft.Extensions.DependencyInjection;
 using Nebula.Shared;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
+using Nebula.Shared.Utils;
+using Robust.LoaderApi;
 
 namespace Nebula.Launcher.ProcessHelper;
 
 [ServiceRegister]
 public sealed class GameRunnerPreparer(IServiceProvider provider, ContentService contentService, EngineService engineService)
 {
-    public async Task<ProcessRunHandler<GameProcessStartInfoProvider>> GetGameProcessStartInfoProvider(RobustUrl address, ILoadingHandler loadingHandler, CancellationToken cancellationToken = default)
+    public async Task<ProcessRunHandler<GameProcessStartInfoProvider>> GetGameProcessStartInfoProvider(RobustUrl address, ILoadingHandlerFactory loadingHandlerFactory, CancellationToken cancellationToken = default)
     {
         var buildInfo = await contentService.GetBuildInfo(address, cancellationToken);
+        var mainLoadingHandler = loadingHandlerFactory.CreateLoadingContext();
+        mainLoadingHandler.AppendJob(2);
         
-        var engine = await engineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion);
+        var engine = await engineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion, loadingHandlerFactory, cancellationToken);
+        mainLoadingHandler.AppendResolvedJob();
 
         if (engine is null)
             throw new Exception("Engine version not found: " + buildInfo.BuildInfo.Build.EngineVersion);
 
-        await contentService.EnsureItems(buildInfo.RobustManifestInfo, loadingHandler, cancellationToken);
-        await engineService.EnsureEngineModules("Robust.Client.WebView", buildInfo.BuildInfo.Build.EngineVersion);
+        var hashApi = await contentService.EnsureItems(buildInfo.RobustManifestInfo, loadingHandlerFactory, cancellationToken);
+       
+        
+        if (hashApi.TryOpen("manifest.yml", out var stream))
+        {
+            var modules = ContentManifestParser.ExtractModules(stream);
+            mainLoadingHandler.AppendJob(modules.Count);
+            mainLoadingHandler.SetLoadingMessage("Loading modules...");
+
+            foreach (var moduleStr in modules)
+            {
+                var module = await engineService.EnsureEngineModules(moduleStr, loadingHandlerFactory, buildInfo.BuildInfo.Build.EngineVersion);
+                if(module is null) 
+                    throw new Exception("Module not found: " + moduleStr);
+                mainLoadingHandler.AppendResolvedJob();
+            }
+            
+            await stream.DisposeAsync();
+        }
 
         var gameInfo =
             provider.GetService<GameProcessStartInfoProvider>()!.WithBuildInfo(buildInfo.BuildInfo.Auth.PublicKey,
                 address);
+        mainLoadingHandler.AppendResolvedJob();
         var gameProcessRunHandler = new ProcessRunHandler<GameProcessStartInfoProvider>(gameInfo);
         
         return gameProcessRunHandler;

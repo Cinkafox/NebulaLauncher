@@ -47,8 +47,8 @@ public class HashApi : IFileApi
         return false;
     }
 
-    public bool Save(RobustManifestItem item, Stream stream){
-        return _fileApi.Save(GetManifestPath(item), stream);
+    public bool Save(RobustManifestItem item, Stream stream, ILoadingHandler? loadingHandler){
+        return _fileApi.Save(GetManifestPath(item), stream, loadingHandler);
     }
 
     public bool Has(RobustManifestItem item){

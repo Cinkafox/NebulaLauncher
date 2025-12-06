@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.Views.Popup;
@@ -9,50 +12,36 @@ namespace Nebula.Launcher.ViewModels.Popup;
 
 [ViewModelRegister(typeof(LoadingContextView), false)]
 [ConstructGenerator]
-public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadingHandler
+public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadingHandlerFactory
 {
+    public ObservableCollection<LoadingContext> LoadingContexts { get;  } = [];
     [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
     [GenerateProperty] public CancellationService CancellationService { get; }
-    
-    [ObservableProperty] private int _currJobs;
-    [ObservableProperty] private int _resolvedJobs;
-    [ObservableProperty] private string _message = string.Empty;
 
-    public string LoadingName { get; set; } = LocalisationService.GetString("popup-loading");
+    public string LoadingName { get; set; } = LocalizationService.GetString("popup-loading");
     public bool IsCancellable { get; set; } = true;
     public override bool IsClosable => false;
 
     public override string Title => LoadingName;
 
-    public void SetJobsCount(int count)
+    public void Cancel()
     {
-        CurrJobs = count;
-    }
-
-    public int GetJobsCount()
-    {
-        return CurrJobs;
-    }
-
-    public void SetResolvedJobsCount(int count)
-    {
-        ResolvedJobs = count;
-    }
-
-    public int GetResolvedJobsCount()
-    {
-        return ResolvedJobs;
-    }
-
-    public void SetLoadingMessage(string message)
-    {
-        Message = message + "\n" + Message;
-    }
-
-    public void Cancel(){
-        if(!IsCancellable) return;
+        if (!IsCancellable) return;
         CancellationService.Cancel();
         Dispose();
+    }
+
+    public ILoadingHandler CreateLoadingContext(ILoadingFormater? loadingFormater = null)
+    {
+        var instance = new LoadingContext(this, loadingFormater ?? DefaultLoadingFormater.Instance);
+        LoadingContexts.Add(instance);
+        return instance;
+    }
+
+    public void RemoveContextInstance(LoadingContext loadingContext)
+    {
+        LoadingContexts.Remove(loadingContext);
+        if(LoadingContexts.Count == 0) Dispose();
     }
 
     protected override void Initialise()
@@ -61,30 +50,63 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
 
     protected override void InitialiseInDesignMode()
     {
-        SetJobsCount(5);
-        SetResolvedJobsCount(2);
-        string[] debugMessages = {
-            "Debug: Starting phase 1...",
-            "Debug: Loading assets...",
-            "Debug: Connecting to server...",
-            "Debug: Fetching user data...",
-            "Debug: Applying configurations...",
-            "Debug: Starting phase 2...",
-            "Debug: Rendering UI...",
-            "Debug: Preparing scene...",
-            "Debug: Initializing components...",
-            "Debug: Running diagnostics...",
-            "Debug: Checking dependencies...",
-            "Debug: Verifying files...",
-            "Debug: Cleaning up cache...",
-            "Debug: Finalizing setup...",
-            "Debug: Setup complete.",
-            "Debug: Ready for launch."
-        };
+        var context = CreateLoadingContext();
+        context.SetJobsCount(5);
+        context.SetResolvedJobsCount(2);
+        context.SetLoadingMessage("message");
 
-        foreach (string message in debugMessages)
-        {
-            SetLoadingMessage(message);
-        }
+        var ctx1 = CreateLoadingContext(new FileLoadingFormater());
+        ctx1.SetJobsCount(1020120);
+        ctx1.SetResolvedJobsCount(12331);
+        ctx1.SetLoadingMessage("File data");
+    }
+}
+
+public sealed partial class LoadingContext : ObservableObject, ILoadingHandler
+{
+    private readonly LoadingContextViewModel _master;
+    private readonly ILoadingFormater _loadingFormater;
+    public string LoadingText => _loadingFormater.Format(this);
+    
+    [ObservableProperty] private string _message = string.Empty;
+    [ObservableProperty] private long _currJobs;
+    [ObservableProperty] private long _resolvedJobs;
+
+    public LoadingContext(LoadingContextViewModel master, ILoadingFormater loadingFormater)
+    {
+        _master = master;
+        _loadingFormater = loadingFormater;
+    }
+
+    public void SetJobsCount(long count)
+    {
+        CurrJobs = count;
+        OnPropertyChanged(nameof(LoadingText));
+    }
+
+    public long GetJobsCount()
+    {
+        return CurrJobs;
+    }
+
+    public void SetResolvedJobsCount(long count)
+    {
+        ResolvedJobs = count;
+        OnPropertyChanged(nameof(LoadingText));
+    }
+
+    public long GetResolvedJobsCount()
+    {
+        return ResolvedJobs;
+    }
+
+    public void SetLoadingMessage(string message)
+    {
+        Message = message;
+    }
+
+    public void Dispose()
+    {
+        _master.RemoveContextInstance(this);
     }
 }

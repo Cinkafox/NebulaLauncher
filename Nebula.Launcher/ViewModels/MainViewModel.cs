@@ -41,9 +41,9 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _isPopupClosable = true;
     [ObservableProperty] private bool _popup;
     [ObservableProperty] private ListItemTemplate? _selectedListItem;
-    [ObservableProperty] private string? _loginText = LocalisationService.GetString("auth-current-login-no-name");
+    [ObservableProperty] private string? _loginText = LocalizationService.GetString("auth-current-login-no-name");
     
-    [GenerateProperty] private LocalisationService LocalisationService { get; } // Не убирать! Без этой хуйни вся локализация идет в пизду!
+    [GenerateProperty] private LocalizationService LocalizationService { get; } // Не убирать! Без этой хуйни вся локализация идет в пизду!
     [GenerateProperty] private AccountInfoViewModel AccountInfoViewModel { get; }
     [GenerateProperty] private DebugService DebugService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
@@ -59,7 +59,7 @@ public partial class MainViewModel : ViewModelBase
     {
         Items = new ObservableCollection<ListItemTemplate>(_templates.Select(a=>
         {
-            return a with { Label = LocalisationService.GetString(a.Label) };
+            return a with { Label = LocalizationService.GetString(a.Label) };
         }
         ));
         RequirePage<AccountInfoViewModel>();
@@ -92,13 +92,13 @@ public partial class MainViewModel : ViewModelBase
         CheckMigration();
         
         var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
-        loadingHandler.LoadingName = LocalisationService.GetString("migration-config-task");
+        loadingHandler.LoadingName = LocalizationService.GetString("migration-config-task");
         loadingHandler.IsCancellable = false;
-        ConfigurationService.MigrateConfigs(loadingHandler);
+        ConfigurationService.MigrateConfigs(loadingHandler.CreateLoadingContext());
         
         if (!VCRuntimeDllChecker.AreVCRuntimeDllsPresent())
         {
-            OnPopupRequired(LocalisationService.GetString("vcruntime-check-error"));
+            OnPopupRequired(LocalizationService.GetString("vcruntime-check-error"));
             Helper.OpenBrowser("https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170");
         }
     }
@@ -108,7 +108,7 @@ public partial class MainViewModel : ViewModelBase
         if(AccountInfoViewModel.Credentials.HasValue)
         {
             LoginText =
-                LocalisationService.GetString("auth-current-login-name",
+                LocalizationService.GetString("auth-current-login-name",
                     new Dictionary<string, object>
                     {
                         { "login", AccountInfoViewModel.Credentials.Value?.Login ?? "" },
@@ -120,7 +120,7 @@ public partial class MainViewModel : ViewModelBase
         }
         else
         {
-            LoginText =  LocalisationService.GetString("auth-current-login-no-name");
+            LoginText =  LocalizationService.GetString("auth-current-login-no-name");
         }
     }
 
@@ -130,10 +130,10 @@ public partial class MainViewModel : ViewModelBase
             return;
 
         var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
-        loadingHandler.LoadingName = LocalisationService.GetString("migration-label-task");
+        loadingHandler.LoadingName = LocalizationService.GetString("migration-label-task");
         loadingHandler.IsCancellable = false;
 
-        if (!ContentService.CheckMigration(loadingHandler))
+        if (!ContentService.CheckMigration(loadingHandler.CreateLoadingContext()))
             return;
 
         OnPopupRequired(loadingHandler);

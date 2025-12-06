@@ -12,7 +12,7 @@ public sealed partial class EditServerNameViewModel : PopupViewModelBase
 {
     [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
     [GenerateProperty] public ConfigurationService ConfigurationService { get; }
-    public override string Title => LocalisationService.GetString("popup-edit-name");
+    public override string Title => LocalizationService.GetString("popup-edit-name");
     public override bool IsClosable => true;
     
     [ObservableProperty] private string _ipInput;

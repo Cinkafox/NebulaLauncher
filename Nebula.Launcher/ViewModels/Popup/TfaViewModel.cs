@@ -12,7 +12,7 @@ public partial class TfaViewModel : PopupViewModelBase
 {
     [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
     [GenerateProperty] public AccountInfoViewModel AccountInfo { get; }
-    public override string Title => LocalisationService.GetString("popup-twofa");
+    public override string Title => LocalizationService.GetString("popup-twofa");
     public override bool IsClosable => true;
     
     protected override void InitialiseInDesignMode()

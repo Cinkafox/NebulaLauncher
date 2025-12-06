@@ -11,20 +11,36 @@
         <popup:LoadingContextViewModel />
     </Design.DataContext>
     <StackPanel Margin="25" Spacing="15">
-        <ProgressBar Height="40" Maximum="{Binding CurrJobs}" Value="{Binding ResolvedJobs}" />
+        <ScrollViewer>
+            <ItemsControl
+                Background="#00000000"
+                ItemsSource="{Binding LoadingContexts}"
+                Padding="0" >
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type popup:LoadingContext}">
+                        <StackPanel Margin="15">
+                            <ProgressBar Height="40" Maximum="{Binding CurrJobs}" Value="{Binding ResolvedJobs}" />
+                            <Panel Margin="5 15 5 5">
+                                <Label HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding LoadingText}" />
+                                </Label>
+                                <Label HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Message}" />
+                                </Label>
+                            </Panel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+        
         <Panel>
-            <StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Left" VerticalAlignment="Center">
-                <Label>
-                    <TextBlock Text="{Binding ResolvedJobs}" />
-                </Label>
-                <Label>
-                    /
-                </Label>
-                <Label>
-                    <TextBlock Text="{Binding CurrJobs}" />
-                </Label>
-            </StackPanel>
-
             <Button 
                 HorizontalAlignment="Right" 
                 VerticalAlignment="Center" 
@@ -32,11 +48,6 @@
                 IsVisible="{Binding IsCancellable}">
                 <customControls:LocalizedLabel LocalId="task-cancel"/> 
             </Button>
-        </Panel>
-        <Panel>
-            <Border Background="{StaticResource DefaultForeground}" MinHeight="210">
-                <TextBlock TextWrapping="Wrap" Text="{Binding Message}" MaxLines="10" Margin="15"/>
-            </Border>
         </Panel>
     </StackPanel>
 </UserControl>

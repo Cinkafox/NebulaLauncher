@@ -41,10 +41,7 @@ public class ConfigurationService
                 await migration.DoMigrate(this, _serviceProvider, loadingHandler);
             }
 
-            if (loadingHandler is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
+            loadingHandler.Dispose();
         });
     }
 

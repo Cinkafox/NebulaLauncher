@@ -14,7 +14,7 @@ public class LocalizedLabel : Label
         set
         {
             SetValue(LocalIdProperty, value);
-            Content = LocalisationService.GetString(value);
+            Content = LocalizationService.GetString(value);
         }
     }
 }

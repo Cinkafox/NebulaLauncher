@@ -186,13 +186,12 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
 
         try
         {
-            using var loadingContext = ViewHelperService.GetViewModel<LoadingContextViewModel>();
-            loadingContext.LoadingName = "Loading instance...";
-            ((ILoadingHandler)loadingContext).AppendJob();
+            using var viewModelLoading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
+            viewModelLoading.LoadingName = "Loading instance...";
 
-            PopupMessageService.Popup(loadingContext);
+            PopupMessageService.Popup(viewModelLoading);
             _currentInstance = 
-                await GameRunnerPreparer.GetGameProcessStartInfoProvider(Address, loadingContext, CancellationService.Token);
+                await GameRunnerPreparer.GetGameProcessStartInfoProvider(Address, viewModelLoading, CancellationService.Token);
             _logger.Log("Preparing instance...");
             _currentInstance.RegisterLogger(_currentContentLogConsumer);
             _currentInstance.RegisterLogger(new DebugLoggerBridge(DebugService.GetLogger($"PROCESS_{Random.Shared.Next(65535)}")));

@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Shared;
@@ -25,7 +26,6 @@ public sealed partial class DecompilerService
     [GenerateProperty] private ViewHelperService ViewHelperService {get;}
     [GenerateProperty] private ContentService ContentService {get;}
     [GenerateProperty] private FileService FileService {get;}
-    [GenerateProperty] private CancellationService CancellationService {get;}
     [GenerateProperty] private EngineService EngineService {get;}
     [GenerateProperty] private DebugService DebugService {get;}
 
@@ -44,16 +44,17 @@ public sealed partial class DecompilerService
         Process.Start(startInfo);
     }
 
-    public async void OpenServerDecompiler(RobustUrl url)
+    public async void OpenServerDecompiler(RobustUrl url, CancellationToken cancellationToken)
     {
         var myTempDir = FileService.EnsureTempDir(out var tmpDir);
 
-        ILoadingHandler loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
-        
+        var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
+        var mainLoadingHandler = loadingHandler.CreateLoadingContext();
+        mainLoadingHandler.AppendJob(4);
         var buildInfo =
-            await ContentService.GetBuildInfo(url, CancellationService.Token);
-        var engine = await EngineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion);
-
+            await ContentService.GetBuildInfo(url, cancellationToken);
+        var engine = await EngineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion, loadingHandler, cancellationToken);
+        mainLoadingHandler.AppendJob();
         if (engine is null)
             throw new Exception("Engine version not found: " + buildInfo.BuildInfo.Build.EngineVersion);
 
@@ -63,9 +64,11 @@ public sealed partial class DecompilerService
             myTempDir.Save(file, stream);
             await stream.DisposeAsync();
         }
+        
+        mainLoadingHandler.AppendJob();
 
-        var hashApi = await ContentService.EnsureItems(buildInfo.RobustManifestInfo, loadingHandler, CancellationService.Token);
-
+        var hashApi = await ContentService.EnsureItems(buildInfo.RobustManifestInfo, loadingHandler, cancellationToken);
+        mainLoadingHandler.AppendJob();
         foreach (var (file, hash) in hashApi.Manifest)
         {
             if(!file.Contains(".dll") || !hashApi.TryOpen(hash, out var stream)) continue;
@@ -73,7 +76,7 @@ public sealed partial class DecompilerService
             await stream.DisposeAsync();
         }
         
-        ((IDisposable)loadingHandler).Dispose();
+        loadingHandler.Dispose();
         
         _logger.Log("File extracted. " + tmpDir);
         
@@ -94,7 +97,7 @@ public sealed partial class DecompilerService
     private async Task Download(){
         using var loading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loading.LoadingName = "Download ILSpy";
-        loading.SetJobsCount(1);
+        loading.CreateLoadingContext().SetJobsCount(1);
         PopupMessageService.Popup(loading);
         using var response = await _httpClient.GetAsync(ConfigurationService.GetConfigValue(LauncherConVar.ILSpyUrl));
         using var zipArchive = new ZipArchive(await response.Content.ReadAsStreamAsync());

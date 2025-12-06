@@ -34,11 +34,10 @@ public partial class ContentService
     }
 
     public async Task<HashApi> EnsureItems(ManifestReader manifestReader, Uri downloadUri,
-        ILoadingHandler loadingHandler,
+        ILoadingHandlerFactory loadingFactory,
         CancellationToken cancellationToken)
     {
         List<RobustManifestItem> allItems = [];
-        List<RobustManifestItem> items = [];
 
         while (manifestReader.TryReadItem(out var item))
         {
@@ -50,40 +49,44 @@ public partial class ContentService
 
         var hashApi = CreateHashApi(allItems);
 
-        items = allItems.Where(a=> !hashApi.Has(a)).ToList();
-
-        loadingHandler.SetLoadingMessage("Download Count:" + items.Count);
+        var items = allItems.Where(a=> !hashApi.Has(a)).ToList();
+        
         _logger.Log("Download Count:" + items.Count);
-        await Download(downloadUri, items, hashApi, loadingHandler, cancellationToken);
+        await Download(downloadUri, items, hashApi, loadingFactory, cancellationToken);
 
         return hashApi;
     }
 
-    public async Task<HashApi> EnsureItems(RobustManifestInfo info, ILoadingHandler loadingHandler,
+    public async Task<HashApi> EnsureItems(RobustManifestInfo info, ILoadingHandlerFactory loadingFactory,
         CancellationToken cancellationToken)
     {
         _logger.Log("Getting manifest: " + info.Hash);
-        loadingHandler.SetLoadingMessage("Getting manifest: " + info.Hash);
+        var loadingHandler = loadingFactory.CreateLoadingContext(new FileLoadingFormater());
+        loadingHandler.SetLoadingMessage("Loading manifest");
 
         if (ManifestFileApi.TryOpen(info.Hash, out var stream))
         {
-            _logger.Log("Loading manifest from: " + info.Hash);
-            return await EnsureItems(new ManifestReader(stream), info.DownloadUri, loadingHandler, cancellationToken);
+            _logger.Log("Loading manifest from disk");
+            loadingHandler.Dispose();
+            return await EnsureItems(new ManifestReader(stream), info.DownloadUri, loadingFactory, cancellationToken);
         }
         
         SetServerHash(info.ManifestUri.ToString(), info.Hash);
 
         _logger.Log("Fetching manifest from: " + info.ManifestUri);
-        loadingHandler.SetLoadingMessage("Fetching manifest from: " + info.ManifestUri);
+        loadingHandler.SetLoadingMessage("Fetching manifest from: " + info.ManifestUri.Host);
 
         var response = await _http.GetAsync(info.ManifestUri, cancellationToken);
-        if (!response.IsSuccessStatusCode) throw new Exception();
-
+        response.EnsureSuccessStatusCode();
+    
+        loadingHandler.SetJobsCount(response.Content.Headers.ContentLength ?? 0);
         await using var streamContent = await response.Content.ReadAsStreamAsync(cancellationToken);
-        ManifestFileApi.Save(info.Hash, streamContent);
+        ManifestFileApi.Save(info.Hash, streamContent, loadingHandler);
+        loadingHandler.Dispose();
         streamContent.Seek(0, SeekOrigin.Begin);
+        
         using var manifestReader = new ManifestReader(streamContent);
-        return await EnsureItems(manifestReader, info.DownloadUri, loadingHandler, cancellationToken);
+        return await EnsureItems(manifestReader, info.DownloadUri, loadingFactory, cancellationToken);
     }
 
     public void Unpack(HashApi hashApi, IWriteFileApi otherApi, ILoadingHandler loadingHandler)
@@ -107,30 +110,24 @@ public partial class ContentService
             }
             else
             {
-                _logger.Error("OH FUCK!! " + item.Path);
+                _logger.Error("Error while unpacking thinks " + item.Path);
             }
 
             loadingHandler.AppendResolvedJob();
         });
 
-        if (loadingHandler is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
+       loadingHandler.Dispose();
     }
 
-    public async Task Download(Uri contentCdn, List<RobustManifestItem> toDownload, HashApi hashApi, ILoadingHandler loadingHandler,
+    private async Task Download(Uri contentCdn, List<RobustManifestItem> toDownload, HashApi hashApi, ILoadingHandlerFactory loadingHandlerFactory,
         CancellationToken cancellationToken)
     {
         if (toDownload.Count == 0 || cancellationToken.IsCancellationRequested)
         {
-            _logger.Log("Nothing to download! Fuck this!");
+            _logger.Log("Nothing to download! Skip!");
             return;
         }
-
-        var downloadJobWatch = loadingHandler.GetQueryJob();
-
-        loadingHandler.SetLoadingMessage("Downloading from: " + contentCdn);
+        
         _logger.Log("Downloading from: " + contentCdn);
 
         var requestBody = new byte[toDownload.Count * 4];
@@ -159,47 +156,36 @@ public partial class ContentService
             return;
         }
 
-        downloadJobWatch.Dispose();
-
         response.EnsureSuccessStatusCode();
 
-        var stream = await response.Content.ReadAsStreamAsync();
+        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         var bandwidthStream = new BandwidthStream(stream);
         stream = bandwidthStream;
         if (response.Content.Headers.ContentEncoding.Contains("zstd"))
             stream = new ZStdDecompressStream(stream);
 
         await using var streamDispose = stream;
-
-        // Read flags header
-        var streamHeader = await stream.ReadExactAsync(4, null);
+        
+        var streamHeader = await stream.ReadExactAsync(4, cancellationToken);
         var streamFlags = (DownloadStreamHeaderFlags)BinaryPrimitives.ReadInt32LittleEndian(streamHeader);
         var preCompressed = (streamFlags & DownloadStreamHeaderFlags.PreCompressed) != 0;
-
-        // compressContext.SetParameter(ZSTD_cParameter.ZSTD_c_nbWorkers, 4);
-        // If the stream is pre-compressed we need to decompress the blobs to verify BLAKE2B hash.
-        // If it isn't, we need to manually try re-compressing individual files to store them.
+        
         var compressContext = preCompressed ? null : new ZStdCCtx();
         var decompressContext = preCompressed ? new ZStdDCtx() : null;
-
-        // Normal file header:
-        // <int32> uncompressed length
-        // When preCompressed is set, we add:
-        // <int32> compressed length
+        
         var fileHeader = new byte[preCompressed ? 8 : 4];
-
-
+        
+        var mainLoadingHandler = loadingHandlerFactory.CreateLoadingContext();
+        mainLoadingHandler.SetLoadingMessage("Downloading from: " + contentCdn.Host);
+        
         try
         {
-            // Buffer for storing compressed ZStd data.
             var compressBuffer = new byte[1024];
-
-            // Buffer for storing uncompressed data.
             var readBuffer = new byte[1024];
 
             var i = 0;
 
-            loadingHandler.AppendJob(toDownload.Count);
+            mainLoadingHandler.AppendJob(toDownload.Count);
 
             foreach (var item in toDownload)
             {
@@ -212,10 +198,16 @@ public partial class ContentService
                 }
 
                 // Read file header.
-                await stream.ReadExactAsync(fileHeader, null);
+                await stream.ReadExactAsync(fileHeader, cancellationToken);
 
                 var length = BinaryPrimitives.ReadInt32LittleEndian(fileHeader.AsSpan(0, 4));
 
+          
+                var fileLoadingHandler = loadingHandlerFactory.CreateLoadingContext(new FileLoadingFormater());
+                fileLoadingHandler.SetLoadingMessage(item.Path);
+
+                var blockFileLoadHandle = length <= 100000;
+                
                 EnsureBuffer(ref readBuffer, length);
                 var data = readBuffer.AsMemory(0, length);
 
@@ -226,9 +218,10 @@ public partial class ContentService
 
                     if (compressedLength > 0)
                     {
+                        fileLoadingHandler.AppendJob(compressedLength);
                         EnsureBuffer(ref compressBuffer, compressedLength);
                         var compressedData = compressBuffer.AsMemory(0, compressedLength);
-                        await stream.ReadExactAsync(compressedData, null);
+                        await stream.ReadExactAsync(compressedData, cancellationToken, blockFileLoadHandle ? null : fileLoadingHandler);
 
                         // Decompress so that we can verify hash down below.
 
@@ -239,24 +232,28 @@ public partial class ContentService
                     }
                     else
                     {
-                        await stream.ReadExactAsync(data, null);
+                        fileLoadingHandler.AppendJob(length);
+                        await stream.ReadExactAsync(data, cancellationToken, blockFileLoadHandle ? null : fileLoadingHandler);
                     }
                 }
                 else
                 {
-                    await stream.ReadExactAsync(data, null);
+                    fileLoadingHandler.AppendJob(length);
+                    await stream.ReadExactAsync(data, cancellationToken, blockFileLoadHandle ? null : fileLoadingHandler);
                 }
 
                 using var fileStream = new MemoryStream(data.ToArray());
-                hashApi.Save(item, fileStream);
+                hashApi.Save(item, fileStream, null);
 
                 _logger.Log("file saved:" + item.Path);
-                loadingHandler.AppendResolvedJob();
+                mainLoadingHandler.AppendResolvedJob();
+                fileLoadingHandler.Dispose();
                 i += 1;
             }
         }
         finally
         {
+            mainLoadingHandler.Dispose();
             decompressContext?.Dispose();
             compressContext?.Dispose();
         }

@@ -32,7 +32,7 @@ public partial class AddFavoriteViewModel : PopupViewModelBase
     [GenerateProperty] private ServerOverviewModel ServerOverviewModel { get; }
     [GenerateProperty] private DebugService DebugService { get; }
     [GenerateProperty] private FavoriteServerListProvider FavoriteServerListProvider { get; }
-    public override string Title => LocalisationService.GetString("popup-add-favorite");
+    public override string Title => LocalizationService.GetString("popup-add-favorite");
     public override bool IsClosable => true;
 
     [ObservableProperty] private string _ipInput;
@@ -43,7 +43,7 @@ public partial class AddFavoriteViewModel : PopupViewModelBase
         try
         {
             if(string.IsNullOrWhiteSpace(IpInput))
-                throw new Exception(LocalisationService.GetString("popup-add-favorite-invalid-ip"));
+                throw new Exception(LocalizationService.GetString("popup-add-favorite-invalid-ip"));
             
             var uri = IpInput.ToRobustUrl();
             FavoriteServerListProvider.AddFavorite(uri);

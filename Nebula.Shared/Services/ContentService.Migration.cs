@@ -21,12 +21,8 @@ public partial class ContentService
     {
         loadingHandler.SetJobsCount(migrationList.Count);
         
-        Parallel.ForEach(migrationList, (f,_)=>MigrateFile(f,loadingHandler));
-        
-        if (loadingHandler is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
+        Parallel.ForEach(migrationList, (f,_)=>MigrateFile(f, loadingHandler) );
+        loadingHandler.Dispose();
     }
 
     private void MigrateFile(string file, ILoadingHandler loadingHandler)

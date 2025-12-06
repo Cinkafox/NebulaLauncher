@@ -14,7 +14,7 @@ public partial class InfoPopupViewModel : PopupViewModelBase
 
     [ObservableProperty] private string _infoText = "Test";
 
-    public override string Title => LocalisationService.GetString("popup-information");
+    public override string Title => LocalizationService.GetString("popup-information");
     public bool IsInfoClosable { get; set; } = true;
     public override bool IsClosable => IsInfoClosable;
 
