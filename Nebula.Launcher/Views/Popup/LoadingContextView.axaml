@@ -11,7 +11,12 @@
         <popup:LoadingContextViewModel />
     </Design.DataContext>
     <StackPanel Margin="25" Spacing="15" >
-        <Panel>
+        <Panel Margin="5">
+            <Border Padding="15" Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
+                <Label VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LoadingName}"/>
+                </Label>
+            </Border>
             <Button 
                 HorizontalAlignment="Right" 
                 VerticalAlignment="Center" 
@@ -58,7 +63,9 @@
                 Grid.Column="1" 
                 Margin="10" Spacing="15"
                 IsVisible="{Binding ShowSpeed}">
-                <customControls:SimpleGraph Values="{Binding Values}" Height="150"/>
+                <customControls:SimpleGraph Values="{Binding Values}" 
+                                            Height="167" 
+                                            GridBrush="{StaticResource DefaultForeground}"/>
                 <Border Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
                     <Panel Margin="10">
                         <Label>Speed</Label>

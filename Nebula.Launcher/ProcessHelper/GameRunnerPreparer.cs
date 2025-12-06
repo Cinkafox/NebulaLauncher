@@ -16,11 +16,8 @@ public sealed class GameRunnerPreparer(IServiceProvider provider, ContentService
     public async Task<ProcessRunHandler<GameProcessStartInfoProvider>> GetGameProcessStartInfoProvider(RobustUrl address, ILoadingHandlerFactory loadingHandlerFactory, CancellationToken cancellationToken = default)
     {
         var buildInfo = await contentService.GetBuildInfo(address, cancellationToken);
-        var mainLoadingHandler = loadingHandlerFactory.CreateLoadingContext();
-        mainLoadingHandler.AppendJob(2);
         
         var engine = await engineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion, loadingHandlerFactory, cancellationToken);
-        mainLoadingHandler.AppendResolvedJob();
 
         if (engine is null)
             throw new Exception("Engine version not found: " + buildInfo.BuildInfo.Build.EngineVersion);
@@ -31,15 +28,12 @@ public sealed class GameRunnerPreparer(IServiceProvider provider, ContentService
         if (hashApi.TryOpen("manifest.yml", out var stream))
         {
             var modules = ContentManifestParser.ExtractModules(stream);
-            mainLoadingHandler.AppendJob(modules.Count);
-            mainLoadingHandler.SetLoadingMessage("Loading modules...");
 
             foreach (var moduleStr in modules)
             {
                 var module = await engineService.EnsureEngineModules(moduleStr, loadingHandlerFactory, buildInfo.BuildInfo.Build.EngineVersion);
                 if(module is null) 
                     throw new Exception("Module not found: " + moduleStr);
-                mainLoadingHandler.AppendResolvedJob();
             }
             
             await stream.DisposeAsync();
@@ -48,7 +42,6 @@ public sealed class GameRunnerPreparer(IServiceProvider provider, ContentService
         var gameInfo =
             provider.GetService<GameProcessStartInfoProvider>()!.WithBuildInfo(buildInfo.BuildInfo.Auth.PublicKey,
                 address);
-        mainLoadingHandler.AppendResolvedJob();
         var gameProcessRunHandler = new ProcessRunHandler<GameProcessStartInfoProvider>(gameInfo);
         
         return gameProcessRunHandler;

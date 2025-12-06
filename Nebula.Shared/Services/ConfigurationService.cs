@@ -32,16 +32,18 @@ public class ConfigurationService
         ConfigurationApi = fileService.CreateFileApi("config");
     }
 
-    public void MigrateConfigs(ILoadingHandler loadingHandler)
+    public void MigrateConfigs(ILoadingHandlerFactory loadingHandlerFactory)
     {
         Task.Run(async () =>
         {
+            var loadingHandler = loadingHandlerFactory.CreateLoadingContext();
             foreach (var migration in _migrations)
             {
                 await migration.DoMigrate(this, _serviceProvider, loadingHandler);
             }
 
             loadingHandler.Dispose();
+            loadingHandlerFactory.Dispose();
         });
     }
 

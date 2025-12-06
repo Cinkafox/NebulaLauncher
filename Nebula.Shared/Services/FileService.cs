@@ -95,6 +95,10 @@ public sealed class ConsoleLoadingHandlerFactory : ILoadingHandlerFactory
     {
         return new ConsoleLoadingHandler();
     }
+
+    public void Dispose()
+    {
+    }
 }
 
 public sealed class ConsoleLoadingHandler : ILoadingHandler

@@ -5,7 +5,7 @@ namespace Nebula.Shared.Services;
 
 public partial class ContentService
 {
-    public bool CheckMigration(ILoadingHandler loadingHandler)
+    public bool CheckMigration(ILoadingHandlerFactory loadingHandler)
     {
         _logger.Log("Checking migration...");
 
@@ -17,11 +17,12 @@ public partial class ContentService
         return true;
     }
 
-    private void DoMigration(ILoadingHandler loadingHandler, List<string> migrationList)
+    private void DoMigration(ILoadingHandlerFactory loadingHandler, List<string> migrationList)
     {
-        loadingHandler.SetJobsCount(migrationList.Count);
+        var mainLoadingHandler = loadingHandler.CreateLoadingContext();
+        mainLoadingHandler.SetJobsCount(migrationList.Count);
         
-        Parallel.ForEach(migrationList, (f,_)=>MigrateFile(f, loadingHandler) );
+        Parallel.ForEach(migrationList, (f,_)=>MigrateFile(f, mainLoadingHandler) );
         loadingHandler.Dispose();
     }
 

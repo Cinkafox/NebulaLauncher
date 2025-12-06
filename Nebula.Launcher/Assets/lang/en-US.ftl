@@ -70,3 +70,4 @@ popup-login-credentials-warning-cancel = Cancel
 popup-login-credentials-warning-proceed = Proceed
 
 goto-path-home = Root folder
+tab-favorite = Favorite

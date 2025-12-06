@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Numerics;
@@ -115,8 +116,6 @@ public partial class ContentService
 
             loadingHandler.AppendResolvedJob();
         });
-
-       loadingHandler.Dispose();
     }
 
     private async Task Download(Uri contentCdn, List<RobustManifestItem> toDownload, HashApi hashApi, ILoadingHandlerFactory loadingHandlerFactory,
@@ -149,18 +148,9 @@ public partial class ContentService
 
         request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("zstd"));
         var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-        if (cancellationToken.IsCancellationRequested)
-        {
-            _logger.Log("Downloading cancelled!");
-            return;
-        }
-
         response.EnsureSuccessStatusCode();
 
         var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var bandwidthStream = new BandwidthStream(stream);
-        stream = bandwidthStream;
         if (response.Content.Headers.ContentEncoding.Contains("zstd"))
             stream = new ZStdDecompressStream(stream);
 
@@ -174,9 +164,13 @@ public partial class ContentService
         var decompressContext = preCompressed ? new ZStdDCtx() : null;
         
         var fileHeader = new byte[preCompressed ? 8 : 4];
-        
-        var mainLoadingHandler = loadingHandlerFactory.CreateLoadingContext();
-        mainLoadingHandler.SetLoadingMessage("Downloading from: " + contentCdn.Host);
+
+        var downloadLoadHandler = loadingHandlerFactory.CreateLoadingContext();
+        downloadLoadHandler.SetJobsCount(toDownload.Count);
+        downloadLoadHandler.SetLoadingMessage("Fetching files...");
+
+        if (loadingHandlerFactory is IConnectionSpeedHandler speedHandlerStart)
+            speedHandlerStart.PasteSpeed(0);
         
         try
         {
@@ -184,16 +178,16 @@ public partial class ContentService
             var readBuffer = new byte[1024];
 
             var i = 0;
-
-            mainLoadingHandler.AppendJob(toDownload.Count);
+            var downloadWatchdog = new Stopwatch();
+            var lengthAcc = 0;
+            var timeAcc = 0L;
 
             foreach (var item in toDownload)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 
-                if (loadingHandlerFactory is IConnectionSpeedHandler speedHandler)
-                    speedHandler.PasteSpeed((int)bandwidthStream.CalcCurrentAvg());
-
+                downloadWatchdog.Restart();
+                
                 // Read file header.
                 await stream.ReadExactAsync(fileHeader, cancellationToken);
 
@@ -242,14 +236,39 @@ public partial class ContentService
                 hashApi.Save(item, fileStream, null);
 
                 _logger.Log("file saved:" + item.Path);
-                mainLoadingHandler.AppendResolvedJob();
                 fileLoadingHandler.Dispose();
+                downloadLoadHandler.AppendResolvedJob();
                 i += 1;
+                
+                if (loadingHandlerFactory is not IConnectionSpeedHandler speedHandler) 
+                    continue;
+
+                if (downloadWatchdog.ElapsedMilliseconds + timeAcc < 1000)
+                {
+                    timeAcc += downloadWatchdog.ElapsedMilliseconds;
+                    lengthAcc += length;
+                    continue;
+                }
+
+                if (timeAcc != 0)
+                {
+                    timeAcc += downloadWatchdog.ElapsedMilliseconds;
+                    lengthAcc += length;
+                    
+                    speedHandler.PasteSpeed((int)(lengthAcc / (timeAcc / 1000)));
+
+                    timeAcc = 0;
+                    lengthAcc = 0;
+                    
+                    continue;
+                }
+                
+                speedHandler.PasteSpeed((int)(length / (downloadWatchdog.ElapsedMilliseconds / 1000)));
             }
         }
         finally
         {
-            mainLoadingHandler.Dispose();
+            downloadLoadHandler.Dispose();
             decompressContext?.Dispose();
             compressContext?.Dispose();
         }

@@ -25,7 +25,7 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
     public bool IsCancellable { get; set; } = true;
     public override bool IsClosable => false;
 
-    public override string Title => LoadingName;
+    public override string Title => LocalizationService.GetString("popup-loading");
 
     public void Cancel()
     {
@@ -56,7 +56,6 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
     public void RemoveContextInstance(LoadingContext loadingContext)
     {
         LoadingContexts.Remove(loadingContext);
-        if(LoadingContexts.Count == 0) Dispose();
     }
 
     protected override void Initialise()

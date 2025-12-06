@@ -29,8 +29,7 @@ public sealed class RunnerService(
         CancellationToken cancellationToken)
     {
         _logger.Log("Start Content!");
-
-        var mainLoadingHandler = loadingHandler.CreateLoadingContext();
+        
         var engine = await engineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion, loadingHandler, cancellationToken);
 
         if (engine is null)
@@ -80,8 +79,8 @@ public sealed class RunnerService(
             MetricsEnabledPatcher.ApplyPatch(reflectionService, harmonyService);
             metricServer = RunHelper.RunMetric(prometheusAssembly);
         }
-        mainLoadingHandler.Dispose();
-        
+
+        loadingHandler.Dispose();
         await Task.Run(() => loader.Main(args), cancellationToken);
         
         metricServer?.Dispose();

@@ -32,6 +32,7 @@ public partial class AccountInfoViewModel : ViewModelBase
     [ObservableProperty] private bool _isLogged;
     [ObservableProperty] private bool _doRetryAuth;
     [ObservableProperty] private AuthServerCredentials _authItemSelect;
+    [ObservableProperty] private string _authServerName;
 
     private bool _isProfilesEmpty;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; }
@@ -436,6 +437,8 @@ public partial class AccountInfoViewModel : ViewModelBase
             }
         
             accountInfoViewModel.IsLogged = true;
+
+            accountInfoViewModel.AuthServerName = accountInfoViewModel.GetServerAuthName(currProfile.AuthServer);
             
             return currProfile;
         }

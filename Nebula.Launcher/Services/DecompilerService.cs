@@ -48,13 +48,10 @@ public sealed partial class DecompilerService
     {
         var myTempDir = FileService.EnsureTempDir(out var tmpDir);
 
-        var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
-        var mainLoadingHandler = loadingHandler.CreateLoadingContext();
-        mainLoadingHandler.AppendJob(4);
+        using var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         var buildInfo =
             await ContentService.GetBuildInfo(url, cancellationToken);
         var engine = await EngineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion, loadingHandler, cancellationToken);
-        mainLoadingHandler.AppendJob();
         if (engine is null)
             throw new Exception("Engine version not found: " + buildInfo.BuildInfo.Build.EngineVersion);
 
@@ -64,19 +61,16 @@ public sealed partial class DecompilerService
             myTempDir.Save(file, stream);
             await stream.DisposeAsync();
         }
-        
-        mainLoadingHandler.AppendJob();
+
 
         var hashApi = await ContentService.EnsureItems(buildInfo.RobustManifestInfo, loadingHandler, cancellationToken);
-        mainLoadingHandler.AppendJob();
+        
         foreach (var (file, hash) in hashApi.Manifest)
         {
             if(!file.Contains(".dll") || !hashApi.TryOpen(hash, out var stream)) continue;
             myTempDir.Save(Path.GetFileName(file), stream);
             await stream.DisposeAsync();
         }
-        
-        loadingHandler.Dispose();
         
         _logger.Log("File extracted. " + tmpDir);
         

@@ -19,6 +19,9 @@ public class SimpleGraph : Control
 
     public static readonly StyledProperty<IBrush> GraphBrushProperty =
         AvaloniaProperty.Register<SimpleGraph, IBrush>(nameof(GraphBrush), Brushes.CornflowerBlue);
+    
+    public static readonly StyledProperty<IBrush> GridBrushProperty =
+        AvaloniaProperty.Register<SimpleGraph, IBrush>(nameof(GridBrush), Brushes.LightGray);
 
     static SimpleGraph()
     {
@@ -54,6 +57,12 @@ public class SimpleGraph : Control
     {
         get => GetValue(GraphBrushProperty);
         set => SetValue(GraphBrushProperty, value);
+    }
+    
+    public IBrush GridBrush
+    {
+        get => GetValue(GridBrushProperty);
+        set => SetValue(GridBrushProperty, value);
     }
 
     public override void Render(DrawingContext context)
@@ -130,7 +139,7 @@ public class SimpleGraph : Control
 
     private void DrawGrid(DrawingContext dc, Rect r)
     {
-        var pen = new Pen(Brushes.LightGray, 0.5);
+        var pen = new Pen(GridBrush, 0.5);
         var rows = 4;
         var cols = Math.Max(2, Values?.Count ?? 2);
         for (var i = 0; i <= rows; i++)

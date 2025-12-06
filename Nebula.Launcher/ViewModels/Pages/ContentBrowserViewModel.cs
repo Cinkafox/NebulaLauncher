@@ -58,7 +58,11 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
         loading.LoadingName = "Unpacking entry";
         PopupService.Popup(loading);
 
-        Task.Run(() => ContentService.Unpack(serverEntry.FileApi, myTempDir, loading.CreateLoadingContext()));
+        Task.Run(() =>
+        {
+            ContentService.Unpack(serverEntry.FileApi, myTempDir, loading.CreateLoadingContext());
+            loading.Dispose();
+        });
         ExplorerHelper.OpenFolder(tmpDir);
     }
 
@@ -307,7 +311,6 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
         IsLoading = true;
         var loading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loading.LoadingName = "Loading entry";
-        loading.CreateLoadingContext();
         PopupService.Popup(loading);
         ServerUrl = serverUrl;
 

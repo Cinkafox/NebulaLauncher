@@ -36,7 +36,7 @@ public interface ILoadingFormater
     public string Format(ILoadingHandler loadingHandler);
 }
 
-public interface ILoadingHandlerFactory
+public interface ILoadingHandlerFactory: IDisposable
 {
     public ILoadingHandler CreateLoadingContext(ILoadingFormater? loadingFormater = null);
 }
