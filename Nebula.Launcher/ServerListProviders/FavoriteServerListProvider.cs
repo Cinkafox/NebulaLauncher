@@ -28,6 +28,7 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
     
     public bool IsLoaded { get; private set; }
     public Action? OnLoaded { get; set; }
+    public Action? OnDisposed { get; set; }
     public Action? Dirty { get; set; }
     public IEnumerable<IListEntryModelView> GetServers()
     {
@@ -108,9 +109,14 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
     }
 
     private void InitialiseInDesignMode(){}
+
+    public void Dispose()
+    {
+        OnDisposed?.Invoke();
+    }
 }
 
-public class AddFavoriteButton: Border, IListEntryModelView{
+public sealed class AddFavoriteButton: Border, IListEntryModelView{
 
     private Button _addFavoriteButton = new Button();
     public AddFavoriteButton(IServiceProvider serviceProvider)
@@ -128,4 +134,9 @@ public class AddFavoriteButton: Border, IListEntryModelView{
         Child = _addFavoriteButton;
     }
     public bool IsFavorite { get; set; }
+
+    public void Dispose()
+    {
+        
+    }
 }

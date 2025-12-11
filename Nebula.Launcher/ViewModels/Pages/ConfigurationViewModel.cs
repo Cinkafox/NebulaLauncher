@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using Nebula.Launcher.Services;
+using Nebula.Launcher.Utils;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views.Pages;
 using Nebula.Shared;
@@ -69,7 +70,7 @@ public partial class ConfigurationViewModel : ViewModelBase
 
     public void OpenDataFolder()
     {
-        ExplorerHelper.OpenFolder(FileService.RootPath);
+        ExplorerUtils.OpenFolder(FileService.RootPath);
     }
 
     public void ExportLogs()
@@ -79,7 +80,7 @@ public partial class ConfigurationViewModel : ViewModelBase
         Directory.CreateDirectory(path);
         
         ZipFile.CreateFromDirectory(logPath, Path.Join(path, DateTime.Now.ToString("yyyy-MM-dd") + ".zip"));
-        ExplorerHelper.OpenFolder(path);
+        ExplorerUtils.OpenFolder(path);
     }
 
     public void RemoveAllContent()

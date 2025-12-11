@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Nebula.Launcher.Controls"
+             xmlns:services="clr-namespace:Nebula.Launcher.Services"
+             xmlns:viewModels1="clr-namespace:Nebula.Launcher.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nebula.Launcher.Views.ServerListView"
+             x:DataType="viewModels1:ServerListViewModel">
+    <Design.DataContext>
+        <viewModels1:ServerListViewModel />
+    </Design.DataContext>
+    
+    <ScrollViewer
+        Margin="5,0,0,10"
+        Padding="0,0,10,0">
+        <StackPanel Margin="0,0,0,30">
+            <Label IsVisible="{Binding IsLoading}" 
+                   x:Name="LoadingLabel" 
+                   Margin="10" HorizontalAlignment="Center"
+                   Content="{services:LocaledText 'server-list-loading'}"/>
+            <ItemsControl 
+                ItemsSource="{Binding ErrorList}" 
+                Margin="10,0,10,0" />
+            <ItemsControl
+                ItemsSource="{Binding ServerList}"
+                Padding="0" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

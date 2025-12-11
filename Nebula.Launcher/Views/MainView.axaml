@@ -77,7 +77,7 @@
                             </ListBox>
                             <Button
                                 Classes="ViewSelectButton"
-                                Command="{Binding TriggerPaneCommand}"
+                                Command="{Binding TriggerPane}"
                                 Grid.Row="1"
                                 HorizontalAlignment="Stretch"
                                 Padding="5,0,5,0"
@@ -178,7 +178,7 @@
                                 <Label Content="{Binding CurrentTitle}" VerticalAlignment="Center" />
                             </StackPanel>
                             <Button
-                                Command="{Binding ClosePopupCommand}"
+                                Command="{Binding CloseCurrentPopup}"
                                 Content="X"
                                 CornerRadius="0,10,0,0"
                                 HorizontalAlignment="Right"

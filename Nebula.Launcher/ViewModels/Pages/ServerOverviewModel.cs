@@ -23,22 +23,16 @@ namespace Nebula.Launcher.ViewModels.Pages;
 public partial class ServerOverviewModel : ViewModelBase
 {
     [ObservableProperty] private string _searchText = string.Empty;
-    
     [ObservableProperty] private bool _isFilterVisible;
-
-    [ObservableProperty] private ServerListView _currentServerList = new();
     
     public readonly ServerFilter CurrentFilter = new();
-
     [GenerateProperty] private IServiceProvider ServiceProvider { get; }
     [GenerateProperty] private ConfigurationService ConfigurationService { get; }
     [GenerateProperty] private FavoriteServerListProvider FavoriteServerListProvider { get; }
     public ObservableCollection<ServerListTabTemplate> Items { get; private set; }
     [ObservableProperty] private ServerListTabTemplate _selectedItem;
-    
     [GenerateProperty, DesignConstruct] private ServerViewContainer ServerViewContainer { get; } 
-    
-    private Dictionary<string, ServerListView> _viewCache = [];
+    [GenerateProperty, DesignConstruct] public ServerListViewModel CurrentServerList { get; }
     
 
     //Design think
@@ -106,26 +100,19 @@ public partial class ServerOverviewModel : ViewModelBase
     {
         ServerViewContainer.Clear();
         CurrentServerList.RefreshFromProvider();
-        CurrentServerList.RequireStatusUpdate();
         CurrentServerList.ApplyFilter(CurrentFilter);
     }
 
     partial void OnSelectedItemChanged(ServerListTabTemplate value)
     {
-        if (!_viewCache.TryGetValue(value.TabName, out var view))
-        {
-            view = ServerListView.TakeFrom(value.ServerListProvider);
-            _viewCache[value.TabName] = view;
-        }
-        
-        CurrentServerList = view;
+        CurrentServerList.Provider = value.ServerListProvider;
         ApplyFilter();
     }
     
 }
 
 [ServiceRegister]
-public class ServerViewContainer
+public sealed class ServerViewContainer
 {
     private readonly ViewHelperService _viewHelperService;
     private readonly List<string> _favorites = [];
@@ -212,6 +199,10 @@ public class ServerViewContainer
 
     public void Clear()
     {
+        foreach (var (_, value) in _entries)
+        {
+            value.Dispose();
+        }
         _entries.Clear();
     }
 
@@ -244,7 +235,7 @@ public class ServerViewContainer
     }
 }
 
-public interface IListEntryModelView
+public interface IListEntryModelView : IDisposable
 {
     
 }

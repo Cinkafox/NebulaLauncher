@@ -71,3 +71,4 @@ popup-login-credentials-warning-proceed = Продолжить
 
 goto-path-home = Корн. папка
 tab-favorite = Избранное
+server-list-loading = Загрузка списка серверов. Пожалуйста, подождите...

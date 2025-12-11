@@ -42,9 +42,10 @@
         </ListBox>
         
         <Border
-            Child="{Binding CurrentServerList}"
             Grid.Row="1"
-            Grid.RowSpan="2" />
+            Grid.RowSpan="2" >
+            <ContentControl Content="{Binding CurrentServerList}"></ContentControl>
+        </Border>
         
         <Border Grid.Row="1" 
                 Background="{StaticResource DefaultGrad}" 

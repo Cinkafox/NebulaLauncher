@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Avalonia.Media;
 
-namespace Nebula.Launcher.ViewModels.Pages;
+namespace Nebula.Launcher.Utils;
 
 public static class ColorUtils
 {

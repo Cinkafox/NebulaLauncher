@@ -1,12 +1,11 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Nebula.Shared;
 
-namespace Nebula.Launcher.Services;
+namespace Nebula.Launcher.Utils;
 
 
-public static class ExplorerHelper
+public static class ExplorerUtils
 {
     public static void OpenFolder(string path)
     {

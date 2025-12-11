@@ -2,6 +2,7 @@ using System;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Avalonia.Platform;
+using Nebula.Launcher.Utils;
 using Nebula.Launcher.ViewModels.Pages;
 using Color = System.Drawing.Color;
 

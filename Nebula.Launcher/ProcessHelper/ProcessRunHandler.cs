@@ -6,29 +6,27 @@ using Nebula.Shared.Services.Logging;
 
 namespace Nebula.Launcher.ProcessHelper;
 
-public class ProcessRunHandler<T> : IProcessConsumerCollection, IDisposable where T: IProcessStartInfoProvider
+public class ProcessRunHandler : IDisposable
 {
     private ProcessStartInfo? _processInfo;
     private Task<ProcessStartInfo>? _processInfoTask;
     
     private Process? _process;
-    private ProcessLogConsumerCollection _consumerCollection = new();
+    private readonly IProcessLogConsumer _logConsumer;
     
     private string _lastError = string.Empty;
-    private readonly T _currentProcessStartInfoProvider;
+    private readonly IProcessStartInfoProvider _currentProcessStartInfoProvider;
     
-    public T GetCurrentProcessStartInfo() => _currentProcessStartInfoProvider;
+    public IProcessStartInfoProvider GetCurrentProcessStartInfo() => _currentProcessStartInfoProvider;
     public bool IsRunning => _processInfo is not null;
-    public Action<ProcessRunHandler<T>>? OnProcessExited;
-
-    public void RegisterLogger(IProcessLogConsumer consumer)
-    {
-        _consumerCollection.RegisterLogger(consumer);
-    }
+    public Action<ProcessRunHandler>? OnProcessExited;
     
-    public ProcessRunHandler(T processStartInfoProvider)
+    public bool Disposed { get; private set; }
+    
+    public ProcessRunHandler(IProcessStartInfoProvider processStartInfoProvider, IProcessLogConsumer logConsumer)
     {
         _currentProcessStartInfoProvider = processStartInfoProvider;
+        _logConsumer = logConsumer;
         _processInfoTask = _currentProcessStartInfoProvider.GetProcessStartInfo();
         _processInfoTask.GetAwaiter().OnCompleted(OnInfoProvided);
     }
@@ -42,8 +40,18 @@ public class ProcessRunHandler<T> : IProcessConsumerCollection, IDisposable wher
         _processInfoTask = null;
     }
 
+    private void CheckIfDisposed()
+    {
+        if (!Disposed) return;
+        throw new ObjectDisposedException(nameof(ProcessRunHandler));
+    }
+
     public void Start()
     {
+        CheckIfDisposed();
+        if(_process is not null) 
+            throw new InvalidOperationException("Already running");
+            
         if (_processInfoTask != null)
         {
             _processInfoTask.Wait();
@@ -66,7 +74,8 @@ public class ProcessRunHandler<T> : IProcessConsumerCollection, IDisposable wher
     
     public void Stop()
     {
-        _process?.CloseMainWindow();
+        CheckIfDisposed();
+        Dispose();
     }
     
     private void OnExited(object? sender, EventArgs e)
@@ -79,12 +88,13 @@ public class ProcessRunHandler<T> : IProcessConsumerCollection, IDisposable wher
         
 
         if (_process.ExitCode != 0)
-            _consumerCollection.Fatal(_lastError);
+            _logConsumer.Fatal(_lastError);
         
         _process.Dispose();
         _process = null;
         
         OnProcessExited?.Invoke(this);
+        Dispose();
     }
 
     private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
@@ -92,7 +102,7 @@ public class ProcessRunHandler<T> : IProcessConsumerCollection, IDisposable wher
         if (e.Data != null)
         {
             _lastError = e.Data;
-            _consumerCollection.Error(e.Data);
+            _logConsumer.Error(e.Data);
         }
     }
 
@@ -100,14 +110,22 @@ public class ProcessRunHandler<T> : IProcessConsumerCollection, IDisposable wher
     {
         if (e.Data != null)
         {
-            _consumerCollection.Out(e.Data);
+            _logConsumer.Out(e.Data);
         }
     }
 
     public void Dispose()
     {
+        if (_process is not null)
+        {
+            _process.CloseMainWindow();
+            return;
+        }
+        
+        CheckIfDisposed();
+    
         _processInfoTask?.Dispose();
-        _process?.Dispose();
+        Disposed = true;
     }
 }
 

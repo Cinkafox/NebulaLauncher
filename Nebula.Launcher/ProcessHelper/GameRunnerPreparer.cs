@@ -13,7 +13,7 @@ namespace Nebula.Launcher.ProcessHelper;
 [ServiceRegister]
 public sealed class GameRunnerPreparer(IServiceProvider provider, ContentService contentService, EngineService engineService)
 {
-    public async Task<ProcessRunHandler<GameProcessStartInfoProvider>> GetGameProcessStartInfoProvider(RobustUrl address, ILoadingHandlerFactory loadingHandlerFactory, CancellationToken cancellationToken = default)
+    public async Task<GameProcessStartInfoProvider> GetGameProcessStartInfoProvider(RobustUrl address, ILoadingHandlerFactory loadingHandlerFactory, CancellationToken cancellationToken = default)
     {
         var buildInfo = await contentService.GetBuildInfo(address, cancellationToken);
         
@@ -39,11 +39,9 @@ public sealed class GameRunnerPreparer(IServiceProvider provider, ContentService
             await stream.DisposeAsync();
         }
 
-        var gameInfo =
+        return 
             provider.GetService<GameProcessStartInfoProvider>()!.WithBuildInfo(buildInfo.BuildInfo.Auth.PublicKey,
                 address);
-        var gameProcessRunHandler = new ProcessRunHandler<GameProcessStartInfoProvider>(gameInfo);
         
-        return gameProcessRunHandler;
     }
 }

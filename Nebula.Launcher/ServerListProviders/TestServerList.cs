@@ -10,6 +10,8 @@ public sealed class TestServerList : IServerListProvider
 {
     public bool IsLoaded => true;
     public Action? OnLoaded { get; set; }
+    public Action? OnDisposed { get; set; }
+
     public IEnumerable<IListEntryModelView> GetServers()
     {
         return [new ServerEntryModelView(),new ServerEntryModelView()];
@@ -23,5 +25,10 @@ public sealed class TestServerList : IServerListProvider
     public void LoadServerList()
     {
         
+    }
+
+    public void Dispose()
+    {
+        OnDisposed?.Invoke();
     }
 }

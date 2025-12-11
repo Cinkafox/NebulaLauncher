@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Microsoft.Extensions.DependencyInjection;
-using Nebula.Launcher.ViewModels;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Shared;
 using Nebula.Shared.Models;
@@ -22,6 +20,7 @@ public sealed partial class HubServerListProvider : IServerListProvider
     
     public bool IsLoaded { get; private set; }
     public Action? OnLoaded { get; set; }
+    public Action? OnDisposed { get; set; }
 
     private CancellationTokenSource? _cts;
     private readonly List<IListEntryModelView> _servers = [];
@@ -83,4 +82,10 @@ public sealed partial class HubServerListProvider : IServerListProvider
     
     private void Initialise(){}
     private void InitialiseInDesignMode(){}
+
+    public void Dispose()
+    {
+        OnDisposed?.Invoke();
+        _cts?.Dispose();
+    }
 }

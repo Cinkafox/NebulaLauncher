@@ -11,7 +11,7 @@ using Nebula.Shared.Services;
 namespace Nebula.Launcher.Services;
 
 [ConstructGenerator, ServiceRegister]
-public partial class LocalizationService
+public sealed partial class LocalizationService
 {
     [GenerateProperty] private ConfigurationService ConfigurationService { get; }
     [GenerateProperty] private DebugService DebugService { get; }
@@ -39,7 +39,6 @@ public partial class LocalizationService
             {
                 Console.WriteLine(error);
             }
-
 
             _currentMessageContext = mc;
         } catch (Exception e) {

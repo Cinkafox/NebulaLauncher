@@ -71,3 +71,4 @@ popup-login-credentials-warning-proceed = Proceed
 
 goto-path-home = Root folder
 tab-favorite = Favorite
+server-list-loading = Loading server list.. Please wait

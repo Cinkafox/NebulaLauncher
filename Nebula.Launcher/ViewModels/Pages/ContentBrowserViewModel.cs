@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.Services;
+using Nebula.Launcher.Utils;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views;
 using Nebula.Launcher.Views.Pages;
@@ -63,7 +64,7 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
             ContentService.Unpack(serverEntry.FileApi, myTempDir, loading.CreateLoadingContext());
             loading.Dispose();
         });
-        ExplorerHelper.OpenFolder(tmpDir);
+        ExplorerUtils.OpenFolder(tmpDir);
     }
 
     public void OnGoEnter()
@@ -80,10 +81,7 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
             var cur = ServiceProvider.GetService<ServerFolderContentEntry>()!;
             cur.Init(this, ServerText.ToRobustUrl());
             var curContent = cur.Go(new ContentPath(SearchText), CancellationService.Token);
-            if(curContent == null) 
-                throw new NullReferenceException($"{SearchText} not found in {ServerText}");
-            
-            CurrentEntry = curContent;
+            CurrentEntry = curContent ?? throw new NullReferenceException($"{SearchText} not found in {ServerText}");
         }
         catch (Exception e)
         {

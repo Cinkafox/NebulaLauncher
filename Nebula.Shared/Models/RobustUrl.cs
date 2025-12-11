@@ -29,7 +29,7 @@ public class RobustUrl
         return url.HttpUri;
     }
 
-    public static explicit operator RobustUrl(string url)
+    public static implicit operator RobustUrl(string url)
     {
         return new RobustUrl(url);
     }

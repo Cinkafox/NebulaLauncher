@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using Avalonia.Media;
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Nebula.Launcher.Models;
@@ -13,7 +11,6 @@ using Nebula.Launcher.Views;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.ViewHelper;
-using BindingFlags = System.Reflection.BindingFlags;
 
 namespace Nebula.Launcher.ViewModels;
 
@@ -23,7 +20,6 @@ public sealed partial class ServerCompoundEntryViewModel :
     ViewModelBase, IFavoriteEntryModelView, IFilterConsumer, IListEntryModelView, IEntryNameHolder
 {
     [ObservableProperty] private ServerEntryModelView? _currentEntry;
-    [ObservableProperty] private Control? _entryControl;
     [ObservableProperty] private string _message = "Loading server entry...";
     [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private bool _loading = true;
@@ -68,7 +64,7 @@ public sealed partial class ServerCompoundEntryViewModel :
                 Message = "Loading server entry...";
                 var status = await RestService.GetAsync<ServerStatus>(_url.StatusUri, cancellationToken);
                 
-                CurrentEntry = ServiceProvider.GetService<ServerEntryModelView>()!.WithData(_url,name, status);
+                CurrentEntry = ServiceProvider.GetService<ServerEntryModelView>()!.WithData(_url, name, status);
                 CurrentEntry.IsFavorite = IsFavorite;
                 CurrentEntry.Loading = false;
                 CurrentEntry.ProcessFilter(_currentFilter);
@@ -101,5 +97,10 @@ public sealed partial class ServerCompoundEntryViewModel :
         _currentFilter = serverFilter;
         if(CurrentEntry is IFilterConsumer filterConsumer) 
             filterConsumer.ProcessFilter(serverFilter);
+    }
+
+    public void Dispose()
+    {
+        CurrentEntry?.Dispose();
     }
 }

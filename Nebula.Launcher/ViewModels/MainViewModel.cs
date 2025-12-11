@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.Services;
+using Nebula.Launcher.Utils;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views;
@@ -208,7 +209,7 @@ public partial class MainViewModel : ViewModelBase
 
     public void OpenRootPath()
     {
-        ExplorerHelper.OpenFolder(FileService.RootPath);
+        ExplorerUtils.OpenFolder(FileService.RootPath);
     }
 
     public void OpenLink()
@@ -248,16 +249,18 @@ public partial class MainViewModel : ViewModelBase
         else
             _viewQueue.Remove(viewModelBase);
     }
-
-
-    [RelayCommand]
-    private void TriggerPane()
+    
+    public void TriggerPane()
     {
         IsPaneOpen = !IsPaneOpen;
     }
 
-    [RelayCommand]
-    public void ClosePopup()
+    public void CloseCurrentPopup()
+    {
+        CurrentPopup?.Dispose();
+    }
+
+    private void ClosePopup()
     {
         var viewModelBase = _viewQueue.FirstOrDefault();
         if (viewModelBase is null)
@@ -271,30 +274,5 @@ public partial class MainViewModel : ViewModelBase
         }
 
         CurrentPopup = viewModelBase;
-    }
-}
-
-public static class VCRuntimeDllChecker
-{
-    public static bool AreVCRuntimeDllsPresent()
-    {
-        if (!OperatingSystem.IsWindows()) return true;
-        
-        string systemDir = Environment.SystemDirectory;
-        string[] requiredDlls = {
-            "msvcp140.dll",
-            "vcruntime140.dll"
-        };
-
-        foreach (var dll in requiredDlls)
-        {
-            var path = Path.Combine(systemDir, dll);
-            if (!File.Exists(path))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 }

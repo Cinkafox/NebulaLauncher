@@ -34,21 +34,6 @@
         <PackageReference Include="Robust.Natives" Version="0.2.3" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Compile Update="Views\Tabs\ServerListTab.axaml.cs">
-            <DependentUpon>ServerListTab.axaml</DependentUpon>
-            <SubType>Code</SubType>
-        </Compile>
-        <Compile Update="Views\Popup\AddFavoriteView.axaml.cs">
-          <DependentUpon>AddFavoriteView.axaml</DependentUpon>
-          <SubType>Code</SubType>
-        </Compile>
-        <Compile Update="Controls\ServerListView.axaml.cs">
-          <DependentUpon>ServerListView.axaml</DependentUpon>
-          <SubType>Code</SubType>
-        </Compile>
-    </ItemGroup>
-
     <Target Name="BuildCheck" AfterTargets="AfterBuild">
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.dll" DestinationFolder="$(OutDir)"/>
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.pdb" DestinationFolder="$(OutDir)"/>

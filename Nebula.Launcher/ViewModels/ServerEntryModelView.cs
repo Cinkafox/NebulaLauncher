@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
@@ -23,7 +21,7 @@ namespace Nebula.Launcher.ViewModels;
 
 [ViewModelRegister(typeof(ServerEntryView), false)]
 [ConstructGenerator]
-public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, IListEntryModelView, IFavoriteEntryModelView, IEntryNameHolder
+public sealed partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, IListEntryModelView, IFavoriteEntryModelView, IEntryNameHolder
 {
     [ObservableProperty] private string _description = "Fetching info...";
     [ObservableProperty] private bool _expandInfo;
@@ -42,10 +40,7 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
     
     private ILogger _logger;
     private ServerInfo? _serverInfo;
-    private ContentLogConsumer _currentContentLogConsumer;
-    private ProcessRunHandler<GameProcessStartInfoProvider>? _currentInstance;
-
-    public LogPopupModelView CurrLog;
+    private InstanceKey _instanceKey;
     public RobustUrl Address { get; private set; }
     [GenerateProperty] private AccountInfoViewModel AccountInfoViewModel { get; }
     [GenerateProperty] private CancellationService CancellationService { get; } = default!;
@@ -56,6 +51,7 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
     [GenerateProperty] private MainViewModel MainViewModel { get; } = default!;
     [GenerateProperty] private FavoriteServerListProvider FavoriteServerListProvider { get; } = default!;
     [GenerateProperty] private GameRunnerPreparer GameRunnerPreparer { get; } = default!;
+    [GenerateProperty] private InstanceRunningContainer InstanceRunningContainer { get; } = default!;
 
     public ServerStatus Status { get; private set; } =
         new(
@@ -101,14 +97,19 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
             ["rp:hrp", "18+"],
             "Antag", 15, 5, 1, false
             , DateTime.Now, 100);
-        Address = "ss14://localhost".ToRobustUrl();
+        Address = "ss14://localhost";
     }
 
     protected override void Initialise()
     {
         _logger = DebugService.GetLogger(this);
-        CurrLog = ViewHelperService.GetViewModel<LogPopupModelView>();
-        _currentContentLogConsumer = new(CurrLog, PopupMessageService);
+        InstanceRunningContainer.IsRunningChanged += IsRunningChanged;
+    }
+
+    private void IsRunningChanged(InstanceKey arg1, bool isRunning)
+    {
+        if(arg1.Equals(_instanceKey)) 
+            RunVisible = !isRunning;
     }
 
     public void ProcessFilter(ServerFilter? serverFilter)
@@ -162,13 +163,11 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
 
     public void RunInstance()
     { 
-        CurrLog.Clear();
         Task.Run(async ()=> await RunInstanceAsync());
     }
 
     public void RunInstanceIgnoreAuth()
     {
-        CurrLog.Clear();
         Task.Run(async ()=> await RunInstanceAsync(true));
     }
 
@@ -190,14 +189,11 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
             viewModelLoading.LoadingName = "Loading instance...";
 
             PopupMessageService.Popup(viewModelLoading);
-            _currentInstance = 
+            var currProcessStartProvider = 
                 await GameRunnerPreparer.GetGameProcessStartInfoProvider(Address, viewModelLoading, CancellationService.Token);
             _logger.Log("Preparing instance...");
-            _currentInstance.RegisterLogger(_currentContentLogConsumer);
-            _currentInstance.RegisterLogger(new DebugLoggerBridge(DebugService.GetLogger($"PROCESS_{Random.Shared.Next(65535)}")));
-            _currentInstance.OnProcessExited += OnProcessExited;
-            RunVisible = false;
-            _currentInstance.Start();
+            _instanceKey = InstanceRunningContainer.RegisterInstance(currProcessStartProvider);
+            InstanceRunningContainer.Run(_instanceKey);
             _logger.Log("Starting instance..." + RealName);
         }
         catch (Exception e)
@@ -205,28 +201,17 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
             var error = new Exception("Error while attempt run instance", e);
             _logger.Error(error);
             PopupMessageService.Popup(error);
-            RunVisible = true;
         }
-    }
-
-    private void OnProcessExited(ProcessRunHandler<GameProcessStartInfoProvider> obj)
-    {
-        RunVisible = true;
-        if (_currentInstance == null) return;
-        
-        _currentInstance.OnProcessExited -= OnProcessExited;
-        _currentInstance.Dispose();
-        _currentInstance = null;
     }
 
     public void StopInstance()
     {
-        _currentInstance?.Stop();   
+        InstanceRunningContainer.Stop(_instanceKey);
     }
     
     public void ReadLog()
     {
-        PopupMessageService.Popup(CurrLog);
+        InstanceRunningContainer.Popup(_instanceKey);
     }
 
     public async void ExpandInfoRequired()
@@ -243,9 +228,39 @@ public partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, ILis
         if (info.Links is null) return;
         foreach (var link in info.Links) Links.Add(link);
     }
+
+    public void Dispose()
+    {
+        _logger.Dispose();
+    }
 }
 
-public class LinkGoCommand : ICommand
+public sealed class InstanceKeyPool
+{
+    private int _nextId = 1;
+
+    public InstanceKey Take()
+    {
+        return new InstanceKey(_nextId++);
+    }
+
+    public void Free(InstanceKey id)
+    {
+        // TODO: make some free logic later
+    }
+}
+
+public record struct InstanceKey(int Id):
+    IEquatable<int>,
+    IComparable<InstanceKey>
+{
+    public static implicit operator InstanceKey(int id) => new InstanceKey(id);
+    public static implicit operator int(InstanceKey id) => id.Id;
+    public bool Equals(int other) => Id == other;
+    public int CompareTo(InstanceKey other) => Id.CompareTo(other.Id);
+};
+
+public sealed class LinkGoCommand : ICommand
 {
     public LinkGoCommand()
     {
