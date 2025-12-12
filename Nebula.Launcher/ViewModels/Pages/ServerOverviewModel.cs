@@ -118,6 +118,14 @@ public sealed class ServerViewContainer
     private readonly List<string> _favorites = [];
     private readonly Dictionary<string, string> _customNames = [];
 
+    private readonly Dictionary<string, WeakReference<IListEntryModelView>> _entries = new();
+
+    public ICollection<IListEntryModelView> Items =>
+        _entries.Values
+            .Select(wr => wr.TryGetTarget(out var target) ? target : null)
+            .Where(t => t != null)
+            .ToList()!;
+
     public ServerViewContainer()
     {
         _viewHelperService = new ViewHelperService();
@@ -131,107 +139,123 @@ public sealed class ServerViewContainer
         configurationService.SubscribeVarChanged(LauncherConVar.ServerCustomNames, OnCustomNamesChanged, true);
     }
 
-    private void OnCustomNamesChanged(Dictionary<string,string>? value)
-    {
-        var oldNames = 
-            _customNames.ToDictionary(k => k.Key, v => v.Value); //Clone think
-        
-        _customNames.Clear();
-        
-        if(value == null)
-        {
-            foreach (var (ip,_) in oldNames)
-            {
-                if(!_entries.TryGetValue(ip, out var listEntry) || listEntry is not IEntryNameHolder entryNameHolder) 
-                    continue;
-
-                entryNameHolder.Name = null;
-            }
-            
-            return;
-        }
-
-        foreach (var (oldIp, oldName) in oldNames)
-        {
-            if(value.TryGetValue(oldIp, out var newName))
-            {
-                if (oldName == newName)
-                    value.Remove(newName);
-                
-                continue;
-            }
-            
-            if(!_entries.TryGetValue(oldIp, out var listEntry) || 
-               listEntry is not IEntryNameHolder entryNameHolder) 
-                continue;
-            
-            entryNameHolder.Name = null;
-        }
-        
-        foreach (var (ip, name) in value)
-        {
-            _customNames.Add(ip, name);
-            if(!_entries.TryGetValue(ip, out var listEntry) || listEntry is not IEntryNameHolder entryNameHolder) 
-                continue;
-            
-            entryNameHolder.Name = name;
-        }
-    }
-
-    private void OnFavoritesChange(string[]? value)
-    {
-        _favorites.Clear();
-        if(value == null) return;
-        
-        foreach (var favorite in value)
-        {
-            _favorites.Add(favorite);
-            if (_entries.TryGetValue(favorite, out var entry) && entry is IFavoriteEntryModelView favoriteView)
-            {
-                favoriteView.IsFavorite = true;
-            }
-        }
-    }
-
-    private readonly Dictionary<string, IListEntryModelView> _entries = new();
-    
-    public ICollection<IListEntryModelView> Items => _entries.Values;
-
     public void Clear()
     {
-        foreach (var (_, value) in _entries)
+        foreach (var (_, weakRef) in _entries)
         {
-            value.Dispose();
+            if (weakRef.TryGetTarget(out var value))
+                value.Dispose();
         }
+
         _entries.Clear();
     }
 
     public IListEntryModelView Get(RobustUrl url, ServerStatus? serverStatus = null)
     {
+        var key = url.ToString();
         IListEntryModelView? entry;
-        
+
         lock (_entries)
         {
-            _customNames.TryGetValue(url.ToString(), out var customName);
-            
-            if (_entries.TryGetValue(url.ToString(), out entry))
+            _customNames.TryGetValue(key, out var customName);
+
+            if (_entries.TryGetValue(key, out var weakEntry)
+                && weakEntry.TryGetTarget(out entry))
             {
                 return entry;
             }
 
             if (serverStatus is not null)
-                entry = _viewHelperService.GetViewModel<ServerEntryModelView>().WithData(url, customName, serverStatus);
+            {
+                entry = _viewHelperService
+                    .GetViewModel<ServerEntryModelView>()
+                    .WithData(url, customName, serverStatus);
+            }
             else
-                entry = _viewHelperService.GetViewModel<ServerCompoundEntryViewModel>().LoadServerEntry(url, customName, CancellationToken.None);
-            
-            if(_favorites.Contains(url.ToString()) && 
-               entry is IFavoriteEntryModelView favoriteEntryModelView) 
-                favoriteEntryModelView.IsFavorite = true;
-            
-            _entries.Add(url.ToString(), entry);
+            {
+                entry = _viewHelperService
+                    .GetViewModel<ServerCompoundEntryViewModel>()
+                    .LoadServerEntry(url, customName, CancellationToken.None);
+            }
+
+            if (_favorites.Contains(key)
+                && entry is IFavoriteEntryModelView fav)
+            {
+                fav.IsFavorite = true;
+            }
+
+            _entries[key] = new WeakReference<IListEntryModelView>(entry);
         }
-        
+
         return entry;
+    }
+
+    private void OnFavoritesChange(string[]? value)
+    {
+        _favorites.Clear();
+        if (value == null) return;
+
+        foreach (var favorite in value)
+        {
+            _favorites.Add(favorite);
+            if (_entries.TryGetValue(favorite, out var weak)
+                && weak.TryGetTarget(out var entry)
+                && entry is IFavoriteEntryModelView fav)
+            {
+                fav.IsFavorite = true;
+            }
+        }
+    }
+
+    private void OnCustomNamesChanged(Dictionary<string, string>? value)
+    {
+        var oldNames = _customNames.ToDictionary(x => x.Key, x => x.Value);
+        _customNames.Clear();
+
+        if (value == null)
+        {
+            foreach (var (ip, _) in oldNames)
+            {
+                ResetName(ip);
+            }
+
+            return;
+        }
+
+        foreach (var (oldIp, oldName) in oldNames)
+        {
+            if (value.TryGetValue(oldIp, out var newName))
+            {
+                if (oldName == newName)
+                    value.Remove(newName);
+
+                continue;
+            }
+
+            ResetName(oldIp);
+        }
+
+        foreach (var (ip, name) in value)
+        {
+            _customNames.Add(ip, name);
+
+            if (_entries.TryGetValue(ip, out var weak)
+                && weak.TryGetTarget(out var entry)
+                && entry is IEntryNameHolder holder)
+            {
+                holder.Name = name;
+            }
+        }
+    }
+
+    private void ResetName(string ip)
+    {
+        if (_entries.TryGetValue(ip, out var weak)
+            && weak.TryGetTarget(out var entry)
+            && entry is IEntryNameHolder holder)
+        {
+            holder.Name = null;
+        }
     }
 }
 

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Nebula.Launcher.Controls;
 using Nebula.Launcher.ViewModels;
 using Nebula.Launcher.ViewModels.Pages;
 

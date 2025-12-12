@@ -28,8 +28,6 @@ public sealed partial class ServerEntryModelView : ViewModelBase, IFilterConsume
     [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private bool _isVisible;
     [ObservableProperty] private bool _runVisible = true;
-    [ObservableProperty] private bool _tagDataVisible;
-    [ObservableProperty] private bool _loading;
     [ObservableProperty] private string _realName;
 
     public string? Name
@@ -131,7 +129,7 @@ public sealed partial class ServerEntryModelView : ViewModelBase, IFilterConsume
         OnPropertyChanged(nameof(Status));
     }
     
-    public ServerEntryModelView WithData(RobustUrl url, string? name,ServerStatus serverStatus)
+    public ServerEntryModelView WithData(RobustUrl url, string? name, ServerStatus serverStatus)
     {
         Address = url;
         SetStatus(serverStatus);

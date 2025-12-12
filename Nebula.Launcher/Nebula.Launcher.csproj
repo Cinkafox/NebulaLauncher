@@ -32,6 +32,7 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0"/>
         <PackageReference Include="libsodium" Version="1.0.20"/>
         <PackageReference Include="Robust.Natives" Version="0.2.3" />
+        <PackageReference Include="Avalonia.Controls.ItemsRepeater" Version="11.1.5" />
     </ItemGroup>
 
     <Target Name="BuildCheck" AfterTargets="AfterBuild">
@@ -62,9 +63,5 @@
     <ItemGroup>
         <ProjectReference Include="..\Nebula.Shared\Nebula.Shared.csproj"/>
         <ProjectReference Include="..\Nebula.SourceGenerators\Nebula.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
-    </ItemGroup>
-
-    <ItemGroup>
-      <AdditionalFiles Include="Controls\ServerListView.axaml" />
     </ItemGroup>
 </Project>

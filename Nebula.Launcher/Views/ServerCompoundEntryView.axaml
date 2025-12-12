@@ -70,9 +70,9 @@
             </Grid>
         </Border>
         
-        <Panel IsVisible="{Binding !Loading}">
-            <views:ServerEntryView IsVisible="{Binding !Loading}" DataContext="{Binding CurrentEntry}"/>
-        </Panel>
+        <ContentControl 
+            IsVisible="{Binding !Loading}" 
+            Content="{Binding CurrentEntry}"/>
          
     </Panel>
 </UserControl>
