@@ -6,7 +6,6 @@ using Nebula.Shared;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Utils;
-using Robust.LoaderApi;
 
 namespace Nebula.Launcher.ProcessHelper;
 
@@ -22,8 +21,7 @@ public sealed class GameRunnerPreparer(IServiceProvider provider, ContentService
         if (engine is null)
             throw new Exception("Engine version not found: " + buildInfo.BuildInfo.Build.EngineVersion);
 
-        var hashApi = await contentService.EnsureItems(buildInfo.RobustManifestInfo, loadingHandlerFactory, cancellationToken);
-       
+        var hashApi = await contentService.EnsureItems(buildInfo, loadingHandlerFactory, cancellationToken);
         
         if (hashApi.TryOpen("manifest.yml", out var stream))
         {

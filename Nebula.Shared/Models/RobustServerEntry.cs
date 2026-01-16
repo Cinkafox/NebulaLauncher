@@ -20,7 +20,7 @@ public sealed record BuildInfo(
     string ManifestDownloadUrl,
     [property: JsonPropertyName("manifest_url")]
     string ManifestUrl,
-    [property: JsonPropertyName("acz")] bool Acz,
+    [property: JsonPropertyName("acz")] bool? Acz,
     [property: JsonPropertyName("hash")] string Hash,
     [property: JsonPropertyName("manifest_hash")]
     string ManifestHash);

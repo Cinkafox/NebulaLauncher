@@ -15,11 +15,11 @@ using Nebula.Launcher.Utils;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views;
 using Nebula.Launcher.Views.Pages;
-using Nebula.Shared.FileApis;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Utils;
 using Nebula.Shared.ViewHelper;
+using Robust.LoaderApi;
 
 namespace Nebula.Launcher.ViewModels.Pages;
 
@@ -199,9 +199,9 @@ public sealed class ExtContentExecutor
         _decompilerService = decompilerService;
     }
 
-    public bool TryExecute(RobustManifestItem manifestItem, CancellationToken cancellationToken)
+    public bool TryExecute(IFileApi api, ContentPath path, CancellationToken cancellationToken)
     {
-        var ext = Path.GetExtension(manifestItem.Path);
+        var ext = Path.GetExtension(path.GetName());
 
         if (ext == ".dll")
         {
@@ -214,41 +214,38 @@ public sealed class ExtContentExecutor
 }
 
 
-public sealed partial class ManifestContentEntry : IContentEntry
+public sealed partial class FileContentEntry : IContentEntry
 {
     public IContentHolder Holder { get; set; } = default!;
     public IContentEntry? Parent { get; set; }
     public string? Name { get; set; }
     public string IconPath => "/Assets/svg/file.svg";
     
-    private RobustManifestItem _manifestItem;
-    private HashApi _hashApi = default!;
+    private IFileApi _fileApi = default!;
     private ExtContentExecutor _extContentExecutor = default!;
 
-    public void Init(IContentHolder holder, RobustManifestItem manifestItem, HashApi api, ExtContentExecutor executor)
+    public void Init(IContentHolder holder, IFileApi api, string fileName, ExtContentExecutor executor)
     {
         Holder = holder;
-        Name = new ContentPath(manifestItem.Path).GetName();
-        _manifestItem = manifestItem;
-        _hashApi = api;
+        Name = fileName;
+        _fileApi = api;
         _extContentExecutor = executor;
     }
     
     public IContentEntry? Go(ContentPath path, CancellationToken cancellationToken)
     {
-        if (_extContentExecutor.TryExecute(_manifestItem, cancellationToken)) 
+        var fullPath = ((IContentEntry)this).FullPath;
+        if (_extContentExecutor.TryExecute(_fileApi, fullPath, cancellationToken)) 
             return null;
         
-        var ext = Path.GetExtension(_manifestItem.Path);
+        var ext = Path.GetExtension(fullPath.GetName());
         
         try
         {
-            if (!_hashApi.TryOpen(_manifestItem, out var stream))
+            if (!_fileApi.TryOpen(fullPath.Path, out var stream))
                 return null;
 
-
             var myTempFile = Path.Combine(Path.GetTempPath(), "tempie" + ext);
-
 
             var sw = new FileStream(myTempFile, FileMode.Create, FileAccess.Write, FileShare.None);
             stream.CopyTo(sw);
@@ -298,7 +295,7 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
     
     public RobustUrl ServerUrl { get; private set; }
 
-    public HashApi FileApi { get; private set; } = default!;
+    public IFileApi FileApi { get; private set; } = default!;
     
     private ExtContentExecutor _contentExecutor = default!;
     
@@ -315,12 +312,12 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
         Task.Run(async () =>
         {
             var buildInfo = await ContentService.GetBuildInfo(serverUrl, CancellationService.Token);
-            FileApi = await ContentService.EnsureItems(buildInfo.RobustManifestInfo, loading,
+            FileApi = await ContentService.EnsureItems(buildInfo, loading,
                 CancellationService.Token);
 
-            foreach (var (path, item) in FileApi.Manifest)
+            foreach (var path in FileApi.AllFiles)
             {
-                CreateContent(new ContentPath(path), item);
+                CreateContent(new ContentPath(path));
             }
             
             IsLoading = false;
@@ -328,7 +325,7 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
         });
     }
 
-    public ManifestContentEntry CreateContent(ContentPath path, RobustManifestItem manifestItem)
+    public FileContentEntry CreateContent(ContentPath path)
     {
         var pathDir = path.GetDirectory();
         BaseFolderContentEntry parent = this;
@@ -345,8 +342,8 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
             parent = folderContentEntry as BaseFolderContentEntry ?? throw new InvalidOperationException();
         }
         
-        var manifestContent = new ManifestContentEntry();
-        manifestContent.Init(Holder, manifestItem, FileApi, _contentExecutor);
+        var manifestContent = new FileContentEntry();
+        manifestContent.Init(Holder, FileApi, path.GetName(), _contentExecutor);
         
         parent.AddChild(manifestContent);
         

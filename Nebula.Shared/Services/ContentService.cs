@@ -19,7 +19,14 @@ public partial class ContentService(
         info.Url = url;
         var bi = await restService.GetAsync<ServerInfo>(url.InfoUri, cancellationToken);
         info.BuildInfo = bi;
-        info.RobustManifestInfo = info.BuildInfo.Build.Acz
+
+        if (info.BuildInfo.Build.Acz is null)
+        {
+            info.DownloadUri = new RobustZipContentInfo(new Uri(info.BuildInfo.Build.DownloadUrl), info.BuildInfo.Build.Hash);
+            return info;
+        }
+        
+        info.RobustManifestInfo = info.BuildInfo.Build.Acz.Value
             ? new RobustManifestInfo(new RobustPath(info.Url, "manifest.txt"), new RobustPath(info.Url, "download"),
                 bi.Build.ManifestHash)
             : new RobustManifestInfo(new Uri(info.BuildInfo.Build.ManifestUrl),

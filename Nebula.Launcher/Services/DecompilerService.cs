@@ -61,13 +61,12 @@ public sealed partial class DecompilerService
             myTempDir.Save(file, stream);
             await stream.DisposeAsync();
         }
-
-
-        var hashApi = await ContentService.EnsureItems(buildInfo.RobustManifestInfo, loadingHandler, cancellationToken);
         
-        foreach (var (file, hash) in hashApi.Manifest)
+        var hashApi = await ContentService.EnsureItems(buildInfo, loadingHandler, cancellationToken);
+        
+        foreach (var file in hashApi.AllFiles)
         {
-            if(!file.Contains(".dll") || !hashApi.TryOpen(hash, out var stream)) continue;
+            if(!file.Contains(".dll") || !hashApi.TryOpen(file, out var stream)) continue;
             myTempDir.Save(Path.GetFileName(file), stream);
             await stream.DisposeAsync();
         }

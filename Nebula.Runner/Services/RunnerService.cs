@@ -35,14 +35,14 @@ public sealed class RunnerService(
         if (engine is null)
             throw new Exception("Engine version not found: " + buildInfo.BuildInfo.Build.EngineVersion);
 
-        var hashApi = await contentService.EnsureItems(buildInfo.RobustManifestInfo, loadingHandler, cancellationToken);
+        var fileApi = await contentService.EnsureItems(buildInfo, loadingHandler, cancellationToken);
 
         var extraMounts = new List<ApiMount>
         {
-            new(hashApi, "/")
+            new(fileApi, "/")
         };
 
-        if (hashApi.TryOpen("manifest.yml", out var stream))
+        if (fileApi.TryOpen("manifest.yml", out var stream))
         {
             var modules = ContentManifestParser.ExtractModules(stream);
 

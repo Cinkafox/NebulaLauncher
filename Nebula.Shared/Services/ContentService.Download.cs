@@ -1,12 +1,15 @@
 ﻿using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO.Compression;
 using System.Net.Http.Headers;
 using System.Numerics;
 using Nebula.Shared.FileApis;
 using Nebula.Shared.FileApis.Interfaces;
 using Nebula.Shared.Models;
 using Nebula.Shared.Utils;
+using Robust.LoaderApi;
 
 namespace Nebula.Shared.Services;
 
@@ -14,6 +17,7 @@ public partial class ContentService
 {
     public readonly IReadWriteFileApi ContentFileApi = fileService.CreateFileApi("content");
     public readonly IReadWriteFileApi ManifestFileApi = fileService.CreateFileApi("manifest");
+    public readonly IReadWriteFileApi ZipContentApi = fileService.CreateFileApi("zipContent");
 
     public void SetServerHash(string address, string hash)
     {
@@ -33,8 +37,20 @@ public partial class ContentService
     {
         return new HashApi(manifestItems, ContentFileApi);
     }
+    
+    public async Task<IFileApi> EnsureItems(RobustBuildInfo info, ILoadingHandlerFactory loadingFactory,
+        CancellationToken cancellationToken)
+    {
+        if (info.RobustManifestInfo.HasValue)
+            return await EnsureItems(info.RobustManifestInfo.Value, loadingFactory, cancellationToken);
+        
+        if (info.DownloadUri.HasValue)
+            return await EnsureItems(info.DownloadUri.Value, loadingFactory, cancellationToken);
+        
+        throw new InvalidOperationException("DownloadUri is null");
+    }
 
-    public async Task<HashApi> EnsureItems(ManifestReader manifestReader, Uri downloadUri,
+    private async Task<HashApi> EnsureItems(ManifestReader manifestReader, Uri downloadUri,
         ILoadingHandlerFactory loadingFactory,
         CancellationToken cancellationToken)
     {
@@ -58,7 +74,41 @@ public partial class ContentService
         return hashApi;
     }
 
-    public async Task<HashApi> EnsureItems(RobustManifestInfo info, ILoadingHandlerFactory loadingFactory,
+    private async Task<ZipFileApi> EnsureItems(RobustZipContentInfo info, ILoadingHandlerFactory loadingFactory, CancellationToken cancellationToken)
+    {
+        if (TryFromFile(ZipContentApi, info.Hash, out var zipFile))
+            return zipFile;
+        
+        var loadingHandler = loadingFactory.CreateLoadingContext(new FileLoadingFormater());
+        
+        var response = await _http.GetAsync(info.DownloadUri, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    
+        loadingHandler.SetLoadingMessage("Downloading zip content");
+        loadingHandler.SetJobsCount(response.Content.Headers.ContentLength ?? 0);
+        await using var streamContent = await response.Content.ReadAsStreamAsync(cancellationToken);
+        ZipContentApi.Save(info.Hash, streamContent, loadingHandler);
+        loadingHandler.Dispose();
+
+        if (TryFromFile(ZipContentApi, info.Hash, out zipFile)) 
+            return zipFile;
+        
+        ZipContentApi.Remove(info.Hash);
+        throw new Exception("Failed to load zip file");
+    }
+
+    private bool TryFromFile(IFileApi fileApi, string path, [NotNullWhen(true)] out ZipFileApi? zipFileApi)
+    {
+        zipFileApi = null;
+        if(!fileApi.TryOpen(path, out var zipContent)) 
+            return false;
+        
+        var zip = new ZipArchive(zipContent);
+        zipFileApi = new ZipFileApi(zip, null);
+        return true;
+    }
+
+    private async Task<HashApi> EnsureItems(RobustManifestInfo info, ILoadingHandlerFactory loadingFactory,
         CancellationToken cancellationToken)
     {
         _logger.Log("Getting manifest: " + info.Hash);
@@ -90,10 +140,10 @@ public partial class ContentService
         return await EnsureItems(manifestReader, info.DownloadUri, loadingFactory, cancellationToken);
     }
 
-    public void Unpack(HashApi hashApi, IWriteFileApi otherApi, ILoadingHandler loadingHandler)
+    public void Unpack(IFileApi hashApi, IWriteFileApi otherApi, ILoadingHandler loadingHandler)
     {
         _logger.Log("Unpack manifest files");
-        var items = hashApi.Manifest.Values.ToList();
+        var items = hashApi.AllFiles.ToList();
         loadingHandler.AppendJob(items.Count);
         
         var options = new ParallelOptions
@@ -105,13 +155,13 @@ public partial class ContentService
         {
             if (hashApi.TryOpen(item, out var stream))
             {
-                _logger.Log($"Unpack {item.Hash} to: {item.Path}");
-                otherApi.Save(item.Path, stream);
+                _logger.Log($"Unpack {item}");
+                otherApi.Save(item, stream);
                 stream.Close();
             }
             else
             {
-                _logger.Error("Error while unpacking thinks " + item.Path);
+                _logger.Error($"Error while unpacking thinks {item}");
             }
 
             loadingHandler.AppendResolvedJob();

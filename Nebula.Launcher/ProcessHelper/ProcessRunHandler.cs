@@ -57,7 +57,7 @@ public class ProcessRunHandler : IDisposable
             _processInfoTask.Wait();
         }
         
-        _process = Process.Start(_processInfo!);
+        _process = Process.Start(_processInfo ?? throw new Exception("Process info is null, please try again."));
         
         if (_process is null) return;
         
