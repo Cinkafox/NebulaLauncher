@@ -16,7 +16,8 @@ public static class DotnetStandalone
     private static readonly HttpClient HttpClient = new();
 
     private static readonly string FullPath =
-        Path.Join(MainWindow.RootPath, "dotnet", DotnetUrlHelper.GetRuntimeIdentifier());
+        Path.Join(MainWindow.RootPath, $"dotnet.{ConfigurationStandalone.GetConfigValue(UpdateConVars.DotnetVersion)}", 
+            DotnetUrlHelper.GetRuntimeIdentifier());
 
     private static readonly string ExecutePath = Path.Join(FullPath, "dotnet" + DotnetUrlHelper.GetExtension());
 

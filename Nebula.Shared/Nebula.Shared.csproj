@@ -1,7 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -11,9 +9,9 @@
         <EmbeddedResource Include="Utils\runtime.json">
             <LogicalName>Utility.runtime.json</LogicalName>
         </EmbeddedResource>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
-        <PackageReference Include="Robust.Natives" Version="0.2.3" />
-        <PackageReference Include="SharpZstd.Interop" Version="1.5.6" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions"/>
+        <PackageReference Include="Robust.Natives"/>
+        <PackageReference Include="SharpZstd.Interop"/>
     </ItemGroup>
 
     <ItemGroup>

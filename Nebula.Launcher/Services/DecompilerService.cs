@@ -29,16 +29,16 @@ public sealed partial class DecompilerService
     [GenerateProperty] private EngineService EngineService {get;}
     [GenerateProperty] private DebugService DebugService {get;}
 
-    private HttpClient _httpClient = new HttpClient();
+    private readonly HttpClient _httpClient = new();
     private ILogger _logger;
 
-    private static string fullPath = Path.Join(FileService.RootPath,"ILSpy");
-    private static string executePath = Path.Join(fullPath, "ILSpy.exe");
+    private string FullPath => Path.Join(FileService.RootPath,$"ILSpy.{ConfigurationService.GetConfigValue(LauncherConVar.ILSpyVersion)}");
+    private string ExecutePath => Path.Join(FullPath, "ILSpy.exe");
 
     public async void OpenDecompiler(string arguments){
         await EnsureILSpy();
         var startInfo = new ProcessStartInfo(){
-            FileName = executePath,
+            FileName = ExecutePath,
             Arguments = arguments
         };
         Process.Start(startInfo);
@@ -84,7 +84,7 @@ public sealed partial class DecompilerService
     private void InitialiseInDesignMode(){}
 
     private async Task EnsureILSpy(){
-        if(!Directory.Exists(fullPath))
+        if(!Directory.Exists(FullPath))
             await Download();
     }
 
@@ -95,7 +95,7 @@ public sealed partial class DecompilerService
         PopupMessageService.Popup(loading);
         using var response = await _httpClient.GetAsync(ConfigurationService.GetConfigValue(LauncherConVar.ILSpyUrl));
         using var zipArchive = new ZipArchive(await response.Content.ReadAsStreamAsync());
-        Directory.CreateDirectory(fullPath);
-        zipArchive.ExtractToDirectory(fullPath);
+        Directory.CreateDirectory(FullPath);
+        zipArchive.ExtractToDirectory(FullPath);
     }
 }

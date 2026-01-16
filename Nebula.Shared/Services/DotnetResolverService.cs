@@ -8,10 +8,10 @@ namespace Nebula.Shared.Services;
 [ServiceRegister]
 public class DotnetResolverService(DebugService debugService, ConfigurationService configurationService)
 {
-    private static readonly string FullPath =
-        Path.Join(FileService.RootPath, "dotnet", DotnetUrlHelper.GetRuntimeIdentifier());
+    private string FullPath =>
+        Path.Join(FileService.RootPath, $"dotnet.{configurationService.GetConfigValue(CurrentConVar.DotnetVersion)}", DotnetUrlHelper.GetRuntimeIdentifier());
 
-    private static readonly string ExecutePath = Path.Join(FullPath, "dotnet" + DotnetUrlHelper.GetExtension());
+    private string ExecutePath => Path.Join(FullPath, "dotnet" + DotnetUrlHelper.GetExtension());
     private readonly HttpClient _httpClient = new();
 
     public async Task<string> EnsureDotnet()

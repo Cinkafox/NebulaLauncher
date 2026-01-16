@@ -1,0 +1,10 @@
+﻿<Solution>
+  <Project Path="Nebula.Launcher\Nebula.Launcher.csproj" Type="Classic C#" />
+  <Project Path="Nebula.Packager\Nebula.Packager.csproj" Type="Classic C#" />
+  <Project Path="Nebula.Runner\Nebula.Runner.csproj" Type="Classic C#" />
+  <Project Path="Nebula.Shared\Nebula.Shared.csproj" Type="Classic C#" />
+  <Project Path="Nebula.SourceGenerators\Nebula.SourceGenerators.csproj" Type="Classic C#" />
+  <Project Path="Nebula.UnitTest\Nebula.UnitTest.csproj" Type="Classic C#" />
+  <Project Path="Nebula.UpdateResolver\Nebula.UpdateResolver.csproj" Type="Classic C#" />
+  <Project Path="Robust.LoaderApi\Robust.LoaderApi\Robust.LoaderApi.csproj" Type="Classic C#" />
+</Solution>
