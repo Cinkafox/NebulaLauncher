@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Shared;
@@ -31,9 +32,9 @@ public sealed class GameProcessStartInfoProvider(DotnetResolverService resolverS
         return this;
     }
 
-    public override async Task<ProcessStartInfo> GetProcessStartInfo()
+    public override async Task<ProcessStartInfo> GetProcessStartInfo(CancellationToken cancellationToken = default)
     {
-        var baseStart = await base.GetProcessStartInfo();
+        var baseStart = await base.GetProcessStartInfo(cancellationToken);
         
         var authProv = accountInfoViewModel.Credentials.Value;
         if(authProv is null) 

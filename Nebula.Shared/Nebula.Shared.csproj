@@ -9,6 +9,7 @@
         <EmbeddedResource Include="Utils\runtime.json">
             <LogicalName>Utility.runtime.json</LogicalName>
         </EmbeddedResource>
+        <PackageReference Include="JetBrains.Annotations" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions"/>
         <PackageReference Include="Robust.Natives"/>
         <PackageReference Include="SharpZstd.Interop"/>

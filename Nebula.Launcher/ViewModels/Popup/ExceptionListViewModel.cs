@@ -15,7 +15,7 @@ public sealed partial class ExceptionListViewModel : PopupViewModelBase
     public override string Title => LocalizationService.GetString("popup-exception");
     public override bool IsClosable => true;
 
-    public ObservableCollection<Exception> Errors { get; } = new();
+    public ObservableCollection<ExceptionCompound> Errors { get; } = new();
 
     protected override void Initialise()
     {
@@ -23,13 +23,18 @@ public sealed partial class ExceptionListViewModel : PopupViewModelBase
 
     protected override void InitialiseInDesignMode()
     {
-        var e = new Exception("TEST");
+        var e = new ExceptionCompound("TEST", "thrown in design mode");
         AppendError(e);
+    }
+
+    public void AppendError(ExceptionCompound exception)
+    {
+        Errors.Add(exception);
     }
 
     public void AppendError(Exception exception)
     {
-        Errors.Add(exception);
+        AppendError(new ExceptionCompound(exception));
         if (exception.InnerException != null)
             AppendError(exception.InnerException);
     }

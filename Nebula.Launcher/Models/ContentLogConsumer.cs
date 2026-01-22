@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Nebula.Launcher.ProcessHelper;
+using Nebula.Launcher.ViewModels;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Shared.Services;
 
@@ -8,18 +9,24 @@ namespace Nebula.Launcher.Models;
 
 public sealed class ContentLogConsumer : IProcessLogConsumer
 {
+    private readonly PopupMessageService _popupMessageService;
     private readonly List<string> _outMessages = [];
     
     private LogPopupModelView? _currentLogPopup;
     
     public int MaxMessages { get; set; } = 100;
 
-    public void Popup(PopupMessageService popupMessageService)
+    public ContentLogConsumer(PopupMessageService popupMessageService)
+    {
+        _popupMessageService = popupMessageService;
+    }
+
+    public void Popup()
     {
         if(_currentLogPopup is not null) 
             return;
         
-        _currentLogPopup = new LogPopupModelView(popupMessageService);
+        _currentLogPopup = new LogPopupModelView(_popupMessageService);
         _currentLogPopup.OnDisposing += OnLogPopupDisposing;
         
         foreach (var message in _outMessages.ToArray())
@@ -27,7 +34,7 @@ public sealed class ContentLogConsumer : IProcessLogConsumer
             _currentLogPopup.Append(message);
         }
         
-        popupMessageService.Popup(_currentLogPopup);
+        _popupMessageService.Popup(_currentLogPopup);
     }
 
     private void OnLogPopupDisposing(PopupViewModelBase obj)
@@ -55,6 +62,6 @@ public sealed class ContentLogConsumer : IProcessLogConsumer
 
     public void Fatal(string text)
     {
-        throw new Exception("Error while running programm: " + text);
+        _popupMessageService.Popup(new ExceptionCompound("Error while running program", text));
     }
 }

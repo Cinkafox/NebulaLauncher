@@ -1,4 +1,5 @@
 using System.Reflection;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Nebula.Shared;
@@ -42,6 +43,7 @@ public static class ServiceExt
     }
 }
 
+[MeansImplicitUse]
 public sealed class ServiceRegisterAttribute : Attribute
 {
     public ServiceRegisterAttribute(Type? inference = null, bool isSingleton = true)

@@ -22,7 +22,7 @@ public sealed class InstanceRunningContainer(PopupMessageService popupMessageSer
     {
         var id = _keyPool.Take();
         
-        var currentContentLogConsumer = new ContentLogConsumer();
+        var currentContentLogConsumer = new ContentLogConsumer(popupMessageService);
         var logBridge = new DebugLoggerBridge(debugService.GetLogger("PROCESS_"+id.Id));
         var logContainer = new ProcessLogConsumerCollection();
         logContainer.RegisterLogger(currentContentLogConsumer);
@@ -43,7 +43,7 @@ public sealed class InstanceRunningContainer(PopupMessageService popupMessageSer
         if(!_contentLoggerCache.TryGetValue(instanceKey, out var handler)) 
             return;
         
-        handler.Popup(popupMessageService);
+        handler.Popup();
     }
 
     public void Run(InstanceKey instanceKey)

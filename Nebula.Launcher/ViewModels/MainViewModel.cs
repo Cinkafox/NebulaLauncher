@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using Avalonia.Logging;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.Utils;
@@ -230,6 +228,11 @@ public partial class MainViewModel : ViewModelBase
             }
             case PopupViewModelBase @base:
                 PopupMessage(@base);
+                break;
+            case ExceptionCompound error:
+                var errViewModel = ViewHelperService.GetViewModel<ExceptionListViewModel>();
+                errViewModel.AppendError(error);
+                PopupMessage(errViewModel);
                 break;
             case Exception error:
                 var err = ViewHelperService.GetViewModel<ExceptionListViewModel>();

@@ -14,15 +14,15 @@ public class DotnetResolverService(DebugService debugService, ConfigurationServi
     private string ExecutePath => Path.Join(FullPath, "dotnet" + DotnetUrlHelper.GetExtension());
     private readonly HttpClient _httpClient = new();
 
-    public async Task<string> EnsureDotnet()
+    public async Task<string> EnsureDotnet(CancellationToken cancellationToken = default)
     {
         if (!Directory.Exists(FullPath))
-            await Download();
+            await Download(cancellationToken);
 
         return ExecutePath;
     }
 
-    private async Task Download()
+    private async Task Download(CancellationToken cancellationToken = default)
     {
         var debugLogger = debugService.GetLogger(this);
         debugLogger.Log($"Downloading dotnet {DotnetUrlHelper.GetRuntimeIdentifier()}...");
@@ -31,16 +31,16 @@ public class DotnetResolverService(DebugService debugService, ConfigurationServi
             configurationService.GetConfigValue(CurrentConVar.DotnetUrl)!
         );
 
-        using var response = await _httpClient.GetAsync(url);
+        using var response = await _httpClient.GetAsync(url, cancellationToken);
         response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync();
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
         Directory.CreateDirectory(FullPath);
 
         if (url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
-            using var zipArchive = new ZipArchive(stream);
-            zipArchive.ExtractToDirectory(FullPath, true);
+            await using var zipArchive = new ZipArchive(stream);
+            await zipArchive.ExtractToDirectoryAsync(FullPath, true, cancellationToken);
         }
         else if (url.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)
                  || url.EndsWith(".tgz", StringComparison.OrdinalIgnoreCase))

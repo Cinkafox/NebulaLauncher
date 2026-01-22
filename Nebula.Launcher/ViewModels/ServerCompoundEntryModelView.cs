@@ -18,7 +18,6 @@ namespace Nebula.Launcher.ViewModels;
 public sealed partial class ServerCompoundEntryViewModel : 
     ViewModelBase, IFavoriteEntryModelView, IFilterConsumer, IListEntryModelView, IEntryNameHolder
 {
-    private ServerEntryModelView? _currentEntry;
     [ObservableProperty] private string _message = "Loading server entry...";
     [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private bool _loading = true;
@@ -29,22 +28,22 @@ public sealed partial class ServerCompoundEntryViewModel :
 
     public ServerEntryModelView? CurrentEntry
     {
-        get => _currentEntry;
+        get;
         set
         {
-            if (value == _currentEntry) return;
-            
-            _currentEntry = value;
+            if (value == field) return;
 
-            if (_currentEntry != null)
+            field = value;
+
+            if (field != null)
             {
-                _currentEntry.IsFavorite = IsFavorite;
-                _currentEntry.Name = Name;
-                _currentEntry.ProcessFilter(_currentFilter);
+                field.IsFavorite = IsFavorite;
+                field.Name = Name;
+                field.ProcessFilter(_currentFilter);
             }
-            
-            Loading = _currentEntry == null;
-            
+
+            Loading = field == null;
+
             OnPropertyChanged();
         }
     }

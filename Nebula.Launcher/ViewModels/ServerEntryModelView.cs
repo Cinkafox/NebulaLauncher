@@ -230,6 +230,7 @@ public sealed partial class ServerEntryModelView : ViewModelBase, IFilterConsume
     public void Dispose()
     {
         _logger.Dispose();
+        InstanceRunningContainer.IsRunningChanged -= IsRunningChanged;
     }
 }
 

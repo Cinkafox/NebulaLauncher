@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
@@ -8,36 +10,23 @@ namespace Nebula.Launcher.ProcessHelper;
 
 public class ProcessRunHandler : IDisposable
 {
-    private ProcessStartInfo? _processInfo;
-    private Task<ProcessStartInfo>? _processInfoTask;
-    
     private Process? _process;
     private readonly IProcessLogConsumer _logConsumer;
     
-    private string _lastError = string.Empty;
-    private readonly IProcessStartInfoProvider _currentProcessStartInfoProvider;
+    private StringBuilder _lastErrorBuilder = new StringBuilder();
     
-    public IProcessStartInfoProvider GetCurrentProcessStartInfo() => _currentProcessStartInfoProvider;
-    public bool IsRunning => _processInfo is not null;
+    public bool IsRunning => _process is not null;
     public Action<ProcessRunHandler>? OnProcessExited;
+
+    public AsyncValueCache<ProcessStartInfo> ProcessStartInfoProvider { get; }
     
     public bool Disposed { get; private set; }
     
     public ProcessRunHandler(IProcessStartInfoProvider processStartInfoProvider, IProcessLogConsumer logConsumer)
     {
-        _currentProcessStartInfoProvider = processStartInfoProvider;
         _logConsumer = logConsumer;
-        _processInfoTask = _currentProcessStartInfoProvider.GetProcessStartInfo();
-        _processInfoTask.GetAwaiter().OnCompleted(OnInfoProvided);
-    }
 
-    private void OnInfoProvided()
-    {
-        if (_processInfoTask == null)
-            return;
-        
-        _processInfo = _processInfoTask.GetAwaiter().GetResult();
-        _processInfoTask = null;
+        ProcessStartInfoProvider = new AsyncValueCache<ProcessStartInfo>(processStartInfoProvider.GetProcessStartInfo);
     }
 
     private void CheckIfDisposed()
@@ -51,13 +40,8 @@ public class ProcessRunHandler : IDisposable
         CheckIfDisposed();
         if(_process is not null) 
             throw new InvalidOperationException("Already running");
-            
-        if (_processInfoTask != null)
-        {
-            _processInfoTask.Wait();
-        }
         
-        _process = Process.Start(_processInfo ?? throw new Exception("Process info is null, please try again."));
+        _process = Process.Start(ProcessStartInfoProvider.GetValue());
         
         if (_process is null) return;
         
@@ -86,9 +70,8 @@ public class ProcessRunHandler : IDisposable
         _process.ErrorDataReceived -= OnErrorDataReceived;
         _process.Exited -= OnExited;
         
-
         if (_process.ExitCode != 0)
-            _logConsumer.Fatal(_lastError);
+            _logConsumer.Fatal(_lastErrorBuilder.ToString());
         
         _process.Dispose();
         _process = null;
@@ -99,11 +82,13 @@ public class ProcessRunHandler : IDisposable
 
     private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
     {
-        if (e.Data != null)
-        {
-            _lastError = e.Data;
-            _logConsumer.Error(e.Data);
-        }
+        if (e.Data == null) return;
+
+        if (!e.Data.StartsWith("  "))
+            _lastErrorBuilder.Clear();
+        
+        _lastErrorBuilder.AppendLine(e.Data);
+        _logConsumer.Error(e.Data);
     }
 
     private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
@@ -122,9 +107,10 @@ public class ProcessRunHandler : IDisposable
             return;
         }
         
+        ProcessStartInfoProvider.Invalidate();
+        
         CheckIfDisposed();
-    
-        _processInfoTask?.Dispose();
+        
         Disposed = true;
     }
 }
@@ -151,5 +137,77 @@ public sealed class DebugLoggerBridge : IProcessLogConsumer
     public void Fatal(string text)
     {
         _logger.Log(LoggerCategory.Error, text);
+    }
+}
+
+public class AsyncValueCache<T>
+{
+    private readonly Func<CancellationToken, Task<T>> _valueFactory;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly CancellationTokenSource _cacheCts = new();
+    
+    private Lazy<Task<T>> _lazyTask = null!;
+    private T _cachedValue = default!;
+    private bool _isCacheValid;
+
+    public AsyncValueCache(Func<CancellationToken, Task<T>> valueFactory)
+    {
+        _valueFactory = valueFactory ?? throw new ArgumentNullException(nameof(valueFactory));
+        ResetLazyTask();
+    }
+
+    public T GetValue()
+    {
+        if (_isCacheValid) return _cachedValue;
+
+        try
+        {
+            _semaphore.Wait();
+            if (_isCacheValid) return _cachedValue;
+
+            _cachedValue = _lazyTask.Value
+                .ConfigureAwait(false)
+                .GetAwaiter()
+                .GetResult();
+            
+            _isCacheValid = true;
+            return _cachedValue;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public void Invalidate()
+    {
+        using var cts = new CancellationTokenSource();
+        try
+        {
+            _semaphore.Wait();
+            _isCacheValid = false;
+            _cacheCts.Cancel();
+            _cacheCts.Dispose();
+            ResetLazyTask();
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    private void ResetLazyTask()
+    {
+        _lazyTask = new Lazy<Task<T>>(() => 
+            _valueFactory(_cacheCts.Token)
+                .ContinueWith(t => 
+                {
+                    if (t.IsCanceled || t.IsFaulted)
+                    {
+                        _isCacheValid = false;
+                        throw t.Exception ?? new Exception();
+                    }
+                    return t.Result;
+                }, TaskContinuationOptions.ExecuteSynchronously));
     }
 }
