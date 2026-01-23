@@ -16,6 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Nebula.SharedModels\Nebula.SharedModels.csproj" />
         <ProjectReference Include="..\Nebula.SourceGenerators\Nebula.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\Robust.LoaderApi\Robust.LoaderApi\Robust.LoaderApi.csproj" />
     </ItemGroup>

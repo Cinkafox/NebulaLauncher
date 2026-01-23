@@ -2,24 +2,36 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Nebula.Shared;
+using Nebula.SharedModels;
 
 namespace Nebula.Packager;
 public static class Program
 {
     public static void Main(string[] args)
     {
-        Pack("","Release");
+        var parsedArgs = CommandLineParser.Parse(args);
+        
+        Pack(parsedArgs.RootPath, parsedArgs.Configuration);
     }
 
-    private static void Pack(string rootPath,string configuration)
+    private static string ShowEmptyOrValue(string? value)
     {
+        if(string.IsNullOrWhiteSpace(value)) return "<empty>";
+        return value;
+    }
+    
+    private static void Pack(string rootPath, string configuration)
+    {
+        Console.WriteLine($"Packaging with arguments: RootPath {ShowEmptyOrValue(rootPath)} and Configuration {configuration}");
+        
         var processInfo = new ProcessStartInfo
         {
             FileName = "dotnet",
             ArgumentList =
             {
                 "publish",
-                Path.Combine(rootPath,"Nebula.Launcher", "Nebula.Launcher.csproj"),
+                Path.Combine(rootPath, "Nebula.Launcher", "Nebula.Launcher.csproj"),
                 "-c", configuration,
             }
         };
@@ -57,18 +69,14 @@ public static class Program
             entries.Add(new LauncherManifestEntry(hashStr, fileNameCut));
             Console.WriteLine($"Added {hashStr} file name {fileNameCut}");
         }
+
+        var manifestRuntimeInfo = new LauncherRuntimeInfo(
+            CurrentConVar.DotnetVersion.DefaultValue!,
+            CurrentConVar.DotnetUrl.DefaultValue!
+            );
         
         using var manifest = File.CreateText(Path.Combine(destinationDirectory, "manifest.json"));
         manifest.AutoFlush = true;
-        manifest.Write(JsonSerializer.Serialize(new LauncherManifest(entries)));
+        manifest.Write(JsonSerializer.Serialize(new LauncherManifest(entries, manifestRuntimeInfo)));
     }
 }
-
-public record struct LauncherManifest(
-    [property: JsonPropertyName("entries")] HashSet<LauncherManifestEntry> Entries
-);
-
-public record struct LauncherManifestEntry(
-    [property: JsonPropertyName("hash")] string Hash,
-    [property: JsonPropertyName("path")] string Path
-);

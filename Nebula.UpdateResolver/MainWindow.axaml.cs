@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Nebula.SharedModels;
 using Nebula.UpdateResolver.Configuration;
 using Nebula.UpdateResolver.Rest;
 
@@ -19,7 +19,8 @@ public partial class MainWindow : Window
     
     private readonly HttpClient _httpClient = new HttpClient();
     public readonly FileApi FileApi = new FileApi(Path.Join(RootPath,"app"));
-    private string LogStr = "";
+    private string _logStr = "";
+    
     public MainWindow()
     {
         InitializeComponent();
@@ -34,7 +35,7 @@ public partial class MainWindow : Window
             var messageOut =
                 $"[{DateTime.Now.ToUniversalTime():yyyy-MM-dd HH:mm:ss}]: {message} {PercentLabel.Content}";
             Console.WriteLine(messageOut);
-            LogStr += messageOut + "\n";
+            _logStr += messageOut + "\n";
         };
         LogStandalone.Log("Starting up");
         if (!Design.IsDesignMode)
@@ -47,7 +48,11 @@ public partial class MainWindow : Window
     {
         try
         {
-            var info = await EnsureFiles();
+            var manifest = await RestStandalone.GetAsync<LauncherManifest>(
+                new Uri(ConfigurationStandalone.GetConfigValue(UpdateConVars.UpdateCacheUrl)! + "/manifest.json"), CancellationToken.None);
+            
+            var info = EnsureFiles(FilterEntries(manifest.Entries));
+            
             LogStandalone.Log("Downloading files...");
 
             foreach (var file in info.ToDelete)
@@ -57,7 +62,7 @@ public partial class MainWindow : Window
             }
 
             var loadedManifest = info.FilesExist;
-            Save(loadedManifest);
+            Save(loadedManifest, manifest.RuntimeInfo);
 
             var count = info.ToDownload.Count;
             var resolved = 0;
@@ -75,18 +80,18 @@ public partial class MainWindow : Window
                 LogStandalone.Log("Saving " + file.Path, (int)(resolved / (float)count * 100f));
 
                 loadedManifest.Add(file);
-                Save(loadedManifest);
+                Save(loadedManifest, manifest.RuntimeInfo);
             }
 
             LogStandalone.Log("Download finished. Running launcher...");
 
-            await DotnetStandalone.Run(Path.Join(FileApi.RootPath, "Nebula.Launcher.dll"));
+            await DotnetStandalone.Run(manifest.RuntimeInfo, Path.Join(FileApi.RootPath, "Nebula.Launcher.dll"));
         }
         catch(HttpRequestException e){
             LogStandalone.LogError(e);
             LogStandalone.Log("Network connection error...");
             var logPath = Path.Join(RootPath,"updateResloverError.txt");
-            await File.WriteAllTextAsync(logPath, LogStr);
+            await File.WriteAllTextAsync(logPath, _logStr);
             Process.Start(new ProcessStartInfo(){
                 FileName = "notepad",
                 Arguments = logPath
@@ -96,7 +101,7 @@ public partial class MainWindow : Window
         {
             LogStandalone.LogError(e);
             var logPath = Path.Join(RootPath,"updateResloverError.txt");
-            await File.WriteAllTextAsync(logPath, LogStr);
+            await File.WriteAllTextAsync(logPath, _logStr);
             Process.Start(new ProcessStartInfo(){
                 FileName = "notepad",
                 Arguments = logPath
@@ -108,11 +113,9 @@ public partial class MainWindow : Window
         Environment.Exit(0);
     }
 
-    private async Task<ManifestEnsureInfo> EnsureFiles()
+    private ManifestEnsureInfo EnsureFiles(HashSet<LauncherManifestEntry> entries)
     {
         LogStandalone.Log("Ensuring launcher manifest...");
-        var manifest = await RestStandalone.GetAsync<LauncherManifest>(
-            new Uri(ConfigurationStandalone.GetConfigValue(UpdateConVars.UpdateCacheUrl)! + "/manifest.json"), CancellationToken.None);
         
         var toDownload = new HashSet<LauncherManifestEntry>();
         var toDelete = new HashSet<LauncherManifestEntry>();
@@ -124,13 +127,13 @@ public partial class MainWindow : Window
             LogStandalone.Log("Delta manifest loaded!");
             foreach (var file in currentManifest.Entries)
             {
-                if (!manifest.Entries.Contains(file))
+                if (!entries.Contains(file))
                     toDelete.Add(EnsurePath(file));
                 else
                     filesExist.Add(EnsurePath(file));
             }
 
-            foreach (var file in manifest.Entries)
+            foreach (var file in entries)
             {
                 if(!currentManifest.Entries.Contains(file))
                     toDownload.Add(EnsurePath(file));
@@ -138,18 +141,37 @@ public partial class MainWindow : Window
         }
         else
         {
-            toDownload = manifest.Entries;
+            toDownload = entries;
         }
         
         LogStandalone.Log("Saving launcher manifest...");
 
         return new ManifestEnsureInfo(toDownload, toDelete, filesExist);
     }
-    
 
-    private void Save(HashSet<LauncherManifestEntry> entries)
+    private HashSet<LauncherManifestEntry> FilterEntries(IEnumerable<LauncherManifestEntry> entries)
     {
-        ConfigurationStandalone.SetConfigValue(UpdateConVars.CurrentLauncherManifest, new LauncherManifest(entries));
+        var filtered = new HashSet<LauncherManifestEntry>();
+        var runtimeIdentifier = DotnetUrlHelper.GetRuntimeIdentifier();
+
+        foreach (var entry in entries)
+        {
+            var splited = entry.Path.Split("/");
+            
+            if(splited.Length < 2 || 
+               splited[0] != "runtimes" || 
+               splited[1] == runtimeIdentifier)
+            {
+                filtered.Add(entry);
+            }
+        }
+        
+        return filtered;
+    }
+
+    private void Save(HashSet<LauncherManifestEntry> entries, LauncherRuntimeInfo info)
+    {
+        ConfigurationStandalone.SetConfigValue(UpdateConVars.CurrentLauncherManifest, new LauncherManifest(entries, info));
     }
 
     private LauncherManifestEntry EnsurePath(LauncherManifestEntry entry)

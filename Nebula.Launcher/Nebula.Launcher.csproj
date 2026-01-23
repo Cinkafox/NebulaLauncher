@@ -62,5 +62,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Nebula.Shared\Nebula.Shared.csproj"/>
         <ProjectReference Include="..\Nebula.SourceGenerators\Nebula.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <ProjectReference Include="..\Nebula.Runner\Nebula.Runner.csproj"
+                          ReferenceOutputAssembly="false" />
     </ItemGroup>
 </Project>

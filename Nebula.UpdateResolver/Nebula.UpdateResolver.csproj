@@ -26,4 +26,8 @@
             <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
         </PackageReference>
     </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Nebula.SharedModels\Nebula.SharedModels.csproj" />
+    </ItemGroup>
 </Project>

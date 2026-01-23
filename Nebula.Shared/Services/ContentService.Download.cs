@@ -81,7 +81,7 @@ public partial class ContentService
         
         var loadingHandler = loadingFactory.CreateLoadingContext(new FileLoadingFormater());
         
-        var response = await _http.GetAsync(info.DownloadUri, cancellationToken);
+        var response = await _http.GetAsync(info.DownloadUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
     
         loadingHandler.SetLoadingMessage("Downloading zip content");

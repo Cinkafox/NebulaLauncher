@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Nebula.SharedModels;
 
 namespace Nebula.UpdateResolver;
 

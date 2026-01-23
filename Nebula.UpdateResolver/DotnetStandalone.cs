@@ -7,7 +7,8 @@ using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Nebula.UpdateResolver.Configuration;
+using Nebula.SharedModels;
+using Nebula.UpdateResolver.Rest;
 
 namespace Nebula.UpdateResolver;
 
@@ -15,19 +16,21 @@ public static class DotnetStandalone
 {
     private static readonly HttpClient HttpClient = new();
 
-    private static readonly string FullPath =
-        Path.Join(MainWindow.RootPath, $"dotnet.{ConfigurationStandalone.GetConfigValue(UpdateConVars.DotnetVersion)}", 
-            DotnetUrlHelper.GetRuntimeIdentifier());
-
-    private static readonly string ExecutePath = Path.Join(FullPath, "dotnet" + DotnetUrlHelper.GetExtension());
-
-    public static async Task<Process?> Run(string dllPath)
+    private static string GetExecutePath(LauncherRuntimeInfo runtimeInfo)
     {
-        await EnsureDotnet();
+        return Path.Join(MainWindow.RootPath, 
+            $"dotnet.{runtimeInfo.RuntimeVersion}",
+            DotnetUrlHelper.GetRuntimeIdentifier(),
+            $"dotnet{DotnetUrlHelper.GetExtension()}");
+    }
+
+    public static async Task<Process?> Run(LauncherRuntimeInfo runtimeInfo, string dllPath)
+    {
+        await EnsureDotnet(runtimeInfo);
 
         return Process.Start(new ProcessStartInfo
         {
-            FileName = ExecutePath,
+            FileName = GetExecutePath(runtimeInfo),
             Arguments = dllPath,
             CreateNoWindow = true,
             UseShellExecute = false,
@@ -37,35 +40,38 @@ public static class DotnetStandalone
         });
     }
 
-    private static async Task EnsureDotnet()
+    private static async Task EnsureDotnet(LauncherRuntimeInfo runtimeInfo)
     {
-        if (!Directory.Exists(FullPath))
-            await Download();
+        if (!Directory.Exists(GetExecutePath(runtimeInfo)))
+            await Download(runtimeInfo);
     }
 
-    private static async Task Download()
+    private static async Task Download(LauncherRuntimeInfo runtimeInfo)
     {
         LogStandalone.Log($"Downloading dotnet {DotnetUrlHelper.GetRuntimeIdentifier()}...");
 
-        var url = DotnetUrlHelper.GetCurrentPlatformDotnetUrl(
-            ConfigurationStandalone.GetConfigValue(UpdateConVars.DotnetUrl)!
-        );
+        var fullPath = GetExecutePath(runtimeInfo);
 
-        using var response = await HttpClient.GetAsync(url);
+        var url = DotnetUrlHelper.GetCurrentPlatformDotnetUrl(runtimeInfo.DotnetRuntimes);
+
+        using var response = await HttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync();
+        var stream = await response.Content.ReadAsStreamAsync();
+        await using var tempStream = new MemoryStream();
+        stream.CopyTo(tempStream,"dotnet", response.Content.Headers.ContentLength ?? 0);
+        await stream.DisposeAsync();
 
-        Directory.CreateDirectory(FullPath);
+        Directory.CreateDirectory(fullPath);
 
         if (url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
-            using var zipArchive = new ZipArchive(stream);
-            zipArchive.ExtractToDirectory(FullPath, true);
+            await using var zipArchive = new ZipArchive(tempStream);
+            await zipArchive.ExtractToDirectoryAsync(fullPath, true);
         }
         else if (url.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)
                  || url.EndsWith(".tgz", StringComparison.OrdinalIgnoreCase))
         {
-            TarUtils.ExtractTarGz(stream, FullPath);
+            TarUtils.ExtractTarGz(tempStream, fullPath);
         }
         else
         {
@@ -80,10 +86,8 @@ public static class DotnetUrlHelper
 {
     public static string GetExtension()
     {
-        if (OperatingSystem.IsWindows()) return ".exe";
-        return "";
+        return OperatingSystem.IsWindows() ? ".exe" : string.Empty;
     }
-
     public static string GetCurrentPlatformDotnetUrl(Dictionary<string, string> dotnetUrl)
     {
         var rid = GetRuntimeIdentifier();
@@ -96,10 +100,38 @@ public static class DotnetUrlHelper
     public static string GetRuntimeIdentifier()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return Environment.Is64BitProcess ? "win-x64" : "win-x86";
+        {
+            return RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X64 => "win-x64",
+                Architecture.X86 => "win-x86",
+                Architecture.Arm64 => "win-arm64",
+                _ => throw new PlatformNotSupportedException($"Unsupported Windows architecture: {RuntimeInformation.ProcessArchitecture}")
+            };
+        }
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return "linux-x64";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X64 => "linux-x64",
+                Architecture.X86 => "linux-x86",
+                Architecture.Arm => "linux-arm",
+                Architecture.Arm64 => "linux-arm64",
+                _ => throw new PlatformNotSupportedException($"Unsupported Linux architecture: {RuntimeInformation.ProcessArchitecture}")
+            };
+        }
 
-        throw new PlatformNotSupportedException("Unsupported operating system");
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X64 => "osx-x64",
+                Architecture.Arm64 => "osx-arm64",
+                _ => throw new PlatformNotSupportedException($"Unsupported macOS architecture: {RuntimeInformation.ProcessArchitecture}")
+            };
+        }
+
+        throw new PlatformNotSupportedException($"Unsupported operating system: {RuntimeInformation.OSDescription}");
     }
 }
