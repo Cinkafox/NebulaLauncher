@@ -20,13 +20,21 @@ public static class Helper
         const int bufferSize = 81920;
         var buffer = new byte[bufferSize];
 
+        int skipStep = 0;
         long totalRead = 0;
         int bytesRead;
         while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0)
         {
             output.Write(buffer, 0, bytesRead);
             totalRead += bytesRead;
-            LogStandalone.Log($"Saving {fileName}", (int)(((float)totalLength / totalRead) * 100));
+
+            skipStep++;
+            
+            if(skipStep < 50) continue;
+            
+            skipStep = 0;
+            
+            LogStandalone.Log($"Saving {fileName}", (int)((totalRead / (float)totalLength) * 100));
         }
     }
 }

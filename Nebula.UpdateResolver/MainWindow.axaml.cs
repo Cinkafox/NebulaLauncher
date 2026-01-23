@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Nebula.SharedModels;
 using Nebula.UpdateResolver.Configuration;
 using Nebula.UpdateResolver.Rest;
@@ -26,20 +27,25 @@ public partial class MainWindow : Window
         InitializeComponent();
         LogStandalone.OnLog += (message, percentage) =>
         {
-            ProgressLabel.Content = message;
-            if (percentage == 0)
-                PercentLabel.Content = "";
-            else
-                PercentLabel.Content = percentage + "%";
-
+            var percentText = "";
+            if (percentage != 0)
+                percentText = $"{percentage}%";
+            
+            Dispatcher.UIThread.Invoke(() =>
+            {
+                ProgressLabel.Content = message;
+                PercentLabel.Content = percentText;
+            });
+            
             var messageOut =
-                $"[{DateTime.Now.ToUniversalTime():yyyy-MM-dd HH:mm:ss}]: {message} {PercentLabel.Content}";
+                $"[{DateTime.Now.ToUniversalTime():yyyy-MM-dd HH:mm:ss}]: {message} {percentText}";
             Console.WriteLine(messageOut);
             _logStr += messageOut + "\n";
         };
+        
         LogStandalone.Log("Starting up");
         if (!Design.IsDesignMode)
-            _ = Start();
+            Task.Run(Start);
         else
             LogStandalone.Log("Debug information", 51);
     }

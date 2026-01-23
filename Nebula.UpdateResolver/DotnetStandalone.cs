@@ -42,7 +42,7 @@ public static class DotnetStandalone
 
     private static async Task EnsureDotnet(LauncherRuntimeInfo runtimeInfo)
     {
-        if (!Directory.Exists(GetExecutePath(runtimeInfo)))
+        if (!File.Exists(GetExecutePath(runtimeInfo)))
             await Download(runtimeInfo);
     }
 
