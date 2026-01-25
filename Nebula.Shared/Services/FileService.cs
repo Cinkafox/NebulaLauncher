@@ -1,8 +1,10 @@
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using Nebula.Shared.FileApis;
 using Nebula.Shared.FileApis.Interfaces;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services.Logging;
+using Nebula.SharedModels;
 using Robust.LoaderApi;
 
 namespace Nebula.Shared.Services;
@@ -10,23 +12,20 @@ namespace Nebula.Shared.Services;
 [ServiceRegister]
 public class FileService
 {
-    public static string RootPath = Path.Join(Environment.GetFolderPath(
-        Environment.SpecialFolder.ApplicationData), "Datum");
-
     private readonly ILogger _logger;
     
     public FileService(DebugService debugService)
     {
         _logger = debugService.GetLogger(this);
 
-        if(!Directory.Exists(RootPath)) 
-            Directory.CreateDirectory(RootPath);
+        if(!Directory.Exists(AppDataPath.RootPath)) 
+            Directory.CreateDirectory(AppDataPath.RootPath);
     }
     
     public IReadWriteFileApi CreateFileApi(string path)
     {
         _logger.Debug($"Creating file api for {path}");
-        return new FileApi(Path.Join(RootPath, path));
+        return new FileApi(Path.Join(AppDataPath.RootPath, path));
     }
     
     public IReadWriteFileApi EnsureTempDir(out string path)
@@ -59,7 +58,7 @@ public class FileService
     public void RemoveAllFiles(string fileApiName,ILoadingHandler loadingHandler, CancellationToken cancellationToken)
     {
         _logger.Debug($"Deleting files from {fileApiName}");
-        var path = Path.Combine(RootPath, fileApiName);
+        var path = Path.Combine(AppDataPath.RootPath, fileApiName);
         
         var di = new DirectoryInfo(path);
 
@@ -88,6 +87,7 @@ public class FileService
         }
     }
 }
+
 
 public sealed class ConsoleLoadingHandlerFactory : ILoadingHandlerFactory
 {

@@ -15,11 +15,10 @@ namespace Nebula.UpdateResolver;
 
 public partial class MainWindow : Window
 {
-    public static readonly string RootPath = Path.Join(Environment.GetFolderPath(
-        Environment.SpecialFolder.ApplicationData), "Datum");
+    public static readonly string RootPath = AppDataPath.GetAppDataPath("Datum");
     
-    private readonly HttpClient _httpClient = new HttpClient();
-    public readonly FileApi FileApi = new FileApi(Path.Join(RootPath,"app"));
+    private readonly HttpClient _httpClient = new();
+    private readonly FileApi _fileApi = new(Path.Join(RootPath, "app"));
     private string _logStr = "";
     
     public MainWindow()
@@ -64,7 +63,7 @@ public partial class MainWindow : Window
             foreach (var file in info.ToDelete)
             {
                 LogStandalone.Log("Deleting " + file.Path);
-                FileApi.Remove(file.Path);
+                _fileApi.Remove(file.Path);
             }
 
             var loadedManifest = info.FilesExist;
@@ -81,7 +80,7 @@ public partial class MainWindow : Window
 
                 response.EnsureSuccessStatusCode();
                 await using var stream = await response.Content.ReadAsStreamAsync();
-                FileApi.Save(file.Path, stream);
+                _fileApi.Save(file.Path, stream);
                 resolved++;
                 LogStandalone.Log("Saving " + file.Path, (int)(resolved / (float)count * 100f));
 
@@ -91,7 +90,7 @@ public partial class MainWindow : Window
 
             LogStandalone.Log("Download finished. Running launcher...");
 
-            await DotnetStandalone.Run(manifest.RuntimeInfo, Path.Join(FileApi.RootPath, "Nebula.Launcher.dll"));
+            await DotnetStandalone.Run(manifest.RuntimeInfo, Path.Join(_fileApi.RootPath, "Nebula.Launcher.dll"));
         }
         catch(HttpRequestException e){
             LogStandalone.LogError(e);
@@ -182,13 +181,12 @@ public partial class MainWindow : Window
 
     private LauncherManifestEntry EnsurePath(LauncherManifestEntry entry)
     {
-        if(!PathValidator.IsSafePath(FileApi.RootPath, entry.Path)) 
+        if(!PathValidator.IsSafePath(_fileApi.RootPath, entry.Path)) 
             throw new ArgumentException("Path contains invalid characters. Manifest hash: " + entry.Hash);
 
         return entry;
     }
 }
-
 
 public static class PathValidator
 {

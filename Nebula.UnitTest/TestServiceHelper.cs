@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nebula.Shared;
-using Nebula.Shared.Services;
+using Nebula.SharedModels;
 
 namespace Nebula.UnitTest;
 
@@ -20,18 +20,9 @@ public static class TestServiceHelper
     {
         var path = Path.Combine(Path.GetTempPath(), "tempThink"+Path.GetRandomFileName());
         Directory.CreateDirectory(path);
-        FileService.RootPath = path;
-        Console.WriteLine("Change root path for file api: " + FileService.RootPath);
+        AppDataPath.SetTestRootPath(path);
     }
 }
-
-public sealed class LauncherUnit : SharedUnit
-{
-    public LauncherUnit(IServiceProvider serviceProvider) : base(serviceProvider)
-    {
-    }
-}
-
 
 public class SharedUnit
 {

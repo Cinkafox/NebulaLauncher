@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using Nebula.Shared.Services.Logging;
+using Nebula.SharedModels;
 
 namespace Nebula.Shared.Services;
 
@@ -10,7 +11,7 @@ public class DebugService : IDisposable
     public static bool DoFileLog;
 
     private readonly string _path =
-        Path.Combine(FileService.RootPath, "log", Assembly.GetEntryAssembly()?.GetName().Name ?? "App");
+        Path.Combine(AppDataPath.RootPath, "log", Assembly.GetEntryAssembly()?.GetName().Name ?? "App");
 
     public DebugService()
     {

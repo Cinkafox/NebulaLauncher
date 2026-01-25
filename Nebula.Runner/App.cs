@@ -1,6 +1,5 @@
 using Nebula.Runner.Services;
 using Nebula.Shared;
-using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
@@ -16,6 +15,7 @@ public sealed class App(RunnerService runnerService, ContentService contentServi
     
     public void Redial(Uri uri, string text = "")
     {
+        throw new Exception($"Redial requested. Reason: {text}");
     }
 
     public async Task Run(string[] args1)
@@ -49,7 +49,7 @@ public sealed class App(RunnerService runnerService, ContentService contentServi
             args.Add("--ss14-address");
             args.Add(url.ToString());
 
-            await runnerService.Run(args.ToArray(), buildInfo, this, new ConsoleLoadingHandlerFactory(), cancelTokenSource.Token);
+            await runnerService.Run(args.ToArray(), buildInfo, this, new ConsoleLoadingHandlerFactory(), login, cancelTokenSource.Token);
         }
         catch (Exception e)
         {

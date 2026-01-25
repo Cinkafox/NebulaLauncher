@@ -16,21 +16,13 @@ public static class DotnetStandalone
 {
     private static readonly HttpClient HttpClient = new();
 
-    private static string GetExecutePath(LauncherRuntimeInfo runtimeInfo)
-    {
-        return Path.Join(MainWindow.RootPath, 
-            $"dotnet.{runtimeInfo.RuntimeVersion}",
-            DotnetUrlHelper.GetRuntimeIdentifier(),
-            $"dotnet{DotnetUrlHelper.GetExtension()}");
-    }
-
     public static async Task<Process?> Run(LauncherRuntimeInfo runtimeInfo, string dllPath)
     {
         await EnsureDotnet(runtimeInfo);
 
         return Process.Start(new ProcessStartInfo
         {
-            FileName = GetExecutePath(runtimeInfo),
+            FileName = runtimeInfo.GetExecutePath(),
             Arguments = dllPath,
             CreateNoWindow = true,
             UseShellExecute = false,
@@ -42,7 +34,7 @@ public static class DotnetStandalone
 
     private static async Task EnsureDotnet(LauncherRuntimeInfo runtimeInfo)
     {
-        if (!File.Exists(GetExecutePath(runtimeInfo)))
+        if (!File.Exists(runtimeInfo.GetExecutePath()))
             await Download(runtimeInfo);
     }
 
@@ -50,9 +42,11 @@ public static class DotnetStandalone
     {
         LogStandalone.Log($"Downloading dotnet {DotnetUrlHelper.GetRuntimeIdentifier()}...");
 
-        var fullPath = GetExecutePath(runtimeInfo);
+        var fullPath = runtimeInfo.GetFullPath();
 
         var url = DotnetUrlHelper.GetCurrentPlatformDotnetUrl(runtimeInfo.DotnetRuntimes);
+        
+        UrlValidator.EnsureDomainValid(url, "microsoft.com");
 
         using var response = await HttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         response.EnsureSuccessStatusCode();
@@ -79,59 +73,5 @@ public static class DotnetStandalone
         }
 
         LogStandalone.Log("Downloading dotnet complete.");
-    }
-}
-
-public static class DotnetUrlHelper
-{
-    public static string GetExtension()
-    {
-        return OperatingSystem.IsWindows() ? ".exe" : string.Empty;
-    }
-    public static string GetCurrentPlatformDotnetUrl(Dictionary<string, string> dotnetUrl)
-    {
-        var rid = GetRuntimeIdentifier();
-
-        if (dotnetUrl.TryGetValue(rid, out var url)) return url;
-
-        throw new PlatformNotSupportedException($"No download URL available for the current platform: {rid}");
-    }
-
-    public static string GetRuntimeIdentifier()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return RuntimeInformation.ProcessArchitecture switch
-            {
-                Architecture.X64 => "win-x64",
-                Architecture.X86 => "win-x86",
-                Architecture.Arm64 => "win-arm64",
-                _ => throw new PlatformNotSupportedException($"Unsupported Windows architecture: {RuntimeInformation.ProcessArchitecture}")
-            };
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            return RuntimeInformation.ProcessArchitecture switch
-            {
-                Architecture.X64 => "linux-x64",
-                Architecture.X86 => "linux-x86",
-                Architecture.Arm => "linux-arm",
-                Architecture.Arm64 => "linux-arm64",
-                _ => throw new PlatformNotSupportedException($"Unsupported Linux architecture: {RuntimeInformation.ProcessArchitecture}")
-            };
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return RuntimeInformation.ProcessArchitecture switch
-            {
-                Architecture.X64 => "osx-x64",
-                Architecture.Arm64 => "osx-arm64",
-                _ => throw new PlatformNotSupportedException($"Unsupported macOS architecture: {RuntimeInformation.ProcessArchitecture}")
-            };
-        }
-
-        throw new PlatformNotSupportedException($"Unsupported operating system: {RuntimeInformation.OSDescription}");
     }
 }

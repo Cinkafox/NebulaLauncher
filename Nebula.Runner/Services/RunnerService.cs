@@ -7,6 +7,7 @@ using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
+using Nebula.SharedModels;
 using Robust.LoaderApi;
 
 namespace Nebula.Runner.Services;
@@ -25,8 +26,8 @@ public sealed class RunnerService(
     private bool MetricEnabled = false; //TODO: ADD METRIC THINKS LATER
 
     public async Task Run(string[] runArgs, RobustBuildInfo buildInfo, IRedialApi redialApi,
-        ILoadingHandlerFactory loadingHandler,
-        CancellationToken cancellationToken)
+        ILoadingHandlerFactory loadingHandler, string? userDataPath = null,
+        CancellationToken cancellationToken = default)
     {
         _logger.Log("Start Content!");
         
@@ -80,6 +81,12 @@ public sealed class RunnerService(
             metricServer = RunHelper.RunMetric(prometheusAssembly);
         }
 
+        if (userDataPath is not null)
+        {
+            UserDataDirPatcher.UserPath = userDataPath;
+            UserDataDirPatcher.ApplyPatch(reflectionService, harmonyService);
+        }
+
         loadingHandler.Dispose();
         await Task.Run(() => loader.Main(args), cancellationToken);
         
@@ -109,6 +116,38 @@ public static class MetricsEnabledPatcher
     {
         __result = true;
         return false; // Skip original method
+    }
+}
+
+
+public static class UserDataDirPatcher
+{
+    public static string UserPath = "default";
+    
+    public static void ApplyPatch(ReflectionService reflectionService, HarmonyService harmonyService)
+    {
+        var harmony = harmonyService.Instance.Harmony;
+
+        var targetType = reflectionService.GetType("Robust.Client.Utility.UserDataDir");
+        var targetMethod = targetType.GetMethod(
+            "GetRootUserDataDir",
+            BindingFlags.Static | BindingFlags.Public
+        ) ?? throw new Exception("target method is null");
+
+        var prefix = typeof(UserDataDirPatcher).GetMethod(
+            nameof(GetRootUserDataDirPrefix),
+            BindingFlags.Static | BindingFlags.NonPublic
+        );
+
+        var prefixMethod = new HarmonyMethod(prefix);
+
+        harmony.Patch(targetMethod, prefix: prefixMethod);
+    }
+
+    private static bool GetRootUserDataDirPrefix(ref string __result)
+    {
+        __result = Path.Join(AppDataPath.RootPath, "userData", UserPath);
+        return false; 
     }
 }
 

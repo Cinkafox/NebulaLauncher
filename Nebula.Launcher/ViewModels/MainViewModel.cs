@@ -14,6 +14,7 @@ using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
 using Nebula.Shared.ViewHelper;
+using Nebula.SharedModels;
 
 namespace Nebula.Launcher.ViewModels;
 
@@ -207,7 +208,7 @@ public partial class MainViewModel : ViewModelBase
 
     public void OpenRootPath()
     {
-        ExplorerUtils.OpenFolder(FileService.RootPath);
+        ExplorerUtils.OpenFolder(AppDataPath.RootPath);
     }
 
     public void OpenLink()

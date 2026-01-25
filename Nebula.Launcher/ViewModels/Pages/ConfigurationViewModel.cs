@@ -12,6 +12,7 @@ using Nebula.Shared;
 using Nebula.Shared.Configurations;
 using Nebula.Shared.Services;
 using Nebula.Shared.ViewHelper;
+using Nebula.SharedModels;
 
 namespace Nebula.Launcher.ViewModels.Pages;
 
@@ -70,12 +71,12 @@ public partial class ConfigurationViewModel : ViewModelBase
 
     public void OpenDataFolder()
     {
-        ExplorerUtils.OpenFolder(FileService.RootPath);
+        ExplorerUtils.OpenFolder(AppDataPath.RootPath);
     }
 
     public void ExportLogs()
     {
-        var logPath = Path.Join(FileService.RootPath, "log");
+        var logPath = Path.Join(AppDataPath.RootPath, "log");
         var path = Path.Combine(Path.GetTempPath(), "tempThink"+Path.GetRandomFileName());
         Directory.CreateDirectory(path);
         

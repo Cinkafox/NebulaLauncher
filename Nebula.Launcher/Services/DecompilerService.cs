@@ -15,6 +15,7 @@ using Nebula.Shared.FileApis.Interfaces;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
+using Nebula.SharedModels;
 
 namespace Nebula.Launcher.Services;
 
@@ -32,7 +33,7 @@ public sealed partial class DecompilerService
     private readonly HttpClient _httpClient = new();
     private ILogger _logger;
 
-    private string FullPath => Path.Join(FileService.RootPath,$"ILSpy.{ConfigurationService.GetConfigValue(LauncherConVar.ILSpyVersion)}");
+    private string FullPath => Path.Join(AppDataPath.RootPath, $"ILSpy.{ConfigurationService.GetConfigValue(LauncherConVar.ILSpyVersion)}");
     private string ExecutePath => Path.Join(FullPath, "ILSpy.exe");
 
     public async void OpenDecompiler(string arguments){

@@ -4,6 +4,7 @@ using Nebula.Shared;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
+using Nebula.SharedModels;
 
 namespace Nebula.UnitTest.NebulaSharedTests;
 
@@ -31,28 +32,26 @@ public class TarTest : BaseSharedTest
     [Test]
     public async Task DownloadTarAndUnzipTest()
     {
-        DotnetUrlHelper.RidOverrideTest = "linux-x64";
-        Console.WriteLine($"Downloading dotnet {DotnetUrlHelper.GetRuntimeIdentifier()}...");
-
-        var url = DotnetUrlHelper.GetCurrentPlatformDotnetUrl(
-            _configurationService.GetConfigValue(CurrentConVar.DotnetUrl)!
-        );
+        Console.WriteLine($"Downloading dotnet linux-x64...");
+        
+        if(!_configurationService.GetConfigValue(CurrentConVar.DotnetUrl)!.TryGetValue("linux-x64", out var url))
+            throw new NullReferenceException();
 
         using var response = await _httpClient.GetAsync(url);
         response.EnsureSuccessStatusCode();
         await using var stream = await response.Content.ReadAsStreamAsync();
 
-        Directory.CreateDirectory(FileService.RootPath);
+        Directory.CreateDirectory(AppDataPath.RootPath);
 
         if (url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
             using var zipArchive = new ZipArchive(stream);
-            zipArchive.ExtractToDirectory(FileService.RootPath, true);
+            await zipArchive.ExtractToDirectoryAsync(AppDataPath.RootPath, true);
         }
         else if (url.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)
                  || url.EndsWith(".tgz", StringComparison.OrdinalIgnoreCase))
         {
-            TarUtils.ExtractTarGz(stream, FileService.RootPath);
+            TarUtils.ExtractTarGz(stream, AppDataPath.RootPath);
         }
         else
         {

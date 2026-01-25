@@ -101,23 +101,12 @@
 &lt;/AssemblyExplorer&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/CreateUnitTestDialog/TestProjectMapping/=47519EA2_002D03C0_002D49D8_002D86CA_002D418F6B7267A4/@EntryIndexedValue">735691F8-949C-4476-B9E4-5DF6FF8D3D0B</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/CreateUnitTestDialog/TestTemplateMapping/=NUnit3x/@EntryIndexedValue">db4927dd-2e12-48a7-9a84-2b7e3e31b9c8</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=d7603912_002D51de_002D4bca_002D9082_002D886ee6d4c2f5/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="RestServiceTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=44ee9fbc_002Dddaf_002D4efa_002Da7df_002D48c0ce9aec7e/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="CryptographicTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.RestServiceTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.PopupMessageServiceTests.PopupMessageServiceTest&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.PopupMessageServiceTests.DisposeTest&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.FileServiceTests.CreateFileApi_CreatesCorrectPath&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.FileServiceTests.EnsureTempDir_CreatesDirectoryAndReturnsApi&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.FileServiceTests.OpenZip_ReturnsZipFileApi_WhenValid&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.FileServiceTests.RemoveAllFiles_DeletesAllFilesAndDirectories&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.FileServiceTests.OpenZip_ThrowsException_WhenFileApiFails&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.EngineServiceTests.GetVersionInfo_ReturnsCorrectBuildInfo&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.EngineServiceTests.TryGetVersionInfo_ReturnsTrue&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.ConfigurationServiceTests.WriteConVarTest&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.ConfigurationServiceTests.WriteArrayConvarTest&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.ConfigurationServiceTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.CryptographicTest.EncryptDecrypt&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.CryptographicTest&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::735691F8-949C-4476-B9E4-5DF6FF8D3D0B::net9.0::Nebula.UnitTest.NebulaSharedTests.TarTest.Download&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::7430875B-ABAA-D4E0-C34F-0797C4762C66::net10.0::Nebula.UnitTest.NebulaSharedTests.CryptographicTest&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
+&lt;/SessionState&gt;</s:String>
+	
+	
+	
+	</wpf:ResourceDictionary>

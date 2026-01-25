@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
+using Nebula.SharedModels;
 using Robust.LoaderApi;
 
 namespace Nebula.UnitTest.NebulaSharedTests;
@@ -36,7 +37,7 @@ public class FileServiceTests : BaseSharedTest
             fileApi.Save("test.txt", stream);
         }
         
-        var expectedPath = Path.Combine(FileService.RootPath, subPath);
+        var expectedPath = Path.Combine(AppDataPath.RootPath, subPath);
 
         Assert.That(Directory.Exists(expectedPath), Is.True, $"Expected path to be created: {expectedPath}");
     }
@@ -53,7 +54,7 @@ public class FileServiceTests : BaseSharedTest
     [Test]
     public void OpenZip_ReturnsZipFileApi_WhenValid()
     {
-        var testZipPath = Path.Combine(FileService.RootPath, "test.zip");
+        var testZipPath = Path.Combine(AppDataPath.RootPath, "test.zip");
         using (var archive = ZipFile.Open(testZipPath, ZipArchiveMode.Create))
         {
             var entry = archive.CreateEntry("test.txt");
@@ -93,7 +94,7 @@ public class FileServiceTests : BaseSharedTest
     [Test]
     public void RemoveAllFiles_DeletesAllFilesAndDirectories()
     {
-        var testDir = Path.Combine(FileService.RootPath, "cleanup-test");
+        var testDir = Path.Combine(AppDataPath.RootPath, "cleanup-test");
         Directory.CreateDirectory(testDir);
 
         File.WriteAllText(Path.Combine(testDir, "test1.txt"), "data");
