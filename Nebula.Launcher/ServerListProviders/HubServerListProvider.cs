@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Collections.ObjectModel;
 using System.Threading;
+using System.Threading.Tasks;
+using Avalonia.Controls;
+using Avalonia.Threading;
+using Nebula.Launcher.Models;
+using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Shared;
 using Nebula.Shared.Models;
@@ -11,81 +16,118 @@ using Nebula.Shared.Utils;
 namespace Nebula.Launcher.ServerListProviders;
 
 [ServiceRegister(null, false), ConstructGenerator]
-public sealed partial class HubServerListProvider : IServerListProvider
+public sealed partial class HubServerListProvider : BaseServerListProvider
 {
+    private CancellationTokenSource? _cts;
+    private readonly SemaphoreSlim _loadLock = new(1, 1);
+    
     [GenerateProperty] private RestService RestService { get; }
     [GenerateProperty] private ServerViewContainer ServerViewContainer { get; }
-    
-    public string HubUrl { get; set; }
-    
-    public bool IsLoaded { get; private set; }
-    public Action? OnLoaded { get; set; }
-    public Action? OnDisposed { get; set; }
 
-    private CancellationTokenSource? _cts;
-    private readonly List<IListEntryModelView> _servers = [];
-    private readonly List<Exception> _errors = [];
+    private string _hubUrl;
 
     public HubServerListProvider With(string hubUrl)
     {
-        HubUrl = hubUrl;
+        _hubUrl = hubUrl;
         return this;
     }
-    
-    public IEnumerable<IListEntryModelView> GetServers()
-    {
-        return _servers;
-    }
 
-    public IEnumerable<Exception> GetErrors()
+    public override void LoadServerList(
+        ObservableCollection<IListEntryModelView> servers, 
+        ObservableCollection<Exception> exceptions)
     {
-        return _errors;
-    }
-
-    public async void LoadServerList()
-    {
-        if (_cts != null)
-        {
-            await _cts.CancelAsync();
-            _cts = null;
-        }
+        base.LoadServerList(servers, exceptions);
         
-        _servers.Clear();
-        _errors.Clear();
-        IsLoaded = false;
-        _cts = new CancellationTokenSource();
+        servers.Add(new LoadingServerEntry());
+        Task.Run(() => LoadServerListAsync(servers, exceptions));
+    }
+
+    private void SyncServers(List<IListEntryModelView> servers, 
+        ObservableCollection<IListEntryModelView> collection)
+    {
+        collection.Clear();
+        foreach (var server in servers)
+        {
+            collection.Add(server);
+        }
+    }
+
+    private async Task LoadServerListAsync(
+        ObservableCollection<IListEntryModelView> servers, 
+        ObservableCollection<Exception> exceptions)
+    {
+        CancellationTokenSource localCts;
+        
+        var serverList = new List<IListEntryModelView>();
+
+        await _loadLock.WaitAsync();
+        try
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+
+            _cts = new CancellationTokenSource();
+            localCts = _cts;
+        }
+        finally
+        {
+            _loadLock.Release();
+        }
 
         try
         {
-            var servers =
-                await RestService.GetAsync<List<ServerHubInfo>>(new Uri(HubUrl), _cts.Token);
-        
-            servers.Sort(new ServerComparer());
-        
-            if(_cts.Token.IsCancellationRequested) return;
-        
-            _servers.AddRange(
-                servers.Select(h=> 
-                    ServerViewContainer.Get(h.Address.ToRobustUrl(), h.StatusData)
-                )
+            var serversRaw = await RestService.GetAsync<List<ServerHubInfo>>(
+                new Uri(_hubUrl),
+                localCts.Token
             );
+
+            serversRaw.Sort(new ServerComparer());
+
+            localCts.Token.ThrowIfCancellationRequested();
+            
+            foreach (var info in serversRaw)
+            {
+                var viewContainer =
+                    ServerViewContainer.Get(info.Address.ToRobustUrl(), info.StatusData);
+
+                serverList.Add(viewContainer);
+            }
+
+            Dispatcher.UIThread.Invoke(() =>
+            {
+                SyncServers(serverList, servers);
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            
         }
         catch (Exception e)
         {
-            _errors.Add(new Exception($"Some error while loading server list from {HubUrl}. See inner exception", e));
-            _errors.Add(e);
+            exceptions.Add(
+                new Exception(
+                    $"Some error while loading server list from {_hubUrl}. See inner exception",
+                    e
+                )
+            );
         }
-        
-        IsLoaded = true;
-        OnLoaded?.Invoke();
     }
     
     private void Initialise(){}
     private void InitialiseInDesignMode(){}
 
-    public void Dispose()
+    public override void Dispose()
     {
-        OnDisposed?.Invoke();
         _cts?.Dispose();
     }
+}
+
+public sealed class LoadingServerEntry : Label, IListEntryModelView
+{
+    public LoadingServerEntry()
+    {
+        Content = LocalizationService.GetString("server-list-loading");
+    }
+    public void Dispose()
+    {}
 }

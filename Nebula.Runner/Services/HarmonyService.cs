@@ -29,19 +29,36 @@ public class HarmonyService(ReflectionService reflectionService)
     }
 
     /// <summary>
-    /// Я помню пенис большой,Я помню пенис большой, Я помню пенис большой, я помню....
+    /// Я не понимаю суть античитов в сосаке.
+    /// Эту хуйню может обойти любой школьник!
+    /// Нет.. я не хочу вводить читы, просто мне нужно поменять некоторые штучки :)
     /// </summary>
     private void UnShittyWizard()
     {
         var method = reflectionService.GetType("Robust.Client.GameController").TypeInitializer;
-        _instance!.Harmony.Patch(method, new HarmonyMethod(Prefix));
+        _instance!.Harmony.Patch(method, new HarmonyMethod(IgnorePrefix));
+        
+        var method2 = typeof(Type).Method(nameof(Type.GetType), new[] { typeof(string) });
+        _instance!.Harmony.Patch(method2, new HarmonyMethod(HidifyPrefix));
     }
     
-    static bool Prefix()
+    static bool IgnorePrefix()
     {
         return false;
     }
+    
+    static bool HidifyPrefix(ref Type? __result, string typeName)
+    {
+        if (typeName.Contains("Harmony"))
+        {
+            __result = null;
+            return false;
+        }
+        
+        return true;
+    }
 }
+
 
 public class HarmonyInstance
 {

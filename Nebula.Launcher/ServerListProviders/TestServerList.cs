@@ -1,33 +1,26 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Nebula.Launcher.ViewModels;
 using Nebula.Launcher.ViewModels.Pages;
 
 namespace Nebula.Launcher.ServerListProviders;
 
-public sealed class TestServerList : IServerListProvider
+public sealed class TestServerList : BaseServerListProvider
 {
-    public bool IsLoaded => true;
-    public Action? OnLoaded { get; set; }
-    public Action? OnDisposed { get; set; }
-
-    public IEnumerable<IListEntryModelView> GetServers()
+    public override void LoadServerList(
+         ObservableCollection<IListEntryModelView> servers, 
+         ObservableCollection<Exception> exceptions)
     {
-        return [new ServerEntryModelView(),new ServerEntryModelView()];
+        base.LoadServerList(servers, exceptions);
+        
+        servers.Add(new ServerEntryModelView());
+        servers.Add(new ServerEntryModelView());
+        
+        exceptions.Add(new Exception("Oh no!"));
     }
 
-    public IEnumerable<Exception> GetErrors()
-    {
-        return [new Exception("On no!")];
-    }
-
-    public void LoadServerList()
+    public override void Dispose()
     {
         
-    }
-
-    public void Dispose()
-    {
-        OnDisposed?.Invoke();
     }
 }

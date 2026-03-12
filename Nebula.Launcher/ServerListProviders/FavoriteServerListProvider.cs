@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -17,47 +18,35 @@ using Nebula.Shared.Utils;
 namespace Nebula.Launcher.ServerListProviders;
 
 [ServiceRegister, ConstructGenerator]
-public sealed partial class FavoriteServerListProvider : IServerListProvider, IServerListDirtyInvoker
+public sealed partial class FavoriteServerListProvider : BaseServerListProvider
 {
     [GenerateProperty] private ConfigurationService ConfigurationService { get; }
     [GenerateProperty] private IServiceProvider ServiceProvider { get; }
     [GenerateProperty] private ServerViewContainer ServerViewContainer { get; }
-
-    private List<IListEntryModelView> _serverLists = [];
-    private string[] rawServerLists = [];
+    //[GenerateProperty] private ServerOverviewModel ServerOverviewModel { get; }
     
-    public bool IsLoaded { get; private set; }
-    public Action? OnLoaded { get; set; }
-    public Action? OnDisposed { get; set; }
-    public Action? Dirty { get; set; }
-    public IEnumerable<IListEntryModelView> GetServers()
-    {
-        return _serverLists;
-    }
-
-    public IEnumerable<Exception> GetErrors()
-    {
-        return [];
-    }
-
-    public void LoadServerList()
-    {
-        IsLoaded = false;
-        _serverLists.Clear();
-        var servers = GetFavoriteEntries();
-
-        var serverEntries = servers.Select(s =>
-            ServerViewContainer.Get(s.ToRobustUrl())
-        );
-        
-        _serverLists.AddRange(serverEntries);
-        
-        _serverLists.Add(new AddFavoriteButton(ServiceProvider));
-        
-        IsLoaded = true;
-        OnLoaded?.Invoke();
-    }
+    private string[] _rawServerLists = [];
     
+    public override void LoadServerList(
+        ObservableCollection<IListEntryModelView> servers, 
+        ObservableCollection<Exception> exceptions)
+    {
+        base.LoadServerList(servers, exceptions);
+        
+        foreach (var server in _rawServerLists)
+        {
+            var container = ServerViewContainer.Get(server.ToRobustUrl());
+            servers.Add(container);
+        }
+        
+        servers.Add(new AddFavoriteButton(ServiceProvider));
+    }
+
+    public override void Dispose()
+    {
+        
+    }
+
     public void AddFavorite(ServerEntryModelView entryModelView)
     {
         AddFavorite(entryModelView.Address);
@@ -87,7 +76,7 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
 
     private List<string> GetFavoriteEntries()
     {
-        return rawServerLists.ToList();
+        return _rawServerLists.ToList();
     }
 
     private void Initialise()
@@ -99,26 +88,20 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider, IS
     {
         if (value == null)
         {
-            rawServerLists = [];
-            Dirty?.Invoke();
+            _rawServerLists = [];
             return;
         }
 
-        rawServerLists = value;
-        Dirty?.Invoke();
+        _rawServerLists = value;
+        //ServerOverviewModel.UpdateRequired();
     }
 
     private void InitialiseInDesignMode(){}
-
-    public void Dispose()
-    {
-        OnDisposed?.Invoke();
-    }
 }
 
 public sealed class AddFavoriteButton: Border, IListEntryModelView{
 
-    private Button _addFavoriteButton = new Button();
+    private readonly Button _addFavoriteButton = new();
     public AddFavoriteButton(IServiceProvider serviceProvider)
     {
         Margin = new Thickness(5, 5, 5, 20);
@@ -133,10 +116,5 @@ public sealed class AddFavoriteButton: Border, IListEntryModelView{
         _addFavoriteButton.Content = "Add Favorite";
         Child = _addFavoriteButton;
     }
-    public bool IsFavorite { get; set; }
-
-    public void Dispose()
-    {
-        
-    }
+    public void Dispose(){}
 }

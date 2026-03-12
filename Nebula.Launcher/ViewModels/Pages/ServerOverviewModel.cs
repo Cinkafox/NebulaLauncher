@@ -24,15 +24,16 @@ public partial class ServerOverviewModel : ViewModelBase
 {
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private bool _isFilterVisible;
-    
-    public readonly ServerFilter CurrentFilter = new();
     [GenerateProperty] private IServiceProvider ServiceProvider { get; }
     [GenerateProperty] private ConfigurationService ConfigurationService { get; }
     [GenerateProperty] private FavoriteServerListProvider FavoriteServerListProvider { get; }
-    public ObservableCollection<ServerListTabTemplate> Items { get; private set; }
+    
     [ObservableProperty] private ServerListTabTemplate _selectedItem;
     [GenerateProperty, DesignConstruct] private ServerViewContainer ServerViewContainer { get; } 
     [GenerateProperty, DesignConstruct] public ServerListViewModel CurrentServerList { get; }
+    
+    public ServerFilter CurrentFilter { get; } = new();
+    public ObservableCollection<ServerListTabTemplate> Items { get; private set; }
     
 
     //Design think
@@ -73,13 +74,9 @@ public partial class ServerOverviewModel : ViewModelBase
         ApplyFilter();
     }
 
-    public void ApplyFilter()
+    private void ApplyFilter()
     {
-        foreach (var entry in ServerViewContainer.Items)
-        {
-            if(entry is IFilterConsumer filterConsumer)
-                filterConsumer.ProcessFilter(CurrentFilter);
-        }
+        ServerViewContainer.ApplyFilter(CurrentFilter);
     }
     
     public void OnFilterChanged(FilterBoxChangedEventArgs args)
@@ -100,15 +97,14 @@ public partial class ServerOverviewModel : ViewModelBase
     {
         ServerViewContainer.Clear();
         CurrentServerList.RefreshFromProvider();
-        CurrentServerList.ApplyFilter(CurrentFilter);
     }
 
     partial void OnSelectedItemChanged(ServerListTabTemplate value)
     {
-        CurrentServerList.Provider = value.ServerListProvider;
+        CurrentServerList.ClearProvider();
+        CurrentServerList.SetProvider(value.ServerListProvider);
         ApplyFilter();
     }
-    
 }
 
 [ServiceRegister]
@@ -119,6 +115,7 @@ public sealed class ServerViewContainer
     private readonly Dictionary<string, string> _customNames = [];
 
     private readonly Dictionary<string, WeakReference<IListEntryModelView>> _entries = new();
+    private ServerFilter? _currentFilter;
 
     public ICollection<IListEntryModelView> Items =>
         _entries.Values
@@ -178,16 +175,31 @@ public sealed class ServerViewContainer
                     .LoadServerEntry(url, customName, CancellationToken.None);
             }
 
-            if (_favorites.Contains(key)
-                && entry is IFavoriteEntryModelView fav)
+            if (entry is IFavoriteEntryModelView fav)
             {
-                fav.IsFavorite = true;
+                fav.IsFavorite = _favorites.Contains(key);
+            }
+
+            if (entry is IFilterConsumer filterConsumer)
+            {
+                filterConsumer.ProcessFilter(_currentFilter);
             }
 
             _entries[key] = new WeakReference<IListEntryModelView>(entry);
         }
 
         return entry;
+    }
+    
+    public void ApplyFilter(ServerFilter? filter)
+    {
+        _currentFilter = filter;
+        
+        foreach (var serverView in Items)
+        {
+            if(serverView is IFilterConsumer filterConsumer)
+                filterConsumer.ProcessFilter(filter);
+        }
     }
 
     private void OnFavoritesChange(string[]? value)

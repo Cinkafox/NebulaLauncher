@@ -1,23 +1,19 @@
 using System;
-using System.Collections.Generic;
-using Nebula.Launcher.ViewModels;
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Nebula.Launcher.ViewModels.Pages;
 
 namespace Nebula.Launcher.ServerListProviders;
 
-public interface IServerListProvider : IDisposable
+public abstract class BaseServerListProvider : ObservableObject, IDisposable
 {
-    public bool IsLoaded { get; }
-    public Action? OnLoaded { get; set; }
-    public Action? OnDisposed { get; set; }
-   
-    public IEnumerable<IListEntryModelView> GetServers();
-    public IEnumerable<Exception> GetErrors();
-   
-    public void LoadServerList();
-}
+    public virtual void LoadServerList(
+        ObservableCollection<IListEntryModelView> servers, 
+        ObservableCollection<Exception> exceptions)
+    {
+        servers.Clear();
+        exceptions.Clear();
+    }
 
-public interface IServerListDirtyInvoker
-{
-    public Action? Dirty { get; set; }
+    public abstract void Dispose();
 }
