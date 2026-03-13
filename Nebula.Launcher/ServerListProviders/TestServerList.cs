@@ -1,26 +1,21 @@
 using System;
 using System.Collections.ObjectModel;
+using Avalonia.Collections;
 using Nebula.Launcher.ViewModels;
 using Nebula.Launcher.ViewModels.Pages;
 
 namespace Nebula.Launcher.ServerListProviders;
 
-public sealed class TestServerList : BaseServerListProvider
+public sealed class TestServerList : IServerListProvider
 {
-    public override void LoadServerList(
-         ObservableCollection<IListEntryModelView> servers, 
-         ObservableCollection<Exception> exceptions)
+    public  void LoadServerList(
+        AvaloniaList<IListEntryModelView> servers, 
+        AvaloniaList<Exception> exceptions)
     {
-        base.LoadServerList(servers, exceptions);
         
-        servers.Add(new ServerEntryModelView());
-        servers.Add(new ServerEntryModelView());
+        servers.Add(new ServerEntryViewModel());
+        servers.Add(new ServerEntryViewModel());
         
         exceptions.Add(new Exception("Oh no!"));
-    }
-
-    public override void Dispose()
-    {
-        
     }
 }

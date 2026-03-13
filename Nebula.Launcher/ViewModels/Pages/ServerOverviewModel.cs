@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
+using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,7 @@ using Nebula.Launcher.Views.Pages;
 using Nebula.Shared;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
+using Nebula.Shared.Utils;
 using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher.ViewModels.Pages;
@@ -49,7 +51,14 @@ public partial class ServerOverviewModel : ViewModelBase
     //real think
     protected override void Initialise()
     {
+        FavoriteServerListProvider.OnRefreshRequired += OnFavoriteRefreshRequired;
         ConfigurationService.SubscribeVarChanged(LauncherConVar.Hub, OnHubListChanged, true);
+    }
+
+    private void OnFavoriteRefreshRequired()
+    {
+        if(CurrentServerList.Provider is FavoriteServerListProvider favoriteServerListProvider)
+            UpdateRequired();
     }
 
     private void OnHubListChanged(ServerHubRecord[]? value)
@@ -147,6 +156,8 @@ public sealed class ServerViewContainer
         _entries.Clear();
     }
 
+    public IListEntryModelView Get(string url, ServerStatus? serverStatus = null) => Get(url.ToRobustUrl(), serverStatus);
+
     public IListEntryModelView Get(RobustUrl url, ServerStatus? serverStatus = null)
     {
         var key = url.ToString();
@@ -154,40 +165,51 @@ public sealed class ServerViewContainer
 
         lock (_entries)
         {
-            _customNames.TryGetValue(key, out var customName);
-
             if (_entries.TryGetValue(key, out var weakEntry)
                 && weakEntry.TryGetTarget(out entry))
             {
                 return entry;
             }
 
-            if (serverStatus is not null)
-            {
-                entry = _viewHelperService
-                    .GetViewModel<ServerEntryModelView>()
-                    .WithData(url, customName, serverStatus);
-            }
-            else
-            {
-                entry = _viewHelperService
-                    .GetViewModel<ServerCompoundEntryViewModel>()
-                    .LoadServerEntry(url, customName, CancellationToken.None);
-            }
-
-            if (entry is IFavoriteEntryModelView fav)
-            {
-                fav.IsFavorite = _favorites.Contains(key);
-            }
-
-            if (entry is IFilterConsumer filterConsumer)
-            {
-                filterConsumer.ProcessFilter(_currentFilter);
-            }
+            entry = Create(url, serverStatus);
 
             _entries[key] = new WeakReference<IListEntryModelView>(entry);
         }
 
+        return entry;
+    }
+    
+    private IListEntryModelView Create(RobustUrl url, ServerStatus? serverStatus = null)
+    {
+        IListEntryModelView? entry;
+        var key = url.ToString();
+        
+        _customNames.TryGetValue(key, out var customName);
+        
+        if (serverStatus is not null)
+        {
+            //entry = new ExampleEntry(serverStatus.Name);
+            entry = _viewHelperService
+                .GetViewModel<ServerEntryViewModel>()
+                .WithData(url, customName, serverStatus);
+        }
+        else
+        {
+            entry = _viewHelperService
+                .GetViewModel<ServerCompoundEntryViewModel>()
+                .LoadServerEntry(url, customName, CancellationToken.None);
+        }
+
+        if (entry is IFavoriteEntryModelView fav)
+        {
+            fav.IsFavorite = _favorites.Contains(key);
+        }
+
+        if (entry is IFilterConsumer filterConsumer)
+        {
+            filterConsumer.ProcessFilter(_currentFilter);
+        }
+        
         return entry;
     }
     
@@ -274,6 +296,19 @@ public sealed class ServerViewContainer
 public interface IListEntryModelView : IDisposable
 {
     
+}
+
+public sealed class ExampleEntry : StackPanel, IListEntryModelView
+{
+    public ExampleEntry(string name)
+    {
+        Children.Add(new Label { Content = name });
+    }
+    
+    public void Dispose()
+    {
+        
+    }
 }
 
 public interface IFavoriteEntryModelView

@@ -21,7 +21,7 @@ namespace Nebula.Launcher.ViewModels;
 
 [ViewModelRegister(typeof(ServerEntryView), false)]
 [ConstructGenerator]
-public sealed partial class ServerEntryModelView : ViewModelBase, IFilterConsumer, IListEntryModelView, IFavoriteEntryModelView, IEntryNameHolder
+public sealed partial class ServerEntryViewModel : ViewModelBase, IFilterConsumer, IListEntryModelView, IFavoriteEntryModelView, IEntryNameHolder
 {
     [ObservableProperty] private string _description = "Fetching info...";
     [ObservableProperty] private bool _expandInfo;
@@ -129,7 +129,7 @@ public sealed partial class ServerEntryModelView : ViewModelBase, IFilterConsume
         OnPropertyChanged(nameof(Status));
     }
     
-    public ServerEntryModelView WithData(RobustUrl url, string? name, ServerStatus serverStatus)
+    public ServerEntryViewModel WithData(RobustUrl url, string? name, ServerStatus serverStatus)
     {
         Address = url;
         SetStatus(serverStatus);

@@ -55,4 +55,10 @@ public partial class AddFavoriteViewModel : PopupViewModelBase
             _logger.Error(e);
         }
     }
+
+    protected override void OnDispose()
+    {
+        base.OnDispose();
+        _logger.Dispose();
+    }
 }

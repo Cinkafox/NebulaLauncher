@@ -1,22 +1,20 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using Nebula.Launcher.Models;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Shared;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
-using Nebula.Shared.Utils;
 
 namespace Nebula.Launcher.ServerListProviders;
 
 [ServiceRegister(null, false), ConstructGenerator]
-public sealed partial class HubServerListProvider : BaseServerListProvider
+public sealed partial class HubServerListProvider : IServerListProvider, IDisposable
 {
     private CancellationTokenSource? _cts;
     private readonly SemaphoreSlim _loadLock = new(1, 1);
@@ -32,34 +30,27 @@ public sealed partial class HubServerListProvider : BaseServerListProvider
         return this;
     }
 
-    public override void LoadServerList(
-        ObservableCollection<IListEntryModelView> servers, 
-        ObservableCollection<Exception> exceptions)
+    public void LoadServerList(
+        AvaloniaList<IListEntryModelView> servers, 
+        AvaloniaList<Exception> exceptions)
     {
-        base.LoadServerList(servers, exceptions);
-        
         servers.Add(new LoadingServerEntry());
         Task.Run(() => LoadServerListAsync(servers, exceptions));
     }
 
     private void SyncServers(List<IListEntryModelView> servers, 
-        ObservableCollection<IListEntryModelView> collection)
+        AvaloniaList<IListEntryModelView> collection)
     {
         collection.Clear();
-        foreach (var server in servers)
-        {
-            collection.Add(server);
-        }
+        collection.AddRange(servers);
     }
 
     private async Task LoadServerListAsync(
-        ObservableCollection<IListEntryModelView> servers, 
-        ObservableCollection<Exception> exceptions)
+        AvaloniaList<IListEntryModelView> servers, 
+        AvaloniaList<Exception> exceptions)
     {
         CancellationTokenSource localCts;
         
-        var serverList = new List<IListEntryModelView>();
-
         await _loadLock.WaitAsync();
         try
         {
@@ -84,26 +75,25 @@ public sealed partial class HubServerListProvider : BaseServerListProvider
             serversRaw.Sort(new ServerComparer());
 
             localCts.Token.ThrowIfCancellationRequested();
-            
-            foreach (var info in serversRaw)
-            {
-                var viewContainer =
-                    ServerViewContainer.Get(info.Address.ToRobustUrl(), info.StatusData);
-
-                serverList.Add(viewContainer);
-            }
 
             Dispatcher.UIThread.Invoke(() =>
             {
+                var serverList = new List<IListEntryModelView>();
+                
+                foreach (var info in serversRaw)
+                {
+                    serverList.Add(ServerViewContainer.Get(info.Address, info.StatusData));
+                }
                 SyncServers(serverList, servers);
             });
         }
         catch (OperationCanceledException)
         {
-            
+            // Ignore cancel think
         }
         catch (Exception e)
         {
+            Console.WriteLine(e);
             exceptions.Add(
                 new Exception(
                     $"Some error while loading server list from {_hubUrl}. See inner exception",
@@ -116,7 +106,7 @@ public sealed partial class HubServerListProvider : BaseServerListProvider
     private void Initialise(){}
     private void InitialiseInDesignMode(){}
 
-    public override void Dispose()
+    public void Dispose()
     {
         _cts?.Dispose();
     }

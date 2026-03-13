@@ -26,7 +26,7 @@ public sealed partial class ServerCompoundEntryViewModel :
     private RobustUrl? _url;
     private ServerFilter? _currentFilter;
 
-    public ServerEntryModelView? CurrentEntry
+    public ServerEntryViewModel? CurrentEntry
     {
         get;
         set
@@ -74,7 +74,7 @@ public sealed partial class ServerCompoundEntryViewModel :
     {
     }
 
-    public ServerCompoundEntryViewModel LoadWithEntry(ServerEntryModelView? entry)
+    public ServerCompoundEntryViewModel LoadWithEntry(ServerEntryViewModel? entry)
     {
         CurrentEntry = entry;
         return this;
@@ -101,7 +101,7 @@ public sealed partial class ServerCompoundEntryViewModel :
             Message = "Loading server entry...";
             var status = await RestService.GetAsync<ServerStatus>(_url.StatusUri, CancellationToken.None);
                 
-            CurrentEntry = ServiceProvider.GetService<ServerEntryModelView>()!.WithData(_url, null, status);
+            CurrentEntry = ServiceProvider.GetService<ServerEntryViewModel>()!.WithData(_url, null, status);
             
             Loading = false;
         }

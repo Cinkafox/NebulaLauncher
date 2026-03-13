@@ -3,7 +3,7 @@
     d:DesignWidth="800"
     mc:Ignorable="d"
     x:Class="Nebula.Launcher.Views.ServerEntryView"
-    x:DataType="viewModels:ServerEntryModelView"
+    x:DataType="viewModels:ServerEntryViewModel"
     xmlns="https://github.com/avaloniaui"
     xmlns:converters="clr-namespace:Nebula.Launcher.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -16,7 +16,7 @@
     xmlns:services="clr-namespace:Nebula.Launcher.Services"
     IsVisible="{Binding IsVisible}">
     <Design.DataContext>
-        <viewModels:ServerEntryModelView />
+        <viewModels:ServerEntryViewModel />
     </Design.DataContext>
 
     <Border
@@ -213,7 +213,7 @@
                                     BoxShadow="0 0 13 -1 #121212"
                                     CornerRadius="10">
                                     <Button
-                                        Command="{Binding $parent[views:ServerEntryView].((viewModels:ServerEntryModelView)DataContext).OnLinkGo}"
+                                        Command="{Binding $parent[views:ServerEntryView].((viewModels:ServerEntryViewModel)DataContext).OnLinkGo}"
                                         CommandParameter="{Binding Url}"
                                         Margin="3">
                                         <StackPanel Orientation="Horizontal" Spacing="5">

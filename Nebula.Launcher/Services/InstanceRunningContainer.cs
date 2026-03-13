@@ -3,13 +3,18 @@ using System.Collections.Generic;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.ProcessHelper;
 using Nebula.Launcher.ViewModels;
+using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Shared;
 using Nebula.Shared.Services;
 
 namespace Nebula.Launcher.Services;
 
 [ServiceRegister]
-public sealed class InstanceRunningContainer(PopupMessageService popupMessageService, DebugService debugService)
+public sealed class InstanceRunningContainer(
+    PopupMessageService popupMessageService,
+    DebugService debugService, 
+    ServerViewContainer container
+    )
 {
     private readonly InstanceKeyPool _keyPool = new();
     private readonly Dictionary<InstanceKey, ProcessRunHandler> _processCache = new();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -18,38 +19,32 @@ using Nebula.Shared.Utils;
 namespace Nebula.Launcher.ServerListProviders;
 
 [ServiceRegister, ConstructGenerator]
-public sealed partial class FavoriteServerListProvider : BaseServerListProvider
+public sealed partial class FavoriteServerListProvider : IServerListProvider
 {
     [GenerateProperty] private ConfigurationService ConfigurationService { get; }
     [GenerateProperty] private IServiceProvider ServiceProvider { get; }
     [GenerateProperty] private ServerViewContainer ServerViewContainer { get; }
-    //[GenerateProperty] private ServerOverviewModel ServerOverviewModel { get; }
+
+    public Action? OnRefreshRequired;
     
     private string[] _rawServerLists = [];
     
-    public override void LoadServerList(
-        ObservableCollection<IListEntryModelView> servers, 
-        ObservableCollection<Exception> exceptions)
+    public void LoadServerList(
+        AvaloniaList<IListEntryModelView> servers, 
+        AvaloniaList<Exception> exceptions)
     {
-        base.LoadServerList(servers, exceptions);
-        
         foreach (var server in _rawServerLists)
         {
-            var container = ServerViewContainer.Get(server.ToRobustUrl());
+            var container = ServerViewContainer.Get(server);
             servers.Add(container);
         }
         
         servers.Add(new AddFavoriteButton(ServiceProvider));
     }
 
-    public override void Dispose()
+    public void AddFavorite(ServerEntryViewModel entryViewModel)
     {
-        
-    }
-
-    public void AddFavorite(ServerEntryModelView entryModelView)
-    {
-        AddFavorite(entryModelView.Address);
+        AddFavorite(entryViewModel.Address);
     }
 
     public void AddFavorite(RobustUrl robustUrl)
@@ -60,10 +55,10 @@ public sealed partial class FavoriteServerListProvider : BaseServerListProvider
         if(ServerViewContainer.Get(robustUrl) is IFavoriteEntryModelView favoriteView) favoriteView.IsFavorite = true;
     }
 
-    public void RemoveFavorite(ServerEntryModelView entryModelView)
+    public void RemoveFavorite(ServerEntryViewModel entryViewModel)
     {
         var servers = GetFavoriteEntries();
-        servers.Remove(entryModelView.Address.ToString());
+        servers.Remove(entryViewModel.Address.ToString());
         ConfigurationService.SetConfigValue(LauncherConVar.Favorites, servers.ToArray());
     }
     
@@ -93,7 +88,7 @@ public sealed partial class FavoriteServerListProvider : BaseServerListProvider
         }
 
         _rawServerLists = value;
-        //ServerOverviewModel.UpdateRequired();
+        OnRefreshRequired?.Invoke();
     }
 
     private void InitialiseInDesignMode(){}

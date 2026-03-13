@@ -9,7 +9,7 @@ namespace Nebula.Launcher.ViewModels.Popup;
 [ConstructGenerator, ViewModelRegister(typeof(IsLoginCredentialsNullPopupView))]
 public partial class IsLoginCredentialsNullPopupViewModel : PopupViewModelBase
 {
-    private ServerEntryModelView _entry;
+    private ServerEntryViewModel _entryView;
     
     [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
     [GenerateProperty, DesignConstruct] private ViewHelperService ViewHelperService { get; }
@@ -22,15 +22,15 @@ public partial class IsLoginCredentialsNullPopupViewModel : PopupViewModelBase
     {
     }
 
-    public IsLoginCredentialsNullPopupViewModel WithServerEntry(ServerEntryModelView entryModelView)
+    public IsLoginCredentialsNullPopupViewModel WithServerEntry(ServerEntryViewModel entryViewModel)
     {
-        _entry = entryModelView;
+        _entryView = entryViewModel;
         return this;
     }
 
     public void Proceed()
     {
-        _entry.RunInstanceIgnoreAuth();
+        _entryView.RunInstanceIgnoreAuth();
         Dispose();
     }
 
