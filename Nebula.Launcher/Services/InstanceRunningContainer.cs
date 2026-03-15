@@ -12,8 +12,7 @@ namespace Nebula.Launcher.Services;
 [ServiceRegister]
 public sealed class InstanceRunningContainer(
     PopupMessageService popupMessageService,
-    DebugService debugService, 
-    ServerViewContainer container
+    DebugService debugService
     )
 {
     private readonly InstanceKeyPool _keyPool = new();

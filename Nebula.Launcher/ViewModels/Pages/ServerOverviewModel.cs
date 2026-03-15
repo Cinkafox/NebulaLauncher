@@ -58,7 +58,9 @@ public partial class ServerOverviewModel : ViewModelBase
     private void OnFavoriteRefreshRequired()
     {
         if(CurrentServerList.Provider is FavoriteServerListProvider favoriteServerListProvider)
+        {
             UpdateRequired();
+        }
     }
 
     private void OnHubListChanged(ServerHubRecord[]? value)
@@ -105,6 +107,7 @@ public partial class ServerOverviewModel : ViewModelBase
     public void UpdateRequired()
     {
         ServerViewContainer.Clear();
+        CurrentServerList.ClearProvider();
         CurrentServerList.RefreshFromProvider();
     }
 
