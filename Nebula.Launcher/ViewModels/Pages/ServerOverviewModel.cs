@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -59,7 +60,7 @@ public partial class ServerOverviewModel : ViewModelBase
     {
         if(CurrentServerList.Provider is FavoriteServerListProvider favoriteServerListProvider)
         {
-            UpdateRequired();
+            RefreshProvider();
         }
     }
 
@@ -107,6 +108,11 @@ public partial class ServerOverviewModel : ViewModelBase
     public void UpdateRequired()
     {
         ServerViewContainer.Clear();
+        RefreshProvider();
+    }
+    
+    private void RefreshProvider()
+    {
         CurrentServerList.ClearProvider();
         CurrentServerList.RefreshFromProvider();
     }
@@ -152,8 +158,8 @@ public sealed class ServerViewContainer
     {
         foreach (var (_, weakRef) in _entries)
         {
-            if (weakRef.TryGetTarget(out var value))
-                value.Dispose();
+            if (weakRef.TryGetTarget(out var value) && value is IDisposable disposable)
+                disposable.Dispose();
         }
 
         _entries.Clear();
@@ -191,7 +197,6 @@ public sealed class ServerViewContainer
         
         if (serverStatus is not null)
         {
-            //entry = new ExampleEntry(serverStatus.Name);
             entry = _viewHelperService
                 .GetViewModel<ServerEntryViewModel>()
                 .WithData(url, customName, serverStatus);
@@ -296,7 +301,7 @@ public sealed class ServerViewContainer
     }
 }
 
-public interface IListEntryModelView : IDisposable
+public interface IListEntryModelView 
 {
     
 }

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.ProcessHelper;
+using Nebula.Launcher.ServerListProviders;
 using Nebula.Launcher.ViewModels;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.ViewModels.Popup;
@@ -23,6 +24,10 @@ public class GameRunnerService
     private readonly InstanceRunningContainer _instanceRunningContainer;
     private readonly AccountInfoViewModel _accountInfoViewModel;
     private readonly ServerViewContainer _container;
+    private readonly MainViewModel _mainViewModel;
+    private readonly FavoriteServerListProvider _favoriteServerListProvider;
+    private readonly RestService _restService;
+    private readonly CancellationService _cancellationService;
     private readonly ILogger _logger;
     
     private readonly Dictionary<InstanceKey, RobustUrl> _robustUrls = new();
@@ -34,7 +39,11 @@ public class GameRunnerService
         GameRunnerPreparer gameRunnerPreparer, 
         InstanceRunningContainer instanceRunningContainer, 
         AccountInfoViewModel accountInfoViewModel, 
-        ServerViewContainer container)
+        ServerViewContainer container, 
+        MainViewModel mainViewModel, 
+        FavoriteServerListProvider favoriteServerListProvider,
+        RestService restService,
+        CancellationService cancellationService)
     {
         _popupMessageService = popupMessageService;
         _viewHelperService = viewHelperService;
@@ -42,6 +51,10 @@ public class GameRunnerService
         _instanceRunningContainer = instanceRunningContainer;
         _accountInfoViewModel = accountInfoViewModel;
         _container = container;
+        _mainViewModel = mainViewModel;
+        _favoriteServerListProvider = favoriteServerListProvider;
+        _restService = restService;
+        _cancellationService = cancellationService;
 
         _logger = debugService.GetLogger("GameRunnerService");
         _instanceRunningContainer.IsRunningChanged += IsRunningChanged;
@@ -65,20 +78,43 @@ public class GameRunnerService
         }
     }
 
-    public void StopInstance(ServerEntryViewModel serverEntryViewModel)
+    public void StopInstance(RobustUrl robustUrl)
     {
-        if (_robustKeys.TryGetValue(serverEntryViewModel.Address, out var instanceKey))
+        if (_robustKeys.TryGetValue(robustUrl, out var instanceKey))
         {
             _instanceRunningContainer.Stop(instanceKey);
         }
     }
 
-    public void ReadInstanceLog(ServerEntryViewModel serverEntryViewModel)
+    public void ReadInstanceLog(RobustUrl robustUrl)
     {
-        if (_robustKeys.TryGetValue(serverEntryViewModel.Address, out var instanceKey))
+        if (_robustKeys.TryGetValue(robustUrl, out var instanceKey))
         {
             _instanceRunningContainer.Popup(instanceKey);
         }
+    }
+    
+    public void OpenContentViewer(RobustUrl robustUrl)
+    {
+        _mainViewModel.RequirePage<ContentBrowserViewModel>().Go(robustUrl, ContentPath.Empty);
+    }
+
+    public void AddFavorite(RobustUrl robustUrl)
+    {
+        _favoriteServerListProvider.AddFavorite(robustUrl);
+    }
+    
+    public void RemoveFavorite(RobustUrl robustUrl)
+    {
+        _favoriteServerListProvider.RemoveFavorite(robustUrl);
+    }
+    
+    public void EditName(RobustUrl robustUrl, string? oldName)
+    {
+        var popup = _viewHelperService.GetViewModel<EditServerNameViewModel>();
+        popup.IpInput = robustUrl.ToString();
+        popup.NameInput = oldName ?? string.Empty;
+        _popupMessageService.Popup(popup);
     }
 
     public async Task<InstanceKey?> RunInstanceAsync(ServerEntryViewModel serverEntryViewModel, CancellationToken cancellationToken, bool ignoreLoginCredentials = false)
@@ -116,5 +152,11 @@ public class GameRunnerService
             _popupMessageService.Popup(error);
             return null;
         }
+    }
+
+    public ServerEntryViewModel GetServerEntry(RobustUrl url, string customName, ServerStatus serverStatus)
+    {
+        return new ServerEntryViewModel(_restService, _cancellationService, this)
+            .WithData(url, customName, serverStatus);
     }
 }

@@ -13,8 +13,8 @@ public sealed class TestServerList : IServerListProvider
         AvaloniaList<Exception> exceptions)
     {
         
-        servers.Add(new ServerEntryViewModel());
-        servers.Add(new ServerEntryViewModel());
+        //servers.Add(new ServerEntryViewModel());
+        //servers.Add(new ServerEntryViewModel());
         
         exceptions.Add(new Exception("Oh no!"));
     }

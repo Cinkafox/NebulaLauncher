@@ -42,11 +42,6 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider
         servers.Add(new AddFavoriteButton(ServiceProvider));
     }
 
-    public void AddFavorite(ServerEntryViewModel entryViewModel)
-    {
-        AddFavorite(entryViewModel.Address);
-    }
-
     public void AddFavorite(RobustUrl robustUrl)
     {
         var servers = GetFavoriteEntries();

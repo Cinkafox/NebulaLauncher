@@ -130,9 +130,4 @@ public sealed partial class ServerCompoundEntryViewModel :
         if(CurrentEntry is IFilterConsumer filterConsumer) 
             filterConsumer.ProcessFilter(serverFilter);
     }
-
-    public void Dispose()
-    {
-        CurrentEntry?.Dispose();
-    }
 }

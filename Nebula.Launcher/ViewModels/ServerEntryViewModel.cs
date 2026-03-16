@@ -18,16 +18,25 @@ using Nebula.Shared.ViewHelper;
 namespace Nebula.Launcher.ViewModels;
 
 [ViewModelRegister(typeof(ServerEntryView), false)]
-[ConstructGenerator]
-public sealed partial class ServerEntryViewModel : ViewModelBase, IFilterConsumer, IListEntryModelView, IFavoriteEntryModelView, IEntryNameHolder, IRunningSignalConsumer
+public sealed partial class ServerEntryViewModel(
+    RestService restService, 
+    CancellationService cancellationService, 
+    GameRunnerService gameRunnerService
+    ) : 
+    ViewModelBase, 
+    IFilterConsumer,
+    IListEntryModelView, 
+    IFavoriteEntryModelView,
+    IEntryNameHolder, 
+    IRunningSignalConsumer
 {
     [ObservableProperty] private string _description = "Fetching info...";
     [ObservableProperty] private bool _expandInfo;
     [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private bool _isVisible;
     [ObservableProperty] private bool _runVisible = true;
-    [ObservableProperty] private string _realName;
-
+    [ObservableProperty] private string _realName = string.Empty;
+    
     public string? Name
     {
         get => RealName;
@@ -37,13 +46,6 @@ public sealed partial class ServerEntryViewModel : ViewModelBase, IFilterConsume
     private ServerInfo? _serverInfo;
 
     public RobustUrl Address { get; private set; }
-    [GenerateProperty] private CancellationService CancellationService { get; } = default!;
-    [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
-    [GenerateProperty] private ViewHelperService ViewHelperService { get; } = default!;
-    [GenerateProperty] private RestService RestService { get; } = default!;
-    [GenerateProperty] private MainViewModel MainViewModel { get; } = default!;
-    [GenerateProperty] private FavoriteServerListProvider FavoriteServerListProvider { get; } = default!;
-    [GenerateProperty] private GameRunnerService GameRunnerService { get; } = default!;
 
     public ServerStatus Status { get; private set; } =
         new(
@@ -69,7 +71,7 @@ public sealed partial class ServerEntryViewModel : ViewModelBase, IFilterConsume
         
         try
         {
-            _serverInfo = await RestService.GetAsync<ServerInfo>(Address.InfoUri, CancellationService.Token);
+            _serverInfo = await restService.GetAsync<ServerInfo>(Address.InfoUri, cancellationService.Token);
         }
         catch (Exception e)
         {
@@ -124,46 +126,43 @@ public sealed partial class ServerEntryViewModel : ViewModelBase, IFilterConsume
         return this;
     }
 
-    public void EditName()
-    {
-        var popup = ViewHelperService.GetViewModel<EditServerNameViewModel>();
-        popup.IpInput = Address.ToString();
-        popup.NameInput = Name ?? string.Empty;
-        PopupMessageService.Popup(popup);
-    }
-
     public void OpenContentViewer()
     {
-        MainViewModel.RequirePage<ContentBrowserViewModel>().Go(Address, ContentPath.Empty);
+        gameRunnerService.OpenContentViewer(Address);
     }
 
     public void ToggleFavorites()
     {
         IsFavorite = !IsFavorite;
         if(IsFavorite)
-            FavoriteServerListProvider.AddFavorite(this);
+            gameRunnerService.AddFavorite(Address);
         else
-            FavoriteServerListProvider.RemoveFavorite(this);
+            gameRunnerService.RemoveFavorite(Address);
     }
 
     public void RunInstance()
     { 
-        Task.Run(async ()=> await GameRunnerService.RunInstanceAsync(this, CancellationService.Token));
+        Task.Run(async ()=> await gameRunnerService.RunInstanceAsync(this, cancellationService.Token));
     }
 
     public void RunInstanceIgnoreAuth()
     {
-        Task.Run(async ()=> await GameRunnerService.RunInstanceAsync(this, CancellationService.Token, true));
+        Task.Run(async ()=> await gameRunnerService.RunInstanceAsync(this, cancellationService.Token, true));
     }
 
     public void StopInstance()
     {
-        GameRunnerService.StopInstance(this);
+        gameRunnerService.StopInstance(Address);
     }
     
     public void ReadLog()
     {
-        GameRunnerService.ReadInstanceLog(this);
+        gameRunnerService.ReadInstanceLog(Address);
+    }
+
+    public void EditName()
+    {
+        gameRunnerService.EditName(Address, Name);
     }
 
     public async void ExpandInfoRequired()
@@ -185,10 +184,6 @@ public sealed partial class ServerEntryViewModel : ViewModelBase, IFilterConsume
     public void ProcessRunningSignal(bool isRunning)
     {
         RunVisible = !isRunning;
-    }
-
-    public void Dispose()
-    {
     }
 }
 

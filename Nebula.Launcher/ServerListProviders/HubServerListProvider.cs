@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Collections;
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Threading;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Pages;
@@ -116,6 +117,7 @@ public sealed class LoadingServerEntry : Label, IListEntryModelView
 {
     public LoadingServerEntry()
     {
+        HorizontalAlignment = HorizontalAlignment.Center;
         Content = LocalizationService.GetString("server-list-loading");
     }
     public void Dispose()
