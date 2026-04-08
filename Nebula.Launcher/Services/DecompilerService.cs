@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -15,6 +16,7 @@ using Nebula.Shared.FileApis.Interfaces;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
+using Nebula.Shared.Utils;
 using Nebula.SharedModels;
 
 namespace Nebula.Launcher.Services;
@@ -91,10 +93,17 @@ public sealed partial class DecompilerService
     private async Task Download(){
         using var loading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loading.LoadingName = "Download ILSpy";
-        loading.CreateLoadingContext().SetJobsCount(1);
+        var context = loading.CreateLoadingContext();
         PopupMessageService.Popup(loading);
         using var response = await _httpClient.GetAsync(ConfigurationService.GetConfigValue(LauncherConVar.ILSpyUrl));
-        using var zipArchive = new ZipArchive(await response.Content.ReadAsStreamAsync());
+        Console.WriteLine(response.StatusCode);
+        context.SetJobsCount(response.Content.Headers.ContentLength ?? 1000);
+        
+        using var stream = await response.Content.ReadAsStreamAsync();
+        using var memoryStream = new MemoryStream();
+        stream.CopyTo(memoryStream, context);
+        
+        using var zipArchive = new ZipArchive(memoryStream);
         Directory.CreateDirectory(FullPath);
         zipArchive.ExtractToDirectory(FullPath);
     }

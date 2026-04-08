@@ -36,7 +36,7 @@ public static class LauncherConVar
         new AuthServerCredentials(
             "WizDen", 
             [
-                "https://harpy.durenko.tatar/auth-api/",
+                "https://feline.durenko.tatar/auth-api/",
                 "https://auth.spacestation14.com/",
                 "https://auth.fallback.spacestation14.com/",
             ]),
@@ -48,13 +48,13 @@ public static class LauncherConVar
     ]);
     
     public static readonly ConVar<ServerHubRecord[]> Hub = ConVarBuilder.Build<ServerHubRecord[]>("launcher.hub.v2", [
-        new ServerHubRecord("WizDen", "https://harpy.durenko.tatar/hub-api/api/servers"),
+        new ServerHubRecord("WizDen", "https://feline.durenko.tatar/hub-api/api/servers"),
         new ServerHubRecord("AltHub","https://hub.singularity14.co.uk/api/servers")
     ]);
 
     public static readonly ConVar<string> CurrentLang = ConVarBuilder.Build<string>("launcher.language", CultureInfo.CurrentCulture.Name);
     public static readonly ConVar<string> ILSpyUrl = ConVarBuilder.Build<string>("decompiler.url",
-    "https://github.com/icsharpcode/ILSpy/releases/download/v10.0-preview2/ILSpy_selfcontained_10.0.0.8282-preview2-x64.zip");
+    "https://feline.durenko.tatar/ILSpy_selfcontained_10.0.0.8330-x64.zip");
     
     public static readonly ConVar<string> ILSpyVersion = ConVarBuilder.Build<string>("dotnet.version", "10");
 }

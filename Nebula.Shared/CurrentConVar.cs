@@ -8,14 +8,14 @@ public static class CurrentConVar
 {
     public static readonly ConVar<string[]> EngineManifestUrl =
         ConVarBuilder.Build<string[]>("engine.manifestUrl", [
-            "https://harpy.durenko.tatar/manifests/manifest", 
+            "https://feline.durenko.tatar/engine-cdn/manifest.json", 
             "https://robust-builds.fallback.cdn.spacestation14.com/manifest.json"
         ]);
 
     public static readonly ConVar<string[]> EngineModuleManifestUrl =
         ConVarBuilder.Build<string[]>("engine.moduleManifestUrl", 
         [
-            "https://harpy.durenko.tatar/manifests/modules",
+            "https://feline.durenko.tatar/engine-cdn/modules.json",
             "https://robust-builds.fallback.cdn.spacestation14.com/modules.json"
         ]);
 
