@@ -15,6 +15,7 @@ using Nebula.Launcher.Utils;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views;
 using Nebula.Launcher.Views.Pages;
+using Nebula.Shared.FileApis;
 using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Utils;
@@ -67,7 +68,7 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
         ExplorerUtils.OpenFolder(tmpDir);
     }
 
-    public void OnGoEnter()
+    public async void OnGoEnter()
     {
         if (string.IsNullOrWhiteSpace(ServerText))
         {
@@ -80,7 +81,7 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
         {
             var cur = ServiceProvider.GetService<ServerFolderContentEntry>()!;
             cur.Init(this, ServerText.ToRobustUrl());
-            var curContent = cur.Go(new ContentPath(SearchText), CancellationService.Token);
+            var curContent = await cur.Go(new ContentPath(SearchText), CancellationService.Token);
             CurrentEntry = curContent ?? throw new NullReferenceException($"{SearchText} not found in {ServerText}");
         }
         catch (Exception e)
@@ -147,11 +148,11 @@ public interface IContentEntry
     public string IconPath { get; }
     public ContentPath FullPath => Parent?.FullPath.With(Name) ?? new ContentPath(Name);
     
-    public IContentEntry? Go(ContentPath path, CancellationToken cancellationToken);
+    public Task<IContentEntry?> Go(ContentPath path, CancellationToken cancellationToken);
     
-    public void GoCurrent()
+    public async void GoCurrent()
     {
-        var entry = Go(ContentPath.Empty, CancellationToken.None);
+        var entry = await Go(ContentPath.Empty, CancellationToken.None);
         if(entry is not null) Holder.CurrentEntry = entry;
     }
     
@@ -181,7 +182,7 @@ public sealed class LazyContentEntry : IContentEntry
         _lazyEntry = entry;
         _lazyEntryInit = lazyEntryInit;
     }
-    public IContentEntry? Go(ContentPath path, CancellationToken cancellationToken)
+    public async Task<IContentEntry?> Go(ContentPath path, CancellationToken cancellationToken)
     {
         _lazyEntryInit?.Invoke();
         return _lazyEntry;
@@ -192,11 +193,17 @@ public sealed class ExtContentExecutor
 {
     public ServerFolderContentEntry _root;
     private DecompilerService _decompilerService;
+    private readonly ViewHelperService _viewHelperService;
+    private readonly PopupMessageService _popupService;
 
-    public ExtContentExecutor(ServerFolderContentEntry root, DecompilerService decompilerService)
+    public ExtContentExecutor(ServerFolderContentEntry root, 
+        DecompilerService decompilerService, 
+        ViewHelperService viewHelperService, PopupMessageService popupService)
     {
         _root = root;
         _decompilerService = decompilerService;
+        _viewHelperService = viewHelperService;
+        _popupService = popupService;
     }
 
     public bool TryExecute(IFileApi api, ContentPath path, CancellationToken cancellationToken)
@@ -206,6 +213,18 @@ public sealed class ExtContentExecutor
         if (ext == ".dll")
         {
             _decompilerService.OpenServerDecompiler(_root.ServerUrl, cancellationToken);
+            return true;
+        }
+
+        if (ext == ".rsic")
+        {
+            if (!api.TryOpen(path.ToString(), out var stream))
+                return false;
+            
+            var rsicShowViewModel = _viewHelperService.GetViewModel<RsicShowViewModel>();
+            rsicShowViewModel.SetImage(stream, true);
+            
+            _popupService.Popup(rsicShowViewModel);
             return true;
         }
 
@@ -223,18 +242,44 @@ public sealed partial class FileContentEntry : IContentEntry
     
     private IFileApi _fileApi = default!;
     private ExtContentExecutor _extContentExecutor = default!;
+    private ContentService _contentService = default!;
+    private ViewHelperService _viewHelperService = default!;
+    private PopupMessageService _popupMessageService = default!;
 
-    public void Init(IContentHolder holder, IFileApi api, string fileName, ExtContentExecutor executor)
+    public void Init(IContentHolder holder, 
+        IFileApi api, 
+        string fileName,
+        ExtContentExecutor executor, 
+        ContentService contentService,
+        ViewHelperService viewHelperService,
+        PopupMessageService popupService
+        )
     {
         Holder = holder;
         Name = fileName;
         _fileApi = api;
         _extContentExecutor = executor;
+        _contentService = contentService;
+        _viewHelperService = viewHelperService;
+        _popupMessageService = popupService;
     }
     
-    public IContentEntry? Go(ContentPath path, CancellationToken cancellationToken)
+    public async Task<IContentEntry?> Go(ContentPath path, CancellationToken cancellationToken)
     {
         var fullPath = ((IContentEntry)this).FullPath;
+        
+        if (_fileApi is HashApi hashApi && !hashApi.FileDownloaded(fullPath.ToString()))
+        {
+            var file = hashApi.Manifest[fullPath.ToString()];
+            var loading = _viewHelperService.GetViewModel<LoadingContextViewModel>();
+            loading.LoadingName = "Loading file";
+            _popupMessageService.Popup(loading);
+            
+            await _contentService.Download([file], hashApi, loading, cancellationToken);
+
+            loading.Dispose();
+        }
+        
         if (_extContentExecutor.TryExecute(_fileApi, fullPath, cancellationToken)) 
             return null;
         
@@ -299,30 +344,31 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
     
     private ExtContentExecutor _contentExecutor = default!;
     
-    public void Init(IContentHolder holder, RobustUrl serverUrl)
+    public async void Init(IContentHolder holder, RobustUrl serverUrl)
     {
         base.Init(holder);
-        _contentExecutor = new ExtContentExecutor(this, DecompilerService);
+        _contentExecutor = new ExtContentExecutor(
+            this, 
+            DecompilerService, 
+            ViewHelperService, 
+            PopupService);
         IsLoading = true;
         var loading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loading.LoadingName = "Loading entry";
         PopupService.Popup(loading);
         ServerUrl = serverUrl;
 
-        Task.Run(async () =>
-        {
-            var buildInfo = await ContentService.GetBuildInfo(serverUrl, CancellationService.Token);
-            FileApi = await ContentService.EnsureItems(buildInfo, loading,
-                CancellationService.Token);
+        var buildInfo = await ContentService.GetBuildInfo(serverUrl, CancellationService.Token);
+        FileApi = await ContentService.GetAllItems(buildInfo, loading,
+            CancellationService.Token);
 
-            foreach (var path in FileApi.AllFiles)
-            {
-                CreateContent(new ContentPath(path));
-            }
+        foreach (var path in FileApi.AllFiles)
+        {
+            CreateContent(new ContentPath(path));
+        }
             
-            IsLoading = false;
-            loading.Dispose();
-        });
+        IsLoading = false;
+        loading.Dispose();
     }
 
     public FileContentEntry CreateContent(ContentPath path)
@@ -343,7 +389,7 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
         }
         
         var manifestContent = new FileContentEntry();
-        manifestContent.Init(Holder, FileApi, path.GetName(), _contentExecutor);
+        manifestContent.Init(Holder, FileApi, path.GetName(), _contentExecutor, ContentService, ViewHelperService, PopupService);
         
         parent.AddChild(manifestContent);
         
@@ -433,11 +479,11 @@ public abstract class BaseFolderContentEntry : ViewModelBase, IContentEntry
     public IContentEntry? Parent { get; set; }
     public string? Name { get; private set; }
     
-    public IContentEntry? Go(ContentPath path, CancellationToken cancellationToken)
+    public async Task<IContentEntry?> Go(ContentPath path, CancellationToken cancellationToken)
     {
         if (path.IsEmpty()) return this;
         if (_childs.TryGetValue(path.GetNext(), out var child)) 
-            return child.Go(path, cancellationToken);
+            return await child.Go(path, cancellationToken);
         
         return null;
     }

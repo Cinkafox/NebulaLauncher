@@ -112,6 +112,21 @@ public class ManifestReader : StreamReader
         return item != null;
     }
 
+    public List<RobustManifestItem> ReadAllItems(CancellationToken ct)
+    {
+        List<RobustManifestItem> allItems = [];
+
+        while (TryReadItem(out var item))
+        {
+            if (ct.IsCancellationRequested)
+                throw new TaskCanceledException();
+            
+            allItems.Add(item.Value);
+        }
+        
+        return allItems;
+    }
+
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);

@@ -1,5 +1,7 @@
-﻿using Nebula.Shared.Models;
+﻿using Nebula.Shared.FileApis.Interfaces;
+using Nebula.Shared.Models;
 using Nebula.Shared.Services.Logging;
+using Robust.LoaderApi;
 
 namespace Nebula.Shared.Services;
 
@@ -39,5 +41,33 @@ public partial class ContentService(
     {
         fileService.RemoveAllFiles("content", loadingHandler, cancellationToken);
         fileService.RemoveAllFiles("manifest", loadingHandler, cancellationToken);
+    }
+    
+    public void Unpack(IFileApi hashApi, IWriteFileApi otherApi, ILoadingHandler loadingHandler)
+    {
+        _logger.Log("Unpack manifest files");
+        var items = hashApi.AllFiles.ToList();
+        loadingHandler.AppendJob(items.Count);
+        
+        var options = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = 10
+        };
+
+        Parallel.ForEach(items, options, item =>
+        {
+            if (hashApi.TryOpen(item, out var stream))
+            {
+                _logger.Log($"Unpack {item}");
+                otherApi.Save(item, stream);
+                stream.Close();
+            }
+            else
+            {
+                _logger.Error($"Error while unpacking thinks {item}");
+            }
+
+            loadingHandler.AppendResolvedJob();
+        });
     }
 }

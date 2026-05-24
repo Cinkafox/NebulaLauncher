@@ -1,8 +1,6 @@
 ﻿using System.Buffers.Binary;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.IO.Compression;
 using System.Net.Http.Headers;
 using System.Numerics;
 using Nebula.Shared.FileApis;
@@ -15,28 +13,7 @@ namespace Nebula.Shared.Services;
 
 public partial class ContentService
 {
-    public readonly IReadWriteFileApi ContentFileApi = fileService.CreateFileApi("content");
-    public readonly IReadWriteFileApi ManifestFileApi = fileService.CreateFileApi("manifest");
     public readonly IReadWriteFileApi ZipContentApi = fileService.CreateFileApi("zipContent");
-
-    public void SetServerHash(string address, string hash)
-    {
-        var dict = varService.GetConfigValue(CurrentConVar.ServerManifestHash)!;
-        if (dict.TryGetValue(address, out var oldHash))
-        {
-            if(oldHash == hash) return;
-            
-            ManifestFileApi.Remove(oldHash);
-        }
-        
-        dict[address] = hash;
-        varService.SetConfigValue(CurrentConVar.ServerManifestHash, dict);
-    }
-    
-    public HashApi CreateHashApi(List<RobustManifestItem> manifestItems)
-    {
-        return new HashApi(manifestItems, ContentFileApi);
-    }
     
     public async Task<IFileApi> EnsureItems(RobustBuildInfo info, ILoadingHandlerFactory loadingFactory,
         CancellationToken cancellationToken)
@@ -45,130 +22,46 @@ public partial class ContentService
             return await EnsureItems(info.RobustManifestInfo.Value, loadingFactory, cancellationToken);
         
         if (info.DownloadUri.HasValue)
-            return await EnsureItems(info.DownloadUri.Value, loadingFactory, cancellationToken);
+            return await GetZipFileApi(info.DownloadUri.Value, loadingFactory, cancellationToken);
         
         throw new InvalidOperationException("DownloadUri is null");
     }
 
-    private async Task<HashApi> EnsureItems(ManifestReader manifestReader, Uri downloadUri,
-        ILoadingHandlerFactory loadingFactory,
+    public async Task<IFileApi> GetAllItems(RobustBuildInfo info, ILoadingHandlerFactory loadingFactory,
         CancellationToken cancellationToken)
     {
-        List<RobustManifestItem> allItems = [];
-
-        while (manifestReader.TryReadItem(out var item))
-        {
-            if (cancellationToken.IsCancellationRequested)
-                throw new TaskCanceledException();
-            
-            allItems.Add(item.Value);
-        }
-
-        var hashApi = CreateHashApi(allItems);
-
-        var items = allItems.Where(a=> !hashApi.Has(a)).ToList();
+        if (info.RobustManifestInfo.HasValue)
+            return await GetAllItems(info.RobustManifestInfo.Value, loadingFactory, cancellationToken);
         
-        _logger.Log("Download Count:" + items.Count);
-        await Download(downloadUri, items, hashApi, loadingFactory, cancellationToken);
-
-        return hashApi;
+        if (info.DownloadUri.HasValue)
+            return await GetZipFileApi(info.DownloadUri.Value, loadingFactory, cancellationToken);
+        
+        throw new InvalidOperationException("DownloadUri is null");
     }
-
-    private async Task<ZipFileApi> EnsureItems(RobustZipContentInfo info, ILoadingHandlerFactory loadingFactory, CancellationToken cancellationToken)
-    {
-        if (TryFromFile(ZipContentApi, info.Hash, out var zipFile))
-            return zipFile;
-        
-        var loadingHandler = loadingFactory.CreateLoadingContext(new FileLoadingFormater());
-        
-        var response = await _http.GetAsync(info.DownloadUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
     
-        loadingHandler.SetLoadingMessage("Downloading zip content");
-        loadingHandler.SetJobsCount(response.Content.Headers.ContentLength ?? 0);
-        await using var streamContent = await response.Content.ReadAsStreamAsync(cancellationToken);
-        ZipContentApi.Save(info.Hash, streamContent, loadingHandler);
-        loadingHandler.Dispose();
-
-        if (TryFromFile(ZipContentApi, info.Hash, out zipFile)) 
-            return zipFile;
-        
-        ZipContentApi.Remove(info.Hash);
-        throw new Exception("Failed to load zip file");
-    }
-
-    private bool TryFromFile(IFileApi fileApi, string path, [NotNullWhen(true)] out ZipFileApi? zipFileApi)
+    private async Task<HashApi> GetAllItems(
+        RobustManifestInfo info, 
+        ILoadingHandlerFactory loadingFactory, 
+        CancellationToken cancellationToken)
     {
-        zipFileApi = null;
-        if(!fileApi.TryOpen(path, out var zipContent)) 
-            return false;
-        
-        var zip = new ZipArchive(zipContent);
-        zipFileApi = new ZipFileApi(zip, null);
-        return true;
+        var manifestReader = await GetManifest(info, loadingFactory, cancellationToken);
+        return CreateHashApi(manifestReader, info.DownloadUri);
     }
 
     private async Task<HashApi> EnsureItems(RobustManifestInfo info, ILoadingHandlerFactory loadingFactory,
         CancellationToken cancellationToken)
     {
-        _logger.Log("Getting manifest: " + info.Hash);
-        var loadingHandler = loadingFactory.CreateLoadingContext(new FileLoadingFormater());
-        loadingHandler.SetLoadingMessage("Loading manifest");
+        var hashApi = await GetAllItems(info, loadingFactory, cancellationToken);
 
-        if (ManifestFileApi.TryOpen(info.Hash, out var stream))
-        {
-            _logger.Log("Loading manifest from disk");
-            loadingHandler.Dispose();
-            return await EnsureItems(new ManifestReader(stream), info.DownloadUri, loadingFactory, cancellationToken);
-        }
+        var missingFiles = hashApi.GetMissingFiles().ToList();
         
-        SetServerHash(info.ManifestUri.ToString(), info.Hash);
+        _logger.Log("Download Count:" + missingFiles.Count);
+        await Download(missingFiles, hashApi, loadingFactory, cancellationToken);
 
-        _logger.Log("Fetching manifest from: " + info.ManifestUri);
-        loadingHandler.SetLoadingMessage("Fetching manifest from: " + info.ManifestUri.Host);
-
-        var response = await _http.GetAsync(info.ManifestUri, cancellationToken);
-        response.EnsureSuccessStatusCode();
-    
-        loadingHandler.SetJobsCount(response.Content.Headers.ContentLength ?? 0);
-        await using var streamContent = await response.Content.ReadAsStreamAsync(cancellationToken);
-        ManifestFileApi.Save(info.Hash, streamContent, loadingHandler);
-        loadingHandler.Dispose();
-        streamContent.Seek(0, SeekOrigin.Begin);
-        
-        using var manifestReader = new ManifestReader(streamContent);
-        return await EnsureItems(manifestReader, info.DownloadUri, loadingFactory, cancellationToken);
+        return hashApi;
     }
 
-    public void Unpack(IFileApi hashApi, IWriteFileApi otherApi, ILoadingHandler loadingHandler)
-    {
-        _logger.Log("Unpack manifest files");
-        var items = hashApi.AllFiles.ToList();
-        loadingHandler.AppendJob(items.Count);
-        
-        var options = new ParallelOptions
-        {
-            MaxDegreeOfParallelism = 10
-        };
-
-        Parallel.ForEach(items, options, item =>
-        {
-            if (hashApi.TryOpen(item, out var stream))
-            {
-                _logger.Log($"Unpack {item}");
-                otherApi.Save(item, stream);
-                stream.Close();
-            }
-            else
-            {
-                _logger.Error($"Error while unpacking thinks {item}");
-            }
-
-            loadingHandler.AppendResolvedJob();
-        });
-    }
-
-    private async Task Download(Uri contentCdn, List<RobustManifestItem> toDownload, HashApi hashApi, ILoadingHandlerFactory loadingHandlerFactory,
+    public async Task Download(List<RobustManifestItem> toDownload, HashApi hashApi, ILoadingHandlerFactory loadingHandlerFactory,
         CancellationToken cancellationToken)
     {
         if (toDownload.Count == 0 || cancellationToken.IsCancellationRequested)
@@ -176,6 +69,8 @@ public partial class ContentService
             _logger.Log("Nothing to download! Skip!");
             return;
         }
+
+        var contentCdn = hashApi.DownloadUri;
         
         _logger.Log("Downloading from: " + contentCdn);
 
@@ -219,7 +114,7 @@ public partial class ContentService
         downloadLoadHandler.SetJobsCount(toDownload.Count);
         downloadLoadHandler.SetLoadingMessage("Fetching files...");
 
-        if (loadingHandlerFactory is IConnectionSpeedHandler speedHandlerStart)
+        if (loadingHandlerFactory is IConnectionSpeedHandler speedHandlerStart && toDownload.Count > 1)
             speedHandlerStart.PasteSpeed(0);
         
         try
@@ -323,7 +218,6 @@ public partial class ContentService
             compressContext?.Dispose();
         }
     }
-
 
     private static void EnsureBuffer(ref byte[] buf, int needsFit)
     {

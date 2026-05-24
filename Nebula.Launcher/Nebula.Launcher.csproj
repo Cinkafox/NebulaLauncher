@@ -28,6 +28,7 @@
         <PackageReference Include="CommunityToolkit.Mvvm"/>
         <PackageReference Include="Fluent.Net"/>
         <PackageReference Include="JetBrains.Annotations"/>
+        <PackageReference Include="MetadataExtractor" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
         <PackageReference Include="libsodium"/>
         <PackageReference Include="Robust.Natives"/>

@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:popup="clr-namespace:Nebula.Launcher.ViewModels.Popup"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nebula.Launcher.Views.Popup.RsicShowView"
+             x:DataType="popup:RsicShowViewModel">
+    <Design.DataContext>
+        <popup:RsicShowViewModel />
+    </Design.DataContext>
+    
+    <StackPanel Orientation="Vertical">
+        <StackPanel Orientation="Horizontal">
+            <Image Width="200" 
+                   RenderOptions.BitmapInterpolationMode="None" 
+                   Source="{Binding Image}"/>
+            <ScrollViewer>
+                <ListBox IsVisible="{Binding ShowSettings}"
+                         Background="#00000000"
+                         ItemsSource="{Binding States}"
+                         Margin="5"
+                         SelectedItem="{Binding SelectedState}"
+                         SelectionMode="Single">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Label>
+                                <TextBlock Text="{Binding State.Name}" />
+                            </Label>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
+        </StackPanel>
+        
+        <StackPanel IsVisible="{Binding ShowSettings}" Orientation="Horizontal">
+            <Button Command="{Binding ChangeRotationLeft}">
+                <Label>
+                    <TextBlock Text="←"/>
+                </Label>
+            </Button>
+            
+            <Button Command="{Binding ChangeRotationRight}">
+                <Label>
+                    <TextBlock Text="→"/>
+                </Label>
+            </Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

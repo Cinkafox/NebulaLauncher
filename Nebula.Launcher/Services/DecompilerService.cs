@@ -65,7 +65,18 @@ public sealed partial class DecompilerService
             await stream.DisposeAsync();
         }
         
-        var hashApi = await ContentService.EnsureItems(buildInfo, loadingHandler, cancellationToken);
+        var hashApi = await ContentService.GetAllItems(buildInfo, loadingHandler, cancellationToken);
+
+        if (hashApi is HashApi hash)
+        {
+            var missingDll = hash
+                .GetFilter()
+                .WithExt(".dll")
+                .WithMissingFiles()
+                .GetFiltered();
+            
+            await ContentService.Download(missingDll, hash, loadingHandler, cancellationToken);
+        }
         
         foreach (var file in hashApi.AllFiles)
         {
@@ -96,7 +107,6 @@ public sealed partial class DecompilerService
         var context = loading.CreateLoadingContext();
         PopupMessageService.Popup(loading);
         using var response = await _httpClient.GetAsync(ConfigurationService.GetConfigValue(LauncherConVar.ILSpyUrl));
-        Console.WriteLine(response.StatusCode);
         context.SetJobsCount(response.Content.Headers.ContentLength ?? 1000);
         
         using var stream = await response.Content.ReadAsStreamAsync();
