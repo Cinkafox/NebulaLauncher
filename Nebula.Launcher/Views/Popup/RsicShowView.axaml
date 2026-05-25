@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:popup="clr-namespace:Nebula.Launcher.ViewModels.Popup"
+             xmlns:converters="clr-namespace:Nebula.Launcher.Converters"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Nebula.Launcher.Views.Popup.RsicShowView"
              x:DataType="popup:RsicShowViewModel">
@@ -13,7 +14,7 @@
     <Grid ColumnDefinitions="*,*,*" RowDefinitions="*,40">
         <Image Grid.Column="0"
                Grid.Row="0"
-               Grid.ColumnSpan="2"
+               Grid.ColumnSpan="{Binding ShowSettings, Converter={x:Static converters:TypeConverters.BoolToRowSpan}}"
                RenderOptions.BitmapInterpolationMode="None" 
                Source="{Binding Image}"/>
         

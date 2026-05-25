@@ -29,4 +29,7 @@ public static class TypeConverters
     
     public static FuncValueConverter<string, bool> StringIsNotEmpty { get; } =
         new(iconKey => !string.IsNullOrEmpty(iconKey));
+
+    public static FuncValueConverter<bool, int> BoolToRowSpan { get; } =
+        new(isTrue => isTrue ? 2 : 3);
 }
