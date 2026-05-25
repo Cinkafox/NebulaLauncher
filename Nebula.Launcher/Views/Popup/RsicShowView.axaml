@@ -10,30 +10,32 @@
         <popup:RsicShowViewModel />
     </Design.DataContext>
     
-    <StackPanel Orientation="Vertical">
-        <StackPanel Orientation="Horizontal">
-            <Image Width="200" 
-                   RenderOptions.BitmapInterpolationMode="None" 
-                   Source="{Binding Image}"/>
-            <ScrollViewer>
-                <ListBox IsVisible="{Binding ShowSettings}"
-                         Background="#00000000"
-                         ItemsSource="{Binding States}"
-                         Margin="5"
-                         SelectedItem="{Binding SelectedState}"
-                         SelectionMode="Single">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Label>
-                                <TextBlock Text="{Binding State.Name}" />
-                            </Label>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </ScrollViewer>
-        </StackPanel>
+    <Grid ColumnDefinitions="*,*,*" RowDefinitions="*,40">
+        <Image Grid.Column="0"
+               Grid.Row="0"
+               Grid.ColumnSpan="2"
+               RenderOptions.BitmapInterpolationMode="None" 
+               Source="{Binding Image}"/>
         
-        <StackPanel IsVisible="{Binding ShowSettings}" Orientation="Horizontal">
+        <ScrollViewer Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
+            <ListBox IsVisible="{Binding ShowSettings}"
+                     Background="#00000000"
+                     ItemsSource="{Binding States}"
+                     Margin="5"
+                     SelectedItem="{Binding SelectedState}"
+                     SelectionMode="Single">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Label>
+                            <TextBlock Text="{Binding State.Name}" />
+                        </Label>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </ScrollViewer>
+        
+        <StackPanel HorizontalAlignment="Center" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                    IsVisible="{Binding ShowSettings}" Orientation="Horizontal">
             <Button Command="{Binding ChangeRotationLeft}">
                 <Label>
                     <TextBlock Text="←"/>
@@ -46,5 +48,5 @@
                 </Label>
             </Button>
         </StackPanel>
-    </StackPanel>
+    </Grid>
 </UserControl>

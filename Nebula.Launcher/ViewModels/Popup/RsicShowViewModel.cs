@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -13,6 +14,7 @@ using Nebula.Launcher.Models;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.Views.Popup;
 using Nebula.Shared.Services;
+using Nebula.Shared.Services.Logging;
 using Nebula.Shared.ViewHelper;
 using SkiaSharp;
 
@@ -25,6 +27,7 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
     public override bool IsClosable => true;
     
     [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
+    [GenerateProperty] public DebugService DebugService { get; }
     
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
     
@@ -35,13 +38,14 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
     [ObservableProperty] private RsiJsonMetadata _currentRsi;
     [ObservableProperty] private RsiStateSelected _selectedState;
     [ObservableProperty] private int _rotation = 0;
+    
+    private ILogger _logger;
 
     public ObservableCollection<RsiStateSelected> States { get; } = [];
 
     public void SetImage(Stream stream, bool readMetadata = false)
     {
         _originalImage?.Dispose();
-        
         ShowSettings = false;
         
         if(readMetadata)
@@ -54,36 +58,38 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
                 _originalImage = SKBitmap.Decode(stream);
                 ShowSettings = true;
                 States.Clear();
+                
+                var startIndex = 0;
 
-                for (var i = 0; i < CurrentRsi.States.Length; i++)
+                foreach (var currState in CurrentRsi.States)
                 {
-                    var currState = CurrentRsi.States[i];
-                    var index = i;
-
+                    var containIndexes = 0;
+                    var direction = 1;
+                    
                     if (currState.Directions is not null)
+                        direction = currState.Directions.Value;
+                    
+                    if (currState.Delays is not null)
                     {
-                        if (currState.Delays is not null)
+                        for (var d = 0; d < direction; d++)
                         {
-                            foreach (var delay in currState.Delays)
-                            {
-                                index += currState.Directions.Value * delay.Length;
-                            }
-
-                            index -= 1;
-                        }
-                        else
-                        {
-                            index += currState.Directions.Value - 1;
+                            containIndexes += currState.Delays[d].Length;
                         }
                     }
+                    else
+                    {
+                        containIndexes += direction;
+                    }
                     
-                    States.Add(new RsiStateSelected(index, currState));
+                    States.Add(new RsiStateSelected(startIndex, currState));
+
+                    startIndex += containIndexes;
                 }
                 
                 SelectedState = States[0];
+                
+                return;
             }
-            
-            return;
         }
         
         Image = new Bitmap(stream);
@@ -91,12 +97,18 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
 
     public void ChangeRotationLeft()
     {
-        Rotation += 1;
+        if(SelectedState.State.Directions is null) 
+            return;
+        
+        Rotation = (Rotation + 1) % SelectedState.State.Directions.Value;
     }
     
     public void ChangeRotationRight()
     {
-        Rotation -= 1;
+        if(SelectedState.State.Directions is null) 
+            return;
+        
+        Rotation = (Rotation + SelectedState.State.Directions.Value - 1) % SelectedState.State.Directions.Value;
     }
 
     partial void OnRotationChanged(int value)
@@ -119,7 +131,7 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
             _originalImage.Height,
             _currentRsi.Size.X, 
             _currentRsi.Size.Y, 
-            value.Number + _rotation);
+            value.StartIndex + _rotation);
         
         var rectI = SKRectI.Create(x, y, _currentRsi.Size.X, _currentRsi.Size.Y);
         var subset = pixmap.ExtractSubset(rectI);
@@ -171,16 +183,26 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
         foreach (var directory in directories)
         {
             var textData = directory.GetObject(PngDirectory.TagTextualData);
-            if (textData is not List<MetadataExtractor.KeyValuePair> valuePairs) continue;
+            
+            if (textData is not List<MetadataExtractor.KeyValuePair> valuePairs)
+            {
+                if(textData is not MetadataExtractor.KeyValuePair[] valueArray)
+                    continue;
+
+                valuePairs = valueArray.ToList();
+            }
             
             var manifest = valuePairs
                 .Where(kvp => kvp.Key == "robusttoolbox_rsic_meta")
                 .Select(kvp => kvp.Value.ToString()).FirstOrDefault();
-            if(manifest is null) 
+            
+            if(manifest is null)
                 continue;
             
             return JsonSerializer.Deserialize<RsiJsonMetadata>(manifest, SerializerOptions);
         }
+        
+        _logger.Error("Manifest not found.");
         
         return null;
     }
@@ -192,6 +214,7 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
 
     protected override void Initialise()
     {
+        _logger = DebugService.GetLogger(this);
     }
     
     protected override void OnDispose()
@@ -201,4 +224,4 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
     }
 }
 
-public record struct RsiStateSelected(int Number, StateJsonMetadata State);
+public record struct RsiStateSelected(int StartIndex, StateJsonMetadata State);

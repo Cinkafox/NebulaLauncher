@@ -216,13 +216,13 @@ public sealed class ExtContentExecutor
             return true;
         }
 
-        if (ext == ".rsic")
+        if (ext == ".rsic" || ext == ".png")
         {
             if (!api.TryOpen(path.ToString(), out var stream))
                 return false;
             
             var rsicShowViewModel = _viewHelperService.GetViewModel<RsicShowViewModel>();
-            rsicShowViewModel.SetImage(stream, true);
+            rsicShowViewModel.SetImage(stream, ext == ".rsic");
             
             _popupService.Popup(rsicShowViewModel);
             return true;
@@ -283,14 +283,12 @@ public sealed partial class FileContentEntry : IContentEntry
         if (_extContentExecutor.TryExecute(_fileApi, fullPath, cancellationToken)) 
             return null;
         
-        var ext = Path.GetExtension(fullPath.GetName());
-        
         try
         {
             if (!_fileApi.TryOpen(fullPath.Path, out var stream))
                 return null;
 
-            var myTempFile = Path.Combine(Path.GetTempPath(), "tempie" + ext);
+            var myTempFile = Path.Combine(Path.GetTempPath(), fullPath.GetName());
 
             var sw = new FileStream(myTempFile, FileMode.Create, FileAccess.Write, FileShare.None);
             stream.CopyTo(sw);
