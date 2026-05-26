@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
-using MetadataExtractor;
 using MetadataExtractor.Formats.Png;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.Services;
@@ -38,6 +35,7 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
     [ObservableProperty] private RsiJsonMetadata _currentRsi;
     [ObservableProperty] private RsiStateSelected _selectedState;
     [ObservableProperty] private int _rotation = 0;
+    [ObservableProperty] private int _frame = 0;
     
     private ILogger _logger;
 
@@ -111,11 +109,24 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
         Rotation = (Rotation + SelectedState.State.Directions.Value - 1) % SelectedState.State.Directions.Value;
     }
 
+    public void NextFrame()
+    {
+        if(SelectedState.State.Delays?[Rotation] is null)
+            return;
+
+        Frame = (Frame + 1) % SelectedState.State.Delays[Rotation].Length;
+    }
+
     partial void OnRotationChanged(int value)
     {
         OnSelectedStateChanged(SelectedState);
     }
-
+    
+    partial void OnFrameChanged(int value)
+    {
+        OnSelectedStateChanged(SelectedState);
+    }
+    
     partial void OnSelectedStateChanged(RsiStateSelected value)
     {
         if (_originalImage == null)
@@ -124,14 +135,29 @@ public sealed partial class RsicShowViewModel : PopupViewModelBase
         _rotation = value.State.Directions != null 
             ? Math.Clamp(_rotation, 0, value.State.Directions.Value - 1) 
             : 0;
+        
+        _frame = value.State.Delays != null ? Math.Clamp(_frame, 0, value.State.Delays[_rotation].Length) : 0;
+        
+        var rotationFrameShift = 0;
+        
+        for (var i = 0; i < _rotation; i++)
+        {
+            if(value.State.Delays is null)
+            {
+                rotationFrameShift++;
+                continue;
+            }
 
-        using var pixmap =  new SKPixmap(_originalImage.Info, _originalImage.GetPixels());
+            rotationFrameShift += value.State.Delays[i].Length;
+        }
+
+        using var pixmap = new SKPixmap(_originalImage.Info, _originalImage.GetPixels());
         var (x,y) = GetCropPosition(
             _originalImage.Width, 
             _originalImage.Height,
             _currentRsi.Size.X, 
             _currentRsi.Size.Y, 
-            value.StartIndex + _rotation);
+            value.StartIndex + rotationFrameShift + _frame);
         
         var rectI = SKRectI.Create(x, y, _currentRsi.Size.X, _currentRsi.Size.Y);
         var subset = pixmap.ExtractSubset(rectI);

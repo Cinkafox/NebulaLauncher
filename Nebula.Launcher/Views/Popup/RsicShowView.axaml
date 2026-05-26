@@ -48,6 +48,12 @@
                     <TextBlock Text="→"/>
                 </Label>
             </Button>
+            
+            <Button Command="{Binding NextFrame}">
+                <Label>
+                    <TextBlock Text="→"/>
+                </Label>
+            </Button>
         </StackPanel>
     </Grid>
 </UserControl>
