@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace Nebula.Launcher.Views.Popup;
 
-public partial class RsicShowView : UserControl
+public partial class ImageShowView : UserControl
 {
-    public RsicShowView()
+    public ImageShowView()
     {
         InitializeComponent();
     }

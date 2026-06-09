@@ -38,7 +38,8 @@ public sealed partial class DecompilerService
     private string FullPath => Path.Join(AppDataPath.RootPath, $"ILSpy.{ConfigurationService.GetConfigValue(LauncherConVar.ILSpyVersion)}");
     private string ExecutePath => Path.Join(FullPath, "ILSpy.exe");
 
-    public async void OpenDecompiler(string arguments){
+    public async void OpenDecompiler(string arguments)
+    {
         await EnsureILSpy();
         var startInfo = new ProcessStartInfo(){
             FileName = ExecutePath,

@@ -17,6 +17,7 @@
         <PackageReference Include="AsyncImageLoader.Avalonia"/>
         <PackageReference Include="Avalonia"/>
         <PackageReference Include="Avalonia.Desktop"/>
+        <PackageReference Include="Avalonia.Labs.Gif" />
         <PackageReference Include="Avalonia.Svg.Skia"/>
         <PackageReference Include="Avalonia.Themes.Fluent"/>
         <PackageReference Include="Avalonia.Fonts.Inter"/>
@@ -31,6 +32,7 @@
         <PackageReference Include="MetadataExtractor" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
         <PackageReference Include="libsodium"/>
+        <PackageReference Include="Openize.Animated-GIF" />
         <PackageReference Include="Robust.Natives"/>
         <PackageReference Include="Avalonia.Controls.ItemsRepeater"/>
     </ItemGroup>

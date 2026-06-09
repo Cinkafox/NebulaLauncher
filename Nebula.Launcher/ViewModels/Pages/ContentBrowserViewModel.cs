@@ -28,7 +28,6 @@ namespace Nebula.Launcher.ViewModels.Pages;
 [ConstructGenerator]
 public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHolder
 {
-    [ObservableProperty] private IContentEntry _currentEntry;
     [ObservableProperty] private string _serverText = "";
     [ObservableProperty] private string _searchText = "";
     [GenerateProperty] private ContentService ContentService { get; } = default!;
@@ -37,7 +36,29 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
     [GenerateProperty] private IServiceProvider ServiceProvider { get; }
     [GenerateProperty] private CancellationService CancellationService { get; set; } = default!;
     [GenerateProperty, DesignConstruct] private ViewHelperService ViewHelperService { get; } = default!;
+    [GenerateProperty] private DecompilerService DecompilerService { get; } = default!;
 
+    public static readonly string[] AllowedExtToOpen = [".yaml", ".yml", ".txt", ".html", ".mp3", ".ogg", ".json"];
+
+    public IContentEntry CurrentEntry
+    {
+        get;
+        set
+        {
+            if(ProcessContent(value))
+                return;
+
+            OnPropertyChanging();
+            field = value;
+            OnPropertyChanged();
+            
+            SearchText = value.FullPath.ToString();
+            if (value.GetRoot() is ServerFolderContentEntry serverEntry)
+            {
+                ServerText = serverEntry.ServerUrl.ToString();
+            }
+        }
+    }
 
     public void OnBackEnter()
     {
@@ -53,19 +74,43 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
     {
         if(CurrentEntry is not ServerFolderContentEntry serverEntry) 
             return;
-        
-        var myTempDir = FileService.EnsureTempDir(out var tmpDir);
-        
-        var loading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
-        loading.LoadingName = "Unpacking entry";
-        PopupService.Popup(loading);
 
-        Task.Run(() =>
+        serverEntry.UnpackServerFiles();
+    }
+    
+    private async void ExecuteFile(FileContentEntry file, CancellationToken cancellationToken = default)
+    {
+        var fullPath = ((IContentEntry)file).FullPath;
+
+        await using var stream = await file.OpenFile(cancellationToken);
+        
+        try
         {
-            ContentService.Unpack(serverEntry.FileApi, myTempDir, loading.CreateLoadingContext());
-            loading.Dispose();
-        });
-        ExplorerUtils.OpenFolder(tmpDir);
+            var myTempFile = Path.Combine(Path.GetTempPath(), fullPath.GetName());
+
+            var sw = new FileStream(myTempFile, FileMode.Create, FileAccess.Write, FileShare.None);
+            await stream.CopyToAsync(sw, cancellationToken);
+
+            await sw.DisposeAsync();
+
+            var startInfo = new ProcessStartInfo(myTempFile)
+            {
+                UseShellExecute = true
+            };
+
+            Process.Start(startInfo);
+        }
+        catch (Exception e)
+        {
+            PopupService.Popup(e);
+        }
+    }
+
+    public async Task<IContentEntry?> GetEntry(ContentPath path)
+    {
+        var cur = ServiceProvider.GetService<ServerFolderContentEntry>()!;
+        cur.Init(this, ServerText.ToRobustUrl());
+        return await cur.Go(path, CancellationService.Token);
     }
 
     public async void OnGoEnter()
@@ -79,10 +124,7 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
 
         try
         {
-            var cur = ServiceProvider.GetService<ServerFolderContentEntry>()!;
-            cur.Init(this, ServerText.ToRobustUrl());
-            var curContent = await cur.Go(new ContentPath(SearchText), CancellationService.Token);
-            CurrentEntry = curContent ?? throw new NullReferenceException($"{SearchText} not found in {ServerText}");
+            CurrentEntry = await GetEntry(new ContentPath(SearchText))?? throw new NullReferenceException($"{SearchText} not found in {ServerText}");
         }
         catch (Exception e)
         {
@@ -92,14 +134,59 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
             SetHubRoot();
         }
     }
-
-    partial void OnCurrentEntryChanged(IContentEntry value)
+    
+    private bool ProcessContent(IContentEntry entry)
     {
-        SearchText = value.FullPath.ToString();
-        if (value.GetRoot() is ServerFolderContentEntry serverEntry)
+        var ext = Path.GetExtension(entry.Name);
+        
+        if (entry is FileContentEntry fileEntry)
         {
-            ServerText = serverEntry.ServerUrl.ToString();
+            if (AllowedExtToOpen.Contains(ext))
+            {
+                ExecuteFile(fileEntry, CancellationService.Token);
+                return true;
+            }
+            
+            switch (ext)
+            {
+                case ".dll":
+                    DecompilerService.OpenServerDecompiler(ServerText.ToRobustUrl(), CancellationService.Token);
+                    return true;
+                case ".rsic":
+                case ".png":
+                    Task.Run(async () =>
+                    {
+                        await using var stream = await fileEntry.OpenFile();
+
+                        var rsicShowViewModel = ViewHelperService.GetViewModel<ImageShowViewModel>();
+
+                        if (ext == ".rsic")
+                            rsicShowViewModel.Image =
+                                ViewHelperService.GetViewModel<RsiImageViewModel>().LoadFromStream(stream);
+                        else
+                            rsicShowViewModel.Image =
+                                ViewHelperService.GetViewModel<StaticImageViewModel>().LoadFromStream(stream);
+
+                        PopupService.Popup(rsicShowViewModel);
+                    });
+                    return true;
+            }
         }
+        
+        if (entry is BaseFolderContentEntry && ext == ".rsi")
+        {
+            Task.Run(async () =>
+            {
+                var imageView = ViewHelperService.GetViewModel<ImageShowViewModel>();
+                PopupService.Popup(imageView);
+                
+                imageView.Image =
+                    await ViewHelperService.GetViewModel<RsiImageViewModel>().LoadFromDirectory(entry);
+            });
+            return true;
+        }
+
+        return false;
     }
     
     protected override void InitialiseInDesignMode()
@@ -148,7 +235,7 @@ public interface IContentEntry
     public string IconPath { get; }
     public ContentPath FullPath => Parent?.FullPath.With(Name) ?? new ContentPath(Name);
     
-    public Task<IContentEntry?> Go(ContentPath path, CancellationToken cancellationToken);
+    public Task<IContentEntry?> Go(ContentPath path, CancellationToken cancellationToken = default);
     
     public async void GoCurrent()
     {
@@ -189,50 +276,6 @@ public sealed class LazyContentEntry : IContentEntry
     }
 }
 
-public sealed class ExtContentExecutor
-{
-    public ServerFolderContentEntry _root;
-    private DecompilerService _decompilerService;
-    private readonly ViewHelperService _viewHelperService;
-    private readonly PopupMessageService _popupService;
-
-    public ExtContentExecutor(ServerFolderContentEntry root, 
-        DecompilerService decompilerService, 
-        ViewHelperService viewHelperService, PopupMessageService popupService)
-    {
-        _root = root;
-        _decompilerService = decompilerService;
-        _viewHelperService = viewHelperService;
-        _popupService = popupService;
-    }
-
-    public bool TryExecute(IFileApi api, ContentPath path, CancellationToken cancellationToken)
-    {
-        var ext = Path.GetExtension(path.GetName());
-
-        if (ext == ".dll")
-        {
-            _decompilerService.OpenServerDecompiler(_root.ServerUrl, cancellationToken);
-            return true;
-        }
-
-        if (ext == ".rsic" || ext == ".png")
-        {
-            if (!api.TryOpen(path.ToString(), out var stream))
-                return false;
-            
-            var rsicShowViewModel = _viewHelperService.GetViewModel<RsicShowViewModel>();
-            rsicShowViewModel.SetImage(stream, ext == ".rsic");
-            
-            _popupService.Popup(rsicShowViewModel);
-            return true;
-        }
-
-        return false;
-    }
-}
-
-
 public sealed partial class FileContentEntry : IContentEntry
 {
     public IContentHolder Holder { get; set; } = default!;
@@ -241,7 +284,6 @@ public sealed partial class FileContentEntry : IContentEntry
     public string IconPath => "/Assets/svg/file.svg";
     
     private IFileApi _fileApi = default!;
-    private ExtContentExecutor _extContentExecutor = default!;
     private ContentService _contentService = default!;
     private ViewHelperService _viewHelperService = default!;
     private PopupMessageService _popupMessageService = default!;
@@ -249,7 +291,6 @@ public sealed partial class FileContentEntry : IContentEntry
     public void Init(IContentHolder holder, 
         IFileApi api, 
         string fileName,
-        ExtContentExecutor executor, 
         ContentService contentService,
         ViewHelperService viewHelperService,
         PopupMessageService popupService
@@ -258,13 +299,12 @@ public sealed partial class FileContentEntry : IContentEntry
         Holder = holder;
         Name = fileName;
         _fileApi = api;
-        _extContentExecutor = executor;
         _contentService = contentService;
         _viewHelperService = viewHelperService;
         _popupMessageService = popupService;
     }
-    
-    public async Task<IContentEntry?> Go(ContentPath path, CancellationToken cancellationToken)
+
+    public async Task EnsureFile(CancellationToken cancellationToken)
     {
         var fullPath = ((IContentEntry)this).FullPath;
         
@@ -279,34 +319,24 @@ public sealed partial class FileContentEntry : IContentEntry
 
             loading.Dispose();
         }
+    }
+
+    public async Task<Stream> OpenFile(CancellationToken cancellationToken = default)
+    {
+        await EnsureFile(cancellationToken);
         
-        if (_extContentExecutor.TryExecute(_fileApi, fullPath, cancellationToken)) 
-            return null;
+        var fullPath = ((IContentEntry)this).FullPath;
         
-        try
-        {
-            if (!_fileApi.TryOpen(fullPath.Path, out var stream))
-                return null;
-
-            var myTempFile = Path.Combine(Path.GetTempPath(), fullPath.GetName());
-
-            var sw = new FileStream(myTempFile, FileMode.Create, FileAccess.Write, FileShare.None);
-            stream.CopyTo(sw);
-
-            sw.Dispose();
-            stream.Dispose();
-
-            var startInfo = new ProcessStartInfo(myTempFile)
-            {
-                UseShellExecute = true
-            };
-
-            Process.Start(startInfo);
-        }
-        catch (Exception e)
-        {
-            _extContentExecutor._root.PopupService.Popup(e);
-        }
+        if (!_fileApi.TryOpen(fullPath.Path, out var stream))
+            throw new FileNotFoundException();
+        
+        return stream;
+    }
+    
+    public async Task<IContentEntry?> Go(ContentPath path, CancellationToken cancellationToken = default)
+    {
+        if (path.IsEmpty())
+            return this;
         return null;
     }
 }
@@ -335,21 +365,15 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
     [GenerateProperty] public CancellationService CancellationService { get; } = default!;
     [GenerateProperty] public PopupMessageService PopupService { get; } = default!;
     [GenerateProperty] public DecompilerService DecompilerService { get; } = default!;
+    [GenerateProperty] public FileService FileService { get; } = default!;
     
     public RobustUrl ServerUrl { get; private set; }
-
-    public IFileApi FileApi { get; private set; } = default!;
-    
-    private ExtContentExecutor _contentExecutor = default!;
+    private IFileApi FileApi { get; set; } = default!;
     
     public async void Init(IContentHolder holder, RobustUrl serverUrl)
     {
         base.Init(holder);
-        _contentExecutor = new ExtContentExecutor(
-            this, 
-            DecompilerService, 
-            ViewHelperService, 
-            PopupService);
+        
         IsLoading = true;
         var loading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loading.LoadingName = "Loading entry";
@@ -387,11 +411,27 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
         }
         
         var manifestContent = new FileContentEntry();
-        manifestContent.Init(Holder, FileApi, path.GetName(), _contentExecutor, ContentService, ViewHelperService, PopupService);
+        manifestContent.Init(Holder, FileApi, path.GetName(), ContentService, ViewHelperService, PopupService);
         
         parent.AddChild(manifestContent);
         
         return manifestContent;
+    }
+
+    public void UnpackServerFiles()
+    {
+        var myTempDir = FileService.EnsureTempDir(out var tmpDir);
+        
+        var loading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
+        loading.LoadingName = "Unpacking entry";
+        PopupService.Popup(loading);
+
+        Task.Run(() =>
+        {
+            ContentService.Unpack(FileApi, myTempDir, loading.CreateLoadingContext());
+            loading.Dispose();
+        });
+        ExplorerUtils.OpenFolder(tmpDir);
     }
     
     protected override void InitialiseInDesignMode() { }
@@ -405,7 +445,6 @@ public sealed partial class ServerListContentEntry : BaseFolderContentEntry
     [GenerateProperty] public ConfigurationService ConfigurationService { get; } = default!;
     [GenerateProperty] public IServiceProvider ServiceProvider { get; } = default!;
     [GenerateProperty] public RestService RestService { get; } = default!;
-
     
     public void InitHubList(IContentHolder holder)
     {
@@ -438,8 +477,6 @@ public sealed partial class ServerListContentEntry : BaseFolderContentEntry
 
         IsLoading = true;
     }
-
-  
 
     protected override void InitialiseInDesignMode()
     {
@@ -477,7 +514,7 @@ public abstract class BaseFolderContentEntry : ViewModelBase, IContentEntry
     public IContentEntry? Parent { get; set; }
     public string? Name { get; private set; }
     
-    public async Task<IContentEntry?> Go(ContentPath path, CancellationToken cancellationToken)
+    public async Task<IContentEntry?> Go(ContentPath path, CancellationToken cancellationToken = default)
     {
         if (path.IsEmpty()) return this;
         if (_childs.TryGetValue(path.GetNext(), out var child)) 
