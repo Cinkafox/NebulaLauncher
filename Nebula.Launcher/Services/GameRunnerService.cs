@@ -29,9 +29,6 @@ public class GameRunnerService
     private readonly RestService _restService;
     private readonly CancellationService _cancellationService;
     private readonly ILogger _logger;
-    
-    private readonly Dictionary<InstanceKey, RobustUrl> _robustUrls = new();
-    private readonly Dictionary<RobustUrl, InstanceKey> _robustKeys = new();
 
     public GameRunnerService(PopupMessageService popupMessageService, 
         DebugService debugService, 
@@ -57,41 +54,16 @@ public class GameRunnerService
         _cancellationService = cancellationService;
 
         _logger = debugService.GetLogger("GameRunnerService");
-        _instanceRunningContainer.IsRunningChanged += IsRunningChanged;
     }
 
-    private void IsRunningChanged(InstanceKey key, bool isRunning)
+    public void StopInstance(InstanceKey instanceKey)
     {
-        _logger.Debug($"IsRunningChanged {key}: {isRunning}");
-        if (!_robustUrls.TryGetValue(key, out var robustUrl)) return;
-        
-        if (_container.Get(robustUrl) is IRunningSignalConsumer signalConsumer)
-        {
-            _logger.Debug($"IsRunningChanged conf {robustUrl}: {isRunning}");
-            signalConsumer.ProcessRunningSignal(isRunning);
-        }
-            
-        if (!isRunning)
-        {
-            _robustKeys.Remove(robustUrl);
-            _robustUrls.Remove(key);
-        }
+        _instanceRunningContainer.Stop(instanceKey);
     }
 
-    public void StopInstance(RobustUrl robustUrl)
+    public void ReadInstanceLog(InstanceKey instanceKey)
     {
-        if (_robustKeys.TryGetValue(robustUrl, out var instanceKey))
-        {
-            _instanceRunningContainer.Stop(instanceKey);
-        }
-    }
-
-    public void ReadInstanceLog(RobustUrl robustUrl)
-    {
-        if (_robustKeys.TryGetValue(robustUrl, out var instanceKey))
-        {
-            _instanceRunningContainer.Popup(instanceKey);
-        }
+        _instanceRunningContainer.Popup(instanceKey);
     }
     
     public void OpenContentViewer(RobustUrl robustUrl)
@@ -117,7 +89,7 @@ public class GameRunnerService
         _popupMessageService.Popup(popup);
     }
 
-    public async Task<InstanceKey?> RunInstanceAsync(ServerEntryViewModel serverEntryViewModel, CancellationToken cancellationToken, bool ignoreLoginCredentials = false)
+    public async Task RunInstanceAsync(ServerEntryViewModel serverEntryViewModel, CancellationToken cancellationToken, bool ignoreLoginCredentials = false)
     {
         _logger.Log("Running instance..." + serverEntryViewModel.RealName);
         if (!ignoreLoginCredentials && _accountInfoViewModel.Credentials.Value is null)
@@ -126,7 +98,7 @@ public class GameRunnerService
                 .WithServerEntry(serverEntryViewModel);
             
             _popupMessageService.Popup(warningContext);
-            return null;
+            return;
         }
 
         try
@@ -138,19 +110,17 @@ public class GameRunnerService
             var currProcessStartProvider = 
                 await _gameRunnerPreparer.GetGameProcessStartInfoProvider(serverEntryViewModel.Address, viewModelLoading, cancellationToken);
             _logger.Log("Preparing instance...");
-            var instanceKey = _instanceRunningContainer.RegisterInstance(currProcessStartProvider);
-            _robustUrls.Add(instanceKey, serverEntryViewModel.Address);
-            _robustKeys.Add(serverEntryViewModel.Address, instanceKey);
-            _instanceRunningContainer.Run(instanceKey);
-            _logger.Log($"Starting instance... {instanceKey.Id} " + serverEntryViewModel.RealName);
-            return instanceKey;
+            _instanceRunningContainer.RegisterInstance(serverEntryViewModel, currProcessStartProvider);
+            _instanceRunningContainer.Run(serverEntryViewModel);
+            _logger.Log($"Starting instance... {serverEntryViewModel.InstanceKey.Id} " + serverEntryViewModel.RealName);
+            return;
         }
         catch (Exception e)
         {
             var error = new Exception("Error while attempt run instance", e);
             _logger.Error(error);
             _popupMessageService.Popup(error);
-            return null;
+            return;
         }
     }
 

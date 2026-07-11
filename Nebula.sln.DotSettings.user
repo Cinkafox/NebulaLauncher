@@ -115,6 +115,11 @@
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=44ee9fbc_002Dddaf_002D4efa_002Da7df_002D48c0ce9aec7e/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="CryptographicTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;NUnit3x::7430875B-ABAA-D4E0-C34F-0797C4762C66::net10.0::Nebula.UnitTest.NebulaSharedTests.CryptographicTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::7430875B-ABAA-D4E0-C34F-0797C4762C66::net10.0::Nebula.UnitTest.NebulaSharedTests.PopupMessageServiceTests.DisposeTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::7430875B-ABAA-D4E0-C34F-0797C4762C66::net10.0::Nebula.UnitTest.NebulaSharedTests.ConfigurationServiceTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::7430875B-ABAA-D4E0-C34F-0797C4762C66::net10.0::Nebula.UnitTest.NebulaSharedTests.FileServiceTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::7430875B-ABAA-D4E0-C34F-0797C4762C66::net10.0::Nebula.UnitTest.NebulaSharedTests.RestServiceTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::7430875B-ABAA-D4E0-C34F-0797C4762C66::net10.0::Nebula.UnitTest.NebulaSharedTests.TarTest&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
 	

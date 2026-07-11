@@ -16,12 +16,17 @@ public sealed class InstanceRunningContainer(
     )
 {
     private readonly InstanceKeyPool _keyPool = new();
-    private readonly Dictionary<InstanceKey, ProcessRunHandler> _processCache = new();
-    private readonly Dictionary<InstanceKey, ContentLogConsumer> _contentLoggerCache = new();
-    private readonly Dictionary<ProcessRunHandler, InstanceKey> _keyCache = new();
+    private readonly Dictionary<InstanceKey, ProcessRunHandler> _processCache = [];
+    private readonly Dictionary<InstanceKey, ContentLogConsumer> _contentLoggerCache = [];
+    private readonly Dictionary<ProcessRunHandler, InstanceKey> _keyCache = [];
+    private readonly Dictionary<InstanceKey, IInstanceKeyHolder> _holders = [];
 
-    public Action<InstanceKey, bool>? IsRunningChanged;
-
+    public void RegisterInstance(IInstanceKeyHolder holder, IProcessStartInfoProvider provider)
+    {
+        holder.InstanceKey = RegisterInstance(provider);
+        _holders[holder.InstanceKey] = holder;
+    }
+    
     public InstanceKey RegisterInstance(IProcessStartInfoProvider provider)
     {
         var id = _keyPool.Take();
@@ -50,13 +55,27 @@ public sealed class InstanceRunningContainer(
         handler.Popup();
     }
 
-    public void Run(InstanceKey instanceKey)
+    public bool Run(IInstanceKeyHolder instanceKeyHolder)
+    {
+        if(!Run(instanceKeyHolder.InstanceKey))
+            return false;
+
+        instanceKeyHolder.IsInstanceRunning = true;
+        return true;
+    }
+
+    public bool Run(InstanceKey instanceKey)
     {
         if(!_processCache.TryGetValue(instanceKey, out var process)) 
-            return;
+            return false;
         
         process.Start();
-        IsRunningChanged?.Invoke(instanceKey, true);
+        return true;
+    }
+
+    public void Stop(IInstanceKeyHolder instanceKeyHolder)
+    {
+        Stop(instanceKeyHolder.InstanceKey);
     }
 
     public void Stop(InstanceKey instanceKey)
@@ -67,6 +86,11 @@ public sealed class InstanceRunningContainer(
         process.Stop();
     }
 
+    public bool IsRunning(IInstanceKeyHolder instanceKeyHolder)
+    {
+        return IsRunning(instanceKeyHolder.InstanceKey);
+    }
+    
     public bool IsRunning(InstanceKey instanceKey)
     {
         return _processCache.ContainsKey(instanceKey);
@@ -77,7 +101,14 @@ public sealed class InstanceRunningContainer(
         if(handler.Disposed) return;
         
         var key = _keyCache[handler];
-        IsRunningChanged?.Invoke(key, false);
+
+        if (_holders.TryGetValue(key, out var holder))
+        {
+            holder.IsInstanceRunning = false;
+            holder.InstanceKey = default;
+            _holders.Remove(key);
+        }
+        
         _processCache.Remove(key);
         _keyCache.Remove(handler);
         _contentLoggerCache.Remove(key);
@@ -88,4 +119,10 @@ public sealed class InstanceRunningContainer(
         obj.OnProcessExited -= OnProcessExited;
         RemoveProcess(obj);
     }
+}
+
+public interface IInstanceKeyHolder
+{
+    public InstanceKey InstanceKey { get; set; }
+    public bool IsInstanceRunning { get; set; }
 }

@@ -28,13 +28,13 @@ public sealed partial class ServerEntryViewModel(
     IListEntryModelView, 
     IFavoriteEntryModelView,
     IEntryNameHolder, 
-    IRunningSignalConsumer
+    IInstanceKeyHolder
 {
     [ObservableProperty] private string _description = "Fetching info...";
     [ObservableProperty] private bool _expandInfo;
     [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private bool _isVisible;
-    [ObservableProperty] private bool _runVisible = true;
+    [ObservableProperty] private bool _isInstanceRunning;
     [ObservableProperty] private string _realName = string.Empty;
     
     public string? Name
@@ -46,6 +46,8 @@ public sealed partial class ServerEntryViewModel(
     private ServerInfo? _serverInfo;
 
     public RobustUrl Address { get; private set; }
+    
+    public InstanceKey InstanceKey { get; set; }
 
     public ServerStatus Status { get; private set; } =
         new(
@@ -152,12 +154,12 @@ public sealed partial class ServerEntryViewModel(
 
     public void StopInstance()
     {
-        gameRunnerService.StopInstance(Address);
+        gameRunnerService.StopInstance(InstanceKey);
     }
     
     public void ReadLog()
     {
-        gameRunnerService.ReadInstanceLog(Address);
+        gameRunnerService.ReadInstanceLog(InstanceKey);
     }
 
     public void EditName()
@@ -178,12 +180,6 @@ public sealed partial class ServerEntryViewModel(
         Links.Clear();
         if (info.Links is null) return;
         foreach (var link in info.Links) Links.Add(link);
-    }
-    
-
-    public void ProcessRunningSignal(bool isRunning)
-    {
-        RunVisible = !isRunning;
     }
 }
 

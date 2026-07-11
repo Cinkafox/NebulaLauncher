@@ -108,11 +108,11 @@
                     Command="{Binding RunInstance}"
                     CornerRadius="10,10,10,10"
                     HorizontalAlignment="Stretch"
-                    IsVisible="{Binding RunVisible}"
+                    IsVisible="{Binding !IsInstanceRunning}"
                     VerticalAlignment="Stretch">
                     <Svg Margin="4" Path="/Assets/svg/play.svg" />
                 </Button>
-                <Grid ColumnDefinitions="*" IsVisible="{Binding !RunVisible}">
+                <Grid ColumnDefinitions="*" IsVisible="{Binding IsInstanceRunning}">
                     <Button
                         Command="{Binding ReadLog}"
                         CornerRadius="10"
@@ -254,7 +254,7 @@
                     CornerRadius="10"
                     Height="35"
                     HorizontalAlignment="Stretch"
-                    IsVisible="{Binding !RunVisible}"
+                    IsVisible="{Binding IsInstanceRunning}"
                     VerticalAlignment="Stretch">
                     <Svg Margin="4" Path="/Assets/svg/stop.svg" />
                 </Button>
