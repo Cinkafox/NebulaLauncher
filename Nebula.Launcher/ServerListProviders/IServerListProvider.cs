@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Avalonia.Collections;
 using Nebula.Launcher.ViewModels.Pages;
 
@@ -8,5 +9,5 @@ public interface IServerListProvider
 {
     public void LoadServerList(
         AvaloniaList<IListEntryModelView> servers,
-        AvaloniaList<Exception> exceptions);
+        AvaloniaList<Exception> exceptions, CancellationToken token);
 }

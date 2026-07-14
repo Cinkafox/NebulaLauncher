@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Threading;
 using Avalonia.Collections;
 using Nebula.Launcher.ViewModels;
 using Nebula.Launcher.ViewModels.Pages;
@@ -10,7 +11,7 @@ public sealed class TestServerList : IServerListProvider
 {
     public  void LoadServerList(
         AvaloniaList<IListEntryModelView> servers, 
-        AvaloniaList<Exception> exceptions)
+        AvaloniaList<Exception> exceptions, CancellationToken token)
     {
         
         //servers.Add(new ServerEntryViewModel());

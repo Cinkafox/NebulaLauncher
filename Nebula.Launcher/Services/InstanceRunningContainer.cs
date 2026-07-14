@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.ProcessHelper;
 using Nebula.Launcher.ViewModels;
-using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Shared;
 using Nebula.Shared.Services;
 

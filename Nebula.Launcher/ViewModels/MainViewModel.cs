@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.Services;
@@ -10,6 +11,7 @@ using Nebula.Launcher.Utils;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Launcher.Views;
+using Nebula.Shared.Models;
 using Nebula.Shared.Services;
 using Nebula.Shared.Services.Logging;
 using Nebula.Shared.Utils;
@@ -50,6 +52,8 @@ public partial class MainViewModel : ViewModelBase
     [GenerateProperty] private ContentService ContentService { get; } = default!;
     [GenerateProperty, DesignConstruct] private ViewHelperService ViewHelperService { get; } = default!;
     [GenerateProperty] private ConfigurationService ConfigurationService { get; } = default!;
+    [GenerateProperty] private RedialService RedialService { get; } = default!;
+    [GenerateProperty] private GameRunnerService GameRunnerService { get; } = default!;
 
     private ILogger _logger;
 
@@ -100,6 +104,26 @@ public partial class MainViewModel : ViewModelBase
         {
             OnPopupRequired(LocalizationService.GetString("vcruntime-check-error"));
             Helper.OpenBrowser("https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170");
+        }
+        
+        RedialService.OnRedial += OnRedial;
+        RedialService.StartServer();
+    }
+
+    ~MainViewModel()
+    {
+        RedialService.StopServer();
+    }
+
+    private async void OnRedial(RobustUrl url, string? message)
+    {
+        await GameRunnerService.RunInstanceAsync(url, CancellationToken.None);
+        
+        if (message is { } text)
+        {
+            var popup = ViewHelperService.GetViewModel<InfoPopupViewModel>();
+            popup.InfoText = text;
+            PopupMessage(popup);
         }
     }
 

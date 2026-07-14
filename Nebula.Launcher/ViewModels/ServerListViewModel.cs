@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Threading;
 using Avalonia.Collections;
 using Nebula.Launcher.ServerListProviders;
 using Nebula.Launcher.ViewModels.Pages;
@@ -31,24 +32,24 @@ public class ServerListViewModel : ViewModelBase
         GC.WaitForPendingFinalizers();
     }
 
-    public void SetProvider(IServerListProvider provider)
+    public void SetProvider(IServerListProvider provider, CancellationToken token)
     {
         Provider = provider;
         
         OnPropertyChanged(nameof(ServerList));
         OnPropertyChanged(nameof(ErrorList));
         
-        RefreshFromProvider();
+        RefreshFromProvider(token);
     }
     
-    public void RefreshFromProvider()
+    public void RefreshFromProvider(CancellationToken token)
     {
-        Provider?.LoadServerList(ServerList, ErrorList);
+        Provider?.LoadServerList(ServerList, ErrorList, token);
     }
     
     protected override void InitialiseInDesignMode()
     {
-        SetProvider(new TestServerList());
+        SetProvider(new TestServerList(), CancellationToken.None);
     }
 
     protected override void Initialise()

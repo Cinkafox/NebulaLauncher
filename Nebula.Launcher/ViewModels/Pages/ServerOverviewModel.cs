@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -111,16 +110,23 @@ public partial class ServerOverviewModel : ViewModelBase
         RefreshProvider();
     }
     
+    private CancellationTokenSource _refreshCancellationTokenSource = new CancellationTokenSource();
+    private CancellationTokenSource _selectCancellationTokenSource = new CancellationTokenSource();
+    
     private void RefreshProvider()
     {
+        _refreshCancellationTokenSource.Cancel();
+        _refreshCancellationTokenSource = new CancellationTokenSource();
         CurrentServerList.ClearProvider();
-        CurrentServerList.RefreshFromProvider();
+        CurrentServerList.RefreshFromProvider(_refreshCancellationTokenSource.Token);
     }
 
     partial void OnSelectedItemChanged(ServerListTabTemplate value)
     {
+        _selectCancellationTokenSource.Cancel();
+        _selectCancellationTokenSource = new CancellationTokenSource();
         CurrentServerList.ClearProvider();
-        CurrentServerList.SetProvider(value.ServerListProvider);
+        CurrentServerList.SetProvider(value.ServerListProvider, _selectCancellationTokenSource.Token);
         ApplyFilter();
     }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Nebula.Launcher.Models;
 using Nebula.Launcher.ProcessHelper;
 using Nebula.Launcher.ServerListProviders;
 using Nebula.Launcher.ViewModels;
@@ -23,12 +22,10 @@ public class GameRunnerService
     private readonly GameRunnerPreparer _gameRunnerPreparer;
     private readonly InstanceRunningContainer _instanceRunningContainer;
     private readonly AccountInfoViewModel _accountInfoViewModel;
-    private readonly ServerViewContainer _container;
-    private readonly MainViewModel _mainViewModel;
     private readonly FavoriteServerListProvider _favoriteServerListProvider;
-    private readonly RestService _restService;
-    private readonly CancellationService _cancellationService;
     private readonly ILogger _logger;
+
+    private Dictionary<RobustUrl, InstanceKey> _instanceDictionary = [];
 
     public GameRunnerService(PopupMessageService popupMessageService, 
         DebugService debugService, 
@@ -36,23 +33,14 @@ public class GameRunnerService
         GameRunnerPreparer gameRunnerPreparer, 
         InstanceRunningContainer instanceRunningContainer, 
         AccountInfoViewModel accountInfoViewModel, 
-        ServerViewContainer container, 
-        MainViewModel mainViewModel, 
-        FavoriteServerListProvider favoriteServerListProvider,
-        RestService restService,
-        CancellationService cancellationService)
+        FavoriteServerListProvider favoriteServerListProvider)
     {
         _popupMessageService = popupMessageService;
         _viewHelperService = viewHelperService;
         _gameRunnerPreparer = gameRunnerPreparer;
         _instanceRunningContainer = instanceRunningContainer;
         _accountInfoViewModel = accountInfoViewModel;
-        _container = container;
-        _mainViewModel = mainViewModel;
         _favoriteServerListProvider = favoriteServerListProvider;
-        _restService = restService;
-        _cancellationService = cancellationService;
-
         _logger = debugService.GetLogger("GameRunnerService");
     }
 
@@ -68,7 +56,7 @@ public class GameRunnerService
     
     public void OpenContentViewer(RobustUrl robustUrl)
     {
-        _mainViewModel.RequirePage<ContentBrowserViewModel>().Go(robustUrl, ContentPath.Empty);
+        _viewHelperService.GetViewModel<MainViewModel>().RequirePage<ContentBrowserViewModel>().Go(robustUrl, ContentPath.Empty);
     }
 
     public void AddFavorite(RobustUrl robustUrl)
@@ -87,6 +75,29 @@ public class GameRunnerService
         popup.IpInput = robustUrl.ToString();
         popup.NameInput = oldName ?? string.Empty;
         _popupMessageService.Popup(popup);
+    }
+    
+    public async Task RunInstanceAsync(RobustUrl robustUrl, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var viewModelLoading = _viewHelperService.GetViewModel<LoadingContextViewModel>();
+            viewModelLoading.LoadingName = "Loading instance...";
+
+            _popupMessageService.Popup(viewModelLoading);
+            var currProcessStartProvider = 
+                await _gameRunnerPreparer.GetGameProcessStartInfoProvider(robustUrl, viewModelLoading, cancellationToken);
+            _logger.Log("Preparing instance...");
+            var instance = _instanceRunningContainer.RegisterInstance(currProcessStartProvider);
+            _instanceRunningContainer.Run(instance);
+            _logger.Log($"Starting instance... {instance} ");
+        }
+        catch (Exception e)
+        {
+            var error = new Exception("Error while attempt run instance", e);
+            _logger.Error(error);
+            _popupMessageService.Popup(error);
+        }
     }
 
     public async Task RunInstanceAsync(ServerEntryViewModel serverEntryViewModel, CancellationToken cancellationToken, bool ignoreLoginCredentials = false)
@@ -112,21 +123,13 @@ public class GameRunnerService
             _logger.Log("Preparing instance...");
             _instanceRunningContainer.RegisterInstance(serverEntryViewModel, currProcessStartProvider);
             _instanceRunningContainer.Run(serverEntryViewModel);
-            _logger.Log($"Starting instance... {serverEntryViewModel.InstanceKey.Id} " + serverEntryViewModel.RealName);
-            return;
+            _logger.Log($"Starting instance... {serverEntryViewModel.InstanceKey.Id} ");
         }
         catch (Exception e)
         {
             var error = new Exception("Error while attempt run instance", e);
             _logger.Error(error);
             _popupMessageService.Popup(error);
-            return;
         }
-    }
-
-    public ServerEntryViewModel GetServerEntry(RobustUrl url, string customName, ServerStatus serverStatus)
-    {
-        return new ServerEntryViewModel(_restService, _cancellationService, this)
-            .WithData(url, customName, serverStatus);
     }
 }

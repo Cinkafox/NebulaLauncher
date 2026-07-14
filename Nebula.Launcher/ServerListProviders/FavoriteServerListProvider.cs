@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
@@ -31,7 +32,7 @@ public sealed partial class FavoriteServerListProvider : IServerListProvider
     
     public void LoadServerList(
         AvaloniaList<IListEntryModelView> servers, 
-        AvaloniaList<Exception> exceptions)
+        AvaloniaList<Exception> exceptions, CancellationToken token)
     {
         foreach (var server in _rawServerLists)
         {

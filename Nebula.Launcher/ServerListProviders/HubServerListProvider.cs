@@ -17,7 +17,6 @@ namespace Nebula.Launcher.ServerListProviders;
 [ServiceRegister(null, false), ConstructGenerator]
 public sealed partial class HubServerListProvider : IServerListProvider, IDisposable
 {
-    private CancellationTokenSource? _cts;
     private readonly SemaphoreSlim _loadLock = new(1, 1);
     
     [GenerateProperty] private RestService RestService { get; }
@@ -33,10 +32,10 @@ public sealed partial class HubServerListProvider : IServerListProvider, IDispos
 
     public void LoadServerList(
         AvaloniaList<IListEntryModelView> servers, 
-        AvaloniaList<Exception> exceptions)
+        AvaloniaList<Exception> exceptions, CancellationToken token)
     {
         servers.Add(new LoadingServerEntry());
-        Task.Run(() => LoadServerListAsync(servers, exceptions));
+        Task.Run(() => LoadServerListAsync(servers, exceptions, token), token);
     }
 
     private void SyncServers(List<IListEntryModelView> servers, 
@@ -48,34 +47,20 @@ public sealed partial class HubServerListProvider : IServerListProvider, IDispos
 
     private async Task LoadServerListAsync(
         AvaloniaList<IListEntryModelView> servers, 
-        AvaloniaList<Exception> exceptions)
+        AvaloniaList<Exception> exceptions, CancellationToken token)
     {
-        CancellationTokenSource localCts;
+        await _loadLock.WaitAsync(token);
         
-        await _loadLock.WaitAsync();
-        try
-        {
-            _cts?.Cancel();
-            _cts?.Dispose();
-
-            _cts = new CancellationTokenSource();
-            localCts = _cts;
-        }
-        finally
-        {
-            _loadLock.Release();
-        }
-
         try
         {
             var serversRaw = await RestService.GetAsync<List<ServerHubInfo>>(
                 new Uri(_hubUrl),
-                localCts.Token
+                token
             );
 
             serversRaw.Sort(new ServerComparer());
 
-            localCts.Token.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested();
 
             Dispatcher.UIThread.Invoke(() =>
             {
@@ -109,7 +94,6 @@ public sealed partial class HubServerListProvider : IServerListProvider, IDispos
 
     public void Dispose()
     {
-        _cts?.Dispose();
     }
 }
 
