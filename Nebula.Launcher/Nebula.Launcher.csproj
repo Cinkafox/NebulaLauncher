@@ -68,4 +68,8 @@
         <ProjectReference Include="..\Nebula.Runner\Nebula.Runner.csproj"
                           ReferenceOutputAssembly="false" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Assets\Fonts\" />
+    </ItemGroup>
 </Project>

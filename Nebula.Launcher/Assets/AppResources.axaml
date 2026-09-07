@@ -7,4 +7,5 @@
         <GradientStop Color="#262222" Offset="0.0" />
         <GradientStop Color="#222222" Offset="1.0" />
     </LinearGradientBrush>
+    <FontFamily x:Key="Montserrat">avares://Nebula.Launcher/Assets/Fonts/Montserrat#Montserrat</FontFamily>
 </ResourceDictionary>

@@ -5,6 +5,7 @@
     <!-- Base Window Style -->
     <Style Selector="Window">
         <Setter Property="Background" Value="{StaticResource DefaultBackground}" />
+        <Setter Property="FontFamily" Value="{StaticResource Montserrat}"/>
     </Style>
 
     <!-- Common Border Style -->
