@@ -1,11 +1,14 @@
-name: Build updateResolver and publish
+name: Publish launcher 
 
 on:
   push:
     tags:
       - 'v*'
     paths:
-      - 'Nebula.UpdateResolver/**'
+      - 'Nebula.Launcher/**'
+      - 'Nebula.Runner/**'
+      - 'Nebula.Shared/**'
+      - 'Nebula.SharedModels/**'
 
 jobs:
   build:
@@ -23,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: dotnet restore
       - name: Create build
-        run: ./publish_update_resolver.sh
+        run: ./publish_launcher.sh
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -41,10 +44,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/NebulaUpdateResolver_linux64.zip
-          asset_name: NebulaUpdateResolver_linux64.zip
+          asset_path: ./publish/NebulaLauncher_linux64.zip
+          asset_name: NebulaLauncher_linux64.zip
           asset_content_type: application/zip
-  
       # Upload Windows
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -52,6 +54,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/NebulaUpdateResolver_win64.zip
-          asset_name: NebulaUpdateResolver_win64.zip
+          asset_path: ./publish/NebulaLauncher_win64.zip
+          asset_name: NebulaLauncher_win64.zip
           asset_content_type: application/zip
