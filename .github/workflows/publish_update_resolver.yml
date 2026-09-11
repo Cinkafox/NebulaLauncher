@@ -41,9 +41,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/NebulaUpdateResolver_linux64.zip
-          asset_name: NebulaUpdateResolver_linux64.zip
-          asset_content_type: application/zip
+          asset_path: ./publish/NebulaUpdateResolver
+          asset_name: NebulaUpdateResolver
+          asset_content_type: application/x-executable
   
       # Upload Windows
       - name: Upload Release Asset
@@ -52,6 +52,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/NebulaUpdateResolver_win64.zip
-          asset_name: NebulaUpdateResolver_win64.zip
-          asset_content_type: application/zip
+          asset_path: ./publish/NebulaUpdateResolver.exe
+          asset_name: NebulaUpdateResolver.exe
+          asset_content_type: application/vnd.microsoft.portable-executable

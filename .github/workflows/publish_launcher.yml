@@ -44,9 +44,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/NebulaLauncher_linux64.zip
-          asset_name: NebulaLauncher_linux64.zip
-          asset_content_type: application/zip
+          asset_path: ./publish/NebulaLauncher
+          asset_name: NebulaLauncher
+          asset_content_type: application/x-executable
+          
       # Upload Windows
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -54,6 +55,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/NebulaLauncher_win64.zip
-          asset_name: NebulaLauncher_win64.zip
-          asset_content_type: application/zip
+          asset_path: ./publish/NebulaLauncher.exe
+          asset_name: NebulaLauncher.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
