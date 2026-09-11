@@ -88,6 +88,10 @@ public sealed partial class HubServerListProvider : IServerListProvider, IDispos
                 )
             );
         }
+        finally
+        {
+            _loadLock.Release();
+        }
     }
     
     private void Initialise(){}
