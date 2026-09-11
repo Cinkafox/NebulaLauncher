@@ -6,4 +6,3 @@ dotnet publish -c Release -r linux-x64 -o ./publish -p:IncludeNativeLibrariesFor
 
 mv ./publish/Nebula.UpdateResolver.exe ./publish/NebulaUpdateResolver.exe
 mv ./publish/Nebula.UpdateResolver ./publish/NebulaUpdateResolver
-mv ./publish/Nebula.UpdateResolver.pdb ./publish/NebulaUpdateResolver.pdb
