@@ -6,6 +6,7 @@
     <Style Selector="Window">
         <Setter Property="Background" Value="{StaticResource DefaultBackground}" />
         <Setter Property="FontFamily" Value="{StaticResource Montserrat}"/>
+        <Setter Property="Foreground" Value="White"/>
     </Style>
 
     <!-- Common Border Style -->
@@ -71,14 +72,14 @@
     </Style>
 
     <!-- ListBoxItem Styles -->
-    <Style Selector="ListBoxItem /template/ ContentPresenter">
+    <Style Selector="ListBox.PageTab > ListBoxItem /template/ ContentPresenter">
         <Setter Property="CornerRadius" Value="0,8,8,0" />
         <Setter Property="Margin" Value="0,0,0,5" />
         <Setter Property="Padding" Value="8" />
         <Setter Property="Background" Value="Transparent" />
     </Style>
 
-    <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+    <Style Selector="ListBox.PageTab > ListBoxItem:selected /template/ ContentPresenter">
         <Setter Property="CornerRadius" Value="0,8,8,0" />
         <Setter Property="Background">
             <Setter.Value>
@@ -92,14 +93,36 @@
         <Setter Property="BoxShadow" Value="0 0 15 1 #1212" />
     </Style>
 
-    <Style Selector="ListBoxItem:pointerover">
-        <Setter Property="CornerRadius" Value="0,8,8,0" />
-        <Setter Property="Margin" Value="0,0,5,0" />
+    <Style Selector="ListBox.PageTab > ListBoxItem:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource DefaultPointColor}" />
+    </Style>
+    
+    <!-- Tab Styles -->
+    <Style Selector="ListBox.ServerTab > ListBoxItem /template/ ContentPresenter">
+        <Setter Property="CornerRadius" Value="8,8,0,0" />
+        <Setter Property="Background" Value="Transparent" />
     </Style>
 
-    <Style Selector="ListBoxItem:pressed /template/ ContentPresenter">
-        <Setter Property="CornerRadius" Value="0,8,8,0" />
-        <Setter Property="Background" Value="{StaticResource DefaultSelected}" />
+    <Style Selector="ListBox.ServerTab > ListBoxItem:selected /template/ ContentPresenter">
+        <Setter Property="CornerRadius" Value="8,8,0,0" />
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush EndPoint="100%,50%" StartPoint="0%,50%">
+                    <GradientStop Color="#ae4c47" Offset="0.0" />
+                    <GradientStop Color="#D95F59" Offset="0.2" />
+                    <GradientStop Color="#D95F59" Offset="1.0" />
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="ListBox.ServerTab > ListBoxItem:pointerover /template/ ContentPresenter">
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Background" Value="{StaticResource DefaultPointColor}" />
+    </Style>
+    
+    <Style Selector="ListBox.ServerTab > ListBoxItem:nth-child(1) /template/ ContentPresenter">
+        <Setter Property="CornerRadius" Value="0,8,0,0" />
     </Style>
 
     <!-- Combined ConfigBorder Styles -->
@@ -108,10 +131,14 @@
                  pages|StringUnitConfigControl.ConfigBorder, 
                  pages|IntUnitConfigControl.ConfigBorder, 
                  pages|FloatUnitConfigControl.ConfigBorder">
-    <Setter Property="Background" Value="#33333355" />
-    <Setter Property="CornerRadius" Value="0"/>
-    <Setter Property="BorderThickness" Value="1,0,0,2" />
-    <Setter Property="BorderBrush" Value="#3f3f3f5f" />
-</Style>
+        <Setter Property="Background" Value="#33333355" />
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="BorderThickness" Value="1,0,0,2" />
+        <Setter Property="BorderBrush" Value="#3f3f3f5f" />
+    </Style>
+    
+    <Style Selector="TextBlock">
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
 
 </Styles>

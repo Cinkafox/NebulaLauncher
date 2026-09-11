@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -102,6 +103,8 @@ public sealed class LoadingServerEntry : Label, IListEntryModelView
     public LoadingServerEntry()
     {
         HorizontalAlignment = HorizontalAlignment.Center;
+        VerticalAlignment = VerticalAlignment.Center;
+        Margin = new Thickness(0,40,0,0);
         Content = LocalizationService.GetString("server-list-loading");
     }
     public void Dispose()

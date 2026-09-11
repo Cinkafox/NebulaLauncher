@@ -2,10 +2,16 @@
     <SolidColorBrush x:Key="DefaultBackground">#222222</SolidColorBrush>
     <SolidColorBrush x:Key="DefaultForeground">#121212</SolidColorBrush>
     <SolidColorBrush x:Key="DefaultSelected">#D95F59</SolidColorBrush>
+    <SolidColorBrush x:Key="DefaultPointColor">#5f3333</SolidColorBrush>
     <BoxShadows x:Key="DefaultShadow">0 0 10 -1 #121212</BoxShadows>
     <LinearGradientBrush EndPoint="100%,50%" StartPoint="0%,50%" x:Key="DefaultGrad">
         <GradientStop Color="#262222" Offset="0.0" />
         <GradientStop Color="#222222" Offset="1.0" />
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush EndPoint="100%,50%" StartPoint="0%,50%" x:Key="ContrastGrad">
+        <GradientStop Color="#562222" Offset="0.0" />
+        <GradientStop Color="#262222" Offset="1.0" />
     </LinearGradientBrush>
     <FontFamily x:Key="Montserrat">avares://Nebula.Launcher/Assets/Fonts/Montserrat#Montserrat</FontFamily>
 </ResourceDictionary>

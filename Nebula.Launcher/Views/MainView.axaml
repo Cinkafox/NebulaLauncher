@@ -59,13 +59,14 @@
                         </Border.Background>
                         <Grid ColumnDefinitions="*" RowDefinitions="*,40">
                             <ListBox
+                                Classes="PageTab"
                                 Background="Transparent"
                                 ItemsSource="{Binding Items}"
                                 Padding="0"
                                 SelectedItem="{Binding SelectedListItem}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate DataType="{x:Type models1:ListItemTemplate}">
-                                        <StackPanel Orientation="Horizontal" Spacing="19">
+                                        <StackPanel Orientation="Horizontal" Margin="5,0,0,0" Spacing="25">
                                             <Svg
                                                 Height="40"
                                                 Path="{Binding IconKey, Converter={x:Static converters:TypeConverters.IconConverter}}"

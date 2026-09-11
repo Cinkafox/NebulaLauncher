@@ -24,6 +24,7 @@
         
         <ListBox
             Background="Transparent"
+            Classes="ServerTab"
             ItemsSource="{Binding Items}"
             Padding="0"
             SelectedItem="{Binding SelectedItem}">
@@ -43,7 +44,9 @@
         
         <Border
             Grid.Row="1"
-            Grid.RowSpan="2" >
+            Grid.RowSpan="2" 
+            BorderBrush="{StaticResource ContrastGrad}" BorderThickness="0,5,0,0"
+            CornerRadius="0">
             <ContentControl Content="{Binding CurrentServerList}"></ContentControl>
         </Border>
         

@@ -17,12 +17,8 @@ using Nebula.Shared.ViewHelper;
 
 namespace Nebula.Launcher.ViewModels;
 
-[ViewModelRegister(typeof(ServerEntryView), false)]
-public sealed partial class ServerEntryViewModel(
-    RestService restService, 
-    CancellationService cancellationService, 
-    GameRunnerService gameRunnerService
-    ) : 
+[ViewModelRegister(typeof(ServerEntryView), false), ConstructGenerator]
+public sealed partial class ServerEntryViewModel: 
     ViewModelBase, 
     IFilterConsumer,
     IListEntryModelView, 
@@ -44,6 +40,10 @@ public sealed partial class ServerEntryViewModel(
     }
     
     private ServerInfo? _serverInfo;
+    
+    [GenerateProperty] private RestService RestService { get; }
+    [GenerateProperty] private CancellationService CancellationService { get; }
+    [GenerateProperty] private GameRunnerService GameRunnerService { get; }
 
     public RobustUrl Address { get; private set; }
     
@@ -73,7 +73,7 @@ public sealed partial class ServerEntryViewModel(
         
         try
         {
-            _serverInfo = await restService.GetAsync<ServerInfo>(Address.InfoUri, cancellationService.Token);
+            _serverInfo = await RestService.GetAsync<ServerInfo>(Address.InfoUri, CancellationService.Token);
         }
         catch (Exception e)
         {
@@ -130,41 +130,41 @@ public sealed partial class ServerEntryViewModel(
 
     public void OpenContentViewer()
     {
-        gameRunnerService.OpenContentViewer(Address);
+        GameRunnerService.OpenContentViewer(Address);
     }
 
     public void ToggleFavorites()
     {
         IsFavorite = !IsFavorite;
         if(IsFavorite)
-            gameRunnerService.AddFavorite(Address);
+            GameRunnerService.AddFavorite(Address);
         else
-            gameRunnerService.RemoveFavorite(Address);
+            GameRunnerService.RemoveFavorite(Address);
     }
 
     public void RunInstance()
     { 
-        Task.Run(async ()=> await gameRunnerService.RunInstanceAsync(this, cancellationService.Token));
+        Task.Run(async ()=> await GameRunnerService.RunInstanceAsync(this, CancellationService.Token));
     }
 
     public void RunInstanceIgnoreAuth()
     {
-        Task.Run(async ()=> await gameRunnerService.RunInstanceAsync(this, cancellationService.Token, true));
+        Task.Run(async ()=> await GameRunnerService.RunInstanceAsync(this, CancellationService.Token, true));
     }
 
     public void StopInstance()
     {
-        gameRunnerService.StopInstance(InstanceKey);
+        GameRunnerService.StopInstance(InstanceKey);
     }
     
     public void ReadLog()
     {
-        gameRunnerService.ReadInstanceLog(InstanceKey);
+        GameRunnerService.ReadInstanceLog(InstanceKey);
     }
 
     public void EditName()
     {
-        gameRunnerService.EditName(Address, Name);
+        GameRunnerService.EditName(Address, Name);
     }
 
     public async void ExpandInfoRequired()
