@@ -1,102 +1,70 @@
-name: Publish launcher 
+name: Publish launcher
 
 on:
   push:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build-launcher:
     runs-on: ubuntu-latest
     steps:
-      - name: Install dependencies
+      - name: Install system dependencies
         run: sudo apt-get install -y python3-paramiko python3-lxml
-      - uses: actions/checkout@v3.6.0
+
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v3.2.0
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
-      - name: Install dependencies
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
         run: dotnet restore
+
       - name: Create build
         run: ./publish_launcher.sh
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Release Assets
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-      # Upload Linux
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/NebulaLauncher
-          asset_name: NebulaLauncher
-          asset_content_type: application/x-executable
-          
-      # Upload Windows
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/NebulaLauncher.exe
-          asset_name: NebulaLauncher.exe
-          asset_content_type: application/vnd.microsoft.portable-executable
+          name: Release ${{ github.ref_name }}
+          files: |
+            ./publish/NebulaLauncher
+            ./publish/NebulaLauncher.exe
+
   build-resolver:
     runs-on: ubuntu-latest
     steps:
-      - name: Install dependencies
+      - name: Install system dependencies
         run: sudo apt-get install -y python3-paramiko python3-lxml
-      - uses: actions/checkout@v3.6.0
+
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v3.2.0
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
-      - name: Install dependencies
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
         run: dotnet restore
+
       - name: Create build
         run: ./publish_update_resolver.sh
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-      # Upload Linux
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/NebulaUpdateResolver
-          asset_name: NebulaUpdateResolver
-          asset_content_type: application/x-executable
 
-      # Upload Windows
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Release Assets
+        uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./publish/NebulaUpdateResolver.exe
-          asset_name: NebulaUpdateResolver.exe
-          asset_content_type: application/vnd.microsoft.portable-executable
+          name: Release ${{ github.ref_name }}
+          files: |
+            ./publish/NebulaUpdateResolver
+            ./publish/NebulaUpdateResolver.exe
