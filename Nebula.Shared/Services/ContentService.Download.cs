@@ -56,9 +56,33 @@ public partial class ContentService
         var missingFiles = hashApi.GetMissingFiles().ToList();
         
         _logger.Log("Download Count:" + missingFiles.Count);
-        await Download(missingFiles, hashApi, loadingFactory, cancellationToken);
+        await DownloadConcurrently(missingFiles, hashApi, loadingFactory, cancellationToken);
 
         return hashApi;
+    }
+
+    public Task DownloadConcurrently(List<RobustManifestItem> toDownload, HashApi hashApi,
+        ILoadingHandlerFactory loadingHandlerFactory,
+        CancellationToken cancellationToken)
+    {
+        var contentDownloadConcurrently = 3;
+        if(toDownload.Count < contentDownloadConcurrently)
+            return Download(toDownload, hashApi, loadingHandlerFactory, cancellationToken);
+        
+        var chunks = toDownload.SplitIntoNChunks(contentDownloadConcurrently).ToList();
+        _logger.Log("Downloading with concurrent chunks:" + chunks.Count);
+        
+        var tasks = new List<Task>();
+        foreach (var chunk in chunks)
+        {
+            var handler = loadingHandlerFactory;
+            //if (loadingHandlerFactory is ILoadingHandlerEntryFactory entryFactory)
+            //    handler = entryFactory.CreateLoadingHandlerFactory();
+            
+            tasks.Add(Download(chunk.ToList(), hashApi, handler, cancellationToken));
+        }
+
+        return Task.WhenAll(tasks);
     }
 
     public async Task Download(List<RobustManifestItem> toDownload, HashApi hashApi, ILoadingHandlerFactory loadingHandlerFactory,
@@ -72,8 +96,6 @@ public partial class ContentService
 
         var contentCdn = hashApi.DownloadUri;
         
-        _logger.Log("Downloading from: " + contentCdn);
-
         var requestBody = new byte[toDownload.Count * 4];
         var reqI = 0;
         foreach (var item in toDownload)
@@ -133,7 +155,6 @@ public partial class ContentService
                 
                 downloadWatchdog.Restart();
                 
-                // Read file header.
                 await stream.ReadExactAsync(fileHeader, cancellationToken);
 
                 var length = BinaryPrimitives.ReadInt32LittleEndian(fileHeader.AsSpan(0, 4));
@@ -148,7 +169,6 @@ public partial class ContentService
 
                 if (preCompressed)
                 {
-                    // Compressed length from extended header.
                     var compressedLength = BinaryPrimitives.ReadInt32LittleEndian(fileHeader.AsSpan(4, 4));
 
                     if (compressedLength > 0)
@@ -157,8 +177,6 @@ public partial class ContentService
                         EnsureBuffer(ref compressBuffer, compressedLength);
                         var compressedData = compressBuffer.AsMemory(0, compressedLength);
                         await stream.ReadExactAsync(compressedData, cancellationToken, blockFileLoadHandle ? null : fileLoadingHandler);
-
-                        // Decompress so that we can verify hash down below.
 
                         var decompressedLength = decompressContext!.Decompress(data.Span, compressedData.Span);
 
@@ -179,8 +197,7 @@ public partial class ContentService
 
                 using var fileStream = new MemoryStream(data.ToArray());
                 hashApi.Save(item, fileStream, null);
-
-                _logger.Log("file saved:" + item.Path);
+                
                 fileLoadingHandler.Dispose();
                 downloadLoadHandler.AppendResolvedJob();
                 i += 1;

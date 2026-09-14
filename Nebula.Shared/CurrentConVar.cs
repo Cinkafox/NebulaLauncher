@@ -40,4 +40,5 @@ public static class CurrentConVar
         });
     
     public static readonly ConVar<string> DotnetVersion = ConVarBuilder.Build<string>("dotnet.version", "10.0.2");
+    public static readonly ConVar<int> ContentDownloadConcurrently = ConVarBuilder.Build<int>("engine.contentDownloadConcurrently", 3);
 }

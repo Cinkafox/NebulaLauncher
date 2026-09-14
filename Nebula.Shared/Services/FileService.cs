@@ -96,6 +96,10 @@ public sealed class ConsoleLoadingHandlerFactory : ILoadingHandlerFactory
         return new ConsoleLoadingHandler();
     }
 
+    public void RemoveContextInstance(ILoadingHandler handler)
+    {
+    }
+
     public void Dispose()
     {
     }

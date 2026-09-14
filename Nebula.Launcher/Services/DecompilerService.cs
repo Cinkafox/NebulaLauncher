@@ -53,9 +53,11 @@ public sealed partial class DecompilerService
         var myTempDir = FileService.EnsureTempDir(out var tmpDir);
 
         using var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
+        using var loadingEntry = loadingHandler.CreateContextEntry();
+        
         var buildInfo =
             await ContentService.GetBuildInfo(url, cancellationToken);
-        var engine = await EngineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion, loadingHandler, cancellationToken);
+        var engine = await EngineService.EnsureEngine(buildInfo.BuildInfo.Build.EngineVersion, loadingEntry, cancellationToken);
         if (engine is null)
             throw new Exception("Engine version not found: " + buildInfo.BuildInfo.Build.EngineVersion);
 
@@ -66,7 +68,7 @@ public sealed partial class DecompilerService
             await stream.DisposeAsync();
         }
         
-        var hashApi = await ContentService.GetAllItems(buildInfo, loadingHandler, cancellationToken);
+        var hashApi = await ContentService.GetAllItems(buildInfo, loadingEntry, cancellationToken);
 
         if (hashApi is HashApi hash)
         {
@@ -76,7 +78,7 @@ public sealed partial class DecompilerService
                 .WithMissingFiles()
                 .GetFiltered();
             
-            await ContentService.Download(missingDll, hash, loadingHandler, cancellationToken);
+            await ContentService.DownloadConcurrently(missingDll, hash, loadingEntry, cancellationToken);
         }
         
         foreach (var file in hashApi.AllFiles)
@@ -104,8 +106,10 @@ public sealed partial class DecompilerService
 
     private async Task Download(){
         using var loading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
+        using var loadingEntry = loading.CreateContextEntry();
+        
         loading.LoadingName = "Download ILSpy";
-        var context = loading.CreateLoadingContext();
+        var context = loadingEntry.CreateLoadingContext();
         PopupMessageService.Popup(loading);
         using var response = await _httpClient.GetAsync(ConfigurationService.GetConfigValue(LauncherConVar.ILSpyUrl));
         context.SetJobsCount(response.Content.Headers.ContentLength ?? 1000);

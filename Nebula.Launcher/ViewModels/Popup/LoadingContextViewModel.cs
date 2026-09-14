@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.Views.Popup;
@@ -11,15 +12,14 @@ namespace Nebula.Launcher.ViewModels.Popup;
 
 [ViewModelRegister(typeof(LoadingContextView), false)]
 [ConstructGenerator]
-public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadingHandlerFactory, IConnectionSpeedHandler
+public sealed partial class LoadingContextViewModel : PopupViewModelBase
 {
-    public ObservableCollection<LoadingContext> LoadingContexts { get;  } = [];
-    public ObservableCollection<double> Values { get; } = [];
-    [ObservableProperty] private string _speedText = "";
-    [ObservableProperty] private bool _showSpeed;
-    [ObservableProperty] private int _loadingColumnSize = 2;
+    public ObservableCollection<LoadingContextEntry> Entries { get; } = [];
+    
     [GenerateProperty] public override PopupMessageService PopupMessageService { get; }
     [GenerateProperty] public CancellationService CancellationService { get; }
+    
+    private Lock _contextLock = new();
 
     public string LoadingName { get; set; } = LocalizationService.GetString("popup-loading");
     public bool IsCancellable { get; set; } = true;
@@ -34,28 +34,22 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
         Dispose();
     }
 
-    public void PasteSpeed(int speed)
+    public LoadingContextEntry CreateContextEntry()
     {
-        if (Values.Count == 0)
+        lock (_contextLock)
         {
-            ShowSpeed = true;
-            LoadingColumnSize = 1;
+            var instance = new LoadingContextEntry(this);
+            Entries.Add(instance);
+            return instance;
         }
-        SpeedText = FileLoadingFormater.FormatBytes(speed) + " / s";
-        Values.Add(speed);
-        if(Values.Count > 10) Values.RemoveAt(0);
     }
 
-    public ILoadingHandler CreateLoadingContext(ILoadingFormater? loadingFormater = null)
+    public void RemoveLoadingContext(LoadingContextEntry entry)
     {
-        var instance = new LoadingContext(this, loadingFormater ?? DefaultLoadingFormater.Instance);
-        LoadingContexts.Add(instance);
-        return instance;
-    }
-
-    public void RemoveContextInstance(LoadingContext loadingContext)
-    {
-        LoadingContexts.Remove(loadingContext);
+        lock (_contextLock)
+        {
+            Entries.Remove(entry);
+        }
     }
 
     protected override void Initialise()
@@ -64,26 +58,95 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase, ILoadi
 
     protected override void InitialiseInDesignMode()
     {
-        var context = CreateLoadingContext();
+        CreateTestEntry();
+        CreateTestEntry();
+        CreateTestEntry();
+    }
+
+    private void CreateTestEntry()
+    {
+        var entry = CreateContextEntry();
+        
+        var context = entry.CreateLoadingContext();
         context.SetJobsCount(5);
         context.SetResolvedJobsCount(2);
         context.SetLoadingMessage("message");
 
-        var ctx1 = CreateLoadingContext(new FileLoadingFormater());
+        var ctx1 = entry.CreateLoadingContext(new FileLoadingFormater());
         ctx1.SetJobsCount(1020120);
         ctx1.SetResolvedJobsCount(12331);
         ctx1.SetLoadingMessage("File data");
         
         for (var i = 0; i < 14; i++)
         {
-            PasteSpeed(Random.Shared.Next(10000000));
+            entry.PasteSpeed(Random.Shared.Next(10000000));
         }
+    }
+}
+
+public sealed partial class LoadingContextEntry(LoadingContextViewModel mainModel) : 
+    ObservableObject, 
+    ILoadingHandlerFactory, 
+    IConnectionSpeedHandler, ILoadingHandlerEntryFactory
+{
+    public ObservableCollection<double> Values { get; } = [];
+    
+    public ObservableCollection<LoadingContext> LoadingContexts { get;  } = [];
+    private readonly Lock _contextLock = new();
+    private readonly Lock _speedLock = new();
+    
+    [ObservableProperty] private string _speedText = "";
+    [ObservableProperty] private bool _showSpeed;
+    [ObservableProperty] private int _loadingColumnSize = 2;
+    
+    public void RemoveContextInstance(ILoadingHandler loadingContext)
+    {
+        if (loadingContext is not LoadingContext context) return;
+        lock (_contextLock)
+        {
+            LoadingContexts.Remove(context);
+        }
+    }
+
+    public ILoadingHandler CreateLoadingContext(ILoadingFormater? loadingFormater = null)
+    {
+        lock (_contextLock)
+        {
+            var instance = new LoadingContext(this, loadingFormater ?? DefaultLoadingFormater.Instance);
+            LoadingContexts.Add(instance);
+            return instance;
+        }
+    }
+
+    public void PasteSpeed(int speed)
+    {
+        lock (_speedLock)
+        {
+            if (Values.Count == 0)
+            {
+                ShowSpeed = true;
+                LoadingColumnSize = 1;
+            }
+            SpeedText = FileLoadingFormater.FormatBytes(speed) + " / s";
+            Values.Add(speed);
+            if(Values.Count > 10) Values.RemoveAt(0);
+        }
+    }
+    
+    public void Dispose()
+    {
+        mainModel.RemoveLoadingContext(this);
+    }
+
+    public ILoadingHandlerFactory CreateLoadingHandlerFactory()
+    {
+        return mainModel.CreateContextEntry();
     }
 }
 
 public sealed partial class LoadingContext : ObservableObject, ILoadingHandler
 {
-    private readonly LoadingContextViewModel _master;
+    private readonly ILoadingHandlerFactory _master;
     private readonly ILoadingFormater _loadingFormater;
     public string LoadingText => _loadingFormater.Format(this);
     
@@ -91,7 +154,7 @@ public sealed partial class LoadingContext : ObservableObject, ILoadingHandler
     [ObservableProperty] private long _currJobs;
     [ObservableProperty] private long _resolvedJobs;
 
-    public LoadingContext(LoadingContextViewModel master, ILoadingFormater loadingFormater)
+    public LoadingContext(ILoadingHandlerFactory master, ILoadingFormater loadingFormater)
     {
         _master = master;
         _loadingFormater = loadingFormater;
