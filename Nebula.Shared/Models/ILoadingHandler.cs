@@ -42,11 +42,6 @@ public interface ILoadingHandlerFactory: IDisposable
     public void RemoveContextInstance(ILoadingHandler handler);
 }
 
-public interface ILoadingHandlerEntryFactory
-{
-    public ILoadingHandlerFactory CreateLoadingHandlerFactory();
-}
-
 public interface IConnectionSpeedHandler
 {
     public void PasteSpeed(int speed);

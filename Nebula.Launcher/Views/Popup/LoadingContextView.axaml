@@ -10,7 +10,7 @@
     <Design.DataContext>
         <popup:LoadingContextViewModel />
     </Design.DataContext>
-    <StackPanel Margin="25" Spacing="15" >
+    <Grid Margin="25" ColumnDefinitions="*" RowDefinitions="70,*"  >
         <Panel Margin="5">
             <Border Padding="15" Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
                 <Label VerticalAlignment="Center">
@@ -27,7 +27,7 @@
                 </Border>
             </Button>
         </Panel>
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{Binding Entries}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="popup:LoadingContextEntry">
@@ -82,5 +82,5 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
-    </StackPanel>
+    </Grid>
 </UserControl>

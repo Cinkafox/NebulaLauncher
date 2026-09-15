@@ -87,7 +87,7 @@ public sealed partial class LoadingContextViewModel : PopupViewModelBase
 public sealed partial class LoadingContextEntry(LoadingContextViewModel mainModel) : 
     ObservableObject, 
     ILoadingHandlerFactory, 
-    IConnectionSpeedHandler, ILoadingHandlerEntryFactory
+    IConnectionSpeedHandler
 {
     public ObservableCollection<double> Values { get; } = [];
     
@@ -136,11 +136,6 @@ public sealed partial class LoadingContextEntry(LoadingContextViewModel mainMode
     public void Dispose()
     {
         mainModel.RemoveLoadingContext(this);
-    }
-
-    public ILoadingHandlerFactory CreateLoadingHandlerFactory()
-    {
-        return mainModel.CreateContextEntry();
     }
 }
 
