@@ -49,6 +49,7 @@ config-remove-content-all = Удалить весь контент
 filter-roleplay = Ролевая игра
 filter-language = Язык
 favorite-add = Добавить в избранное
+favorites-action = Добавить сервер
 popup-add-favorite-invalid-ip = Пожалуйста, введите валидный адрес
 servername-set = Установить имя сервера
 servername-clear = Очистить
@@ -72,3 +73,6 @@ popup-login-credentials-warning-proceed = Продолжить
 goto-path-home = Корн. папка
 tab-favorite = Избранное
 server-list-loading = Загрузка списка серверов. Пожалуйста, подождите...
+
+error-app-already-running-title = Обнаружен повторный запуск
+error-app-already-running-message = Ошибка: приложение уже запущена. Пожалуйста, закройте её перед запуском новой.

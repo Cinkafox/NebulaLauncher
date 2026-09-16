@@ -86,7 +86,7 @@ public partial class MainViewModel : ViewModelBase
                 .GetManifestResourceStream("Nebula.Launcher.Version.txt")!;
         using var streamReader = new StreamReader(stream);
 
-        VersionInfo = streamReader.ReadLine() ?? "dev";
+        VersionInfo = streamReader.ReadLine()?.Split("/").Last() ?? "dev";
 
         InitialiseInDesignMode();
 

@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Microsoft.Extensions.DependencyInjection;
+using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.ViewModels.Popup;
@@ -97,14 +98,14 @@ public sealed class AddFavoriteButton: Border, IListEntryModelView{
     {
         Margin = new Thickness(5, 5, 5, 20);
         Background = new SolidColorBrush(Color.Parse("#222222"));
-        CornerRadius = new CornerRadius(20f);
+        CornerRadius = new CornerRadius(15f);
         _addFavoriteButton.HorizontalAlignment = HorizontalAlignment.Center;
         _addFavoriteButton.Click += (sender, args) =>
         {
             serviceProvider.GetService<PopupMessageService>()!.Popup(
                 serviceProvider.GetService<AddFavoriteViewModel>()!);
         };
-        _addFavoriteButton.Content = "Add Favorite";
+        _addFavoriteButton.Content = LocalizationService.GetString("favorites-action");
         Child = _addFavoriteButton;
     }
     public void Dispose(){}

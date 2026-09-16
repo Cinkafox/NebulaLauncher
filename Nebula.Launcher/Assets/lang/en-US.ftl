@@ -49,6 +49,7 @@ config-remove-content-all = Remove all content
 filter-roleplay = Roleplay
 filter-language = Language
 favorite-add = Add to favorites
+favorites-action = Add favorite
 popup-add-favorite-invalid-ip = Please enter a valid IP
 servername-set = Set server name
 servername-clear = Clear server name
@@ -72,3 +73,6 @@ popup-login-credentials-warning-proceed = Proceed
 goto-path-home = Root folder
 tab-favorite = Favorite
 server-list-loading = Loading server list.. Please wait
+
+error-app-already-running-title = Duplicate instance detected.
+error-app-already-running-message = Error: An instance of the application is already running. Please close the existing instance before launching a new one.

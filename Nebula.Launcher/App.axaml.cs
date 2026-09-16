@@ -6,6 +6,7 @@ using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Nebula.Launcher.MessageBox;
+using Nebula.Launcher.Services;
 using Nebula.Launcher.Views;
 using Nebula.Shared;
 using Nebula.Shared.Services;
@@ -21,6 +22,8 @@ public class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        var services = new ServiceCollection();
+        
         if (!Program.IsNewInstance)
         {
             IMessageContainerProvider? provider = null;
@@ -34,10 +37,20 @@ public class App : Application
                     singleViewPlatform.MainView = (Control)(provider = new MessageView());
                     break;
             }
+
+            services.AddSingleton<ConfigurationService>();
+            services.AddSingleton<FileService>();
+            services.AddSingleton<DebugService>();
+            services.AddSingleton<LocalizationService>();
+            
+            var serviceProvider = services.BuildServiceProvider();
+            
+            var localizationService = serviceProvider.GetRequiredService<LocalizationService>();
+            
             
             provider?.ShowMessage(
-                "Error: An instance of the application is already running. Please close the existing instance before launching a new one.", 
-                "Duplicate instance detected.");
+                LocalizationService.GetString("error-app-already-running-message"), 
+                LocalizationService.GetString("error-app-already-running-title"));
             
             return;
         }
@@ -58,7 +71,7 @@ public class App : Application
         else
         {
             DebugService.DoFileLog = true;
-            var services = new ServiceCollection();
+           
             services.AddAvaloniaServices();
             services.AddServices();
             services.AddViews();
