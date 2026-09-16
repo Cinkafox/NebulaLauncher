@@ -63,7 +63,6 @@ public partial class AccountInfoViewModel : ViewModelBase
         _logger = DebugService.GetLogger(this);
         Credentials = new AuthTokenCredentialsVar(this);
         Task.Run(ReadAuthConfig);
-        Credentials.Value = Credentials.Value;
     }
     
     public void DoAuth(string? code = null)
@@ -284,6 +283,8 @@ public partial class AccountInfoViewModel : ViewModelBase
         ConfigurationService.SetConfigValue(LauncherConVar.AuthProfiles, profileCandidates.ToArray());
 
         if (Accounts.Count == 0) UpdateAuthMenu();
+
+        await Credentials.InvokeValue();
         
         message.Dispose();
     }

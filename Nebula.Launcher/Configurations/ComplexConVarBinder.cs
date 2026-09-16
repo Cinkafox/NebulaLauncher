@@ -38,6 +38,11 @@ public abstract class ComplexConVarBinder<T> : INotifyPropertyChanged, INotifyPr
         }
     }
 
+    public async Task InvokeValue()
+    {
+        await SetValueAsync(Value).ConfigureAwait(false);
+    }
+
     protected ComplexConVarBinder(ConVarObserver<T> baseConVar)
     {
         _baseConVar = baseConVar ?? throw new ArgumentNullException(nameof(baseConVar));
