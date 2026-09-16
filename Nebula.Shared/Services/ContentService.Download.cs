@@ -56,12 +56,52 @@ public partial class ContentService
         var missingFiles = hashApi.GetMissingFiles().ToList();
         
         _logger.Log("Download Count:" + missingFiles.Count);
-        await Download(missingFiles, hashApi, loadingFactory, cancellationToken);
+        await DownloadConcurrently(missingFiles, hashApi, loadingFactory, cancellationToken);
 
         return hashApi;
     }
 
-    public async Task Download(List<RobustManifestItem> toDownload, HashApi hashApi, ILoadingHandlerFactory loadingHandlerFactory,
+    public Task DownloadConcurrently(List<RobustManifestItem> toDownload, HashApi hashApi,
+        ILoadingHandlerFactory loadingHandlerFactory,
+        CancellationToken cancellationToken)
+    {
+        var contentDownloadConcurrently = 3;
+        var downloadHandler = loadingHandlerFactory.CreateLoadingContext();
+        var speedFileHandler = loadingHandlerFactory as IConnectionSpeedHandler;
+        
+        downloadHandler.SetJobsCount(toDownload.Count);
+        
+        if(toDownload.Count < contentDownloadConcurrently)
+            return Download(
+                toDownload,
+                hashApi, 
+                speedFileHandler, 
+                loadingHandlerFactory.CreateLoadingContext(new FileLoadingFormater()), 
+                downloadHandler, 
+                cancellationToken);
+        
+        var chunks = toDownload.SplitIntoNChunks(contentDownloadConcurrently).ToList();
+        _logger.Log("Downloading with concurrent chunks:" + chunks.Count);
+        
+        var tasks = new List<Task>();
+        foreach (var chunk in chunks)
+        {
+            tasks.Add(Download(chunk.ToList(), 
+                hashApi, 
+                speedFileHandler,
+                loadingHandlerFactory.CreateLoadingContext(new FileLoadingFormater()),
+                downloadHandler,
+                cancellationToken));
+        }
+
+        return Task.WhenAll(tasks);
+    }
+
+    public async Task Download(List<RobustManifestItem> toDownload, 
+        HashApi hashApi, 
+        IConnectionSpeedHandler? loadingSpeedHandler, 
+        ILoadingHandler fileLoadingHandler,
+        ILoadingHandler downloadCountHandler,
         CancellationToken cancellationToken)
     {
         if (toDownload.Count == 0 || cancellationToken.IsCancellationRequested)
@@ -72,8 +112,6 @@ public partial class ContentService
 
         var contentCdn = hashApi.DownloadUri;
         
-        _logger.Log("Downloading from: " + contentCdn);
-
         var requestBody = new byte[toDownload.Count * 4];
         var reqI = 0;
         foreach (var item in toDownload)
@@ -109,13 +147,8 @@ public partial class ContentService
         var decompressContext = preCompressed ? new ZStdDCtx() : null;
         
         var fileHeader = new byte[preCompressed ? 8 : 4];
-
-        var downloadLoadHandler = loadingHandlerFactory.CreateLoadingContext();
-        downloadLoadHandler.SetJobsCount(toDownload.Count);
-        downloadLoadHandler.SetLoadingMessage("Fetching files...");
-
-        if (loadingHandlerFactory is IConnectionSpeedHandler speedHandlerStart && toDownload.Count > 1)
-            speedHandlerStart.PasteSpeed(0);
+        
+        downloadCountHandler.SetLoadingMessage("Fetching files...");
         
         try
         {
@@ -133,12 +166,11 @@ public partial class ContentService
                 
                 downloadWatchdog.Restart();
                 
-                // Read file header.
                 await stream.ReadExactAsync(fileHeader, cancellationToken);
 
                 var length = BinaryPrimitives.ReadInt32LittleEndian(fileHeader.AsSpan(0, 4));
                 
-                var fileLoadingHandler = loadingHandlerFactory.CreateLoadingContext(new FileLoadingFormater());
+                fileLoadingHandler.Clear();
                 fileLoadingHandler.SetLoadingMessage(item.Path.Split("/").Last());
 
                 var blockFileLoadHandle = length <= 100000;
@@ -148,7 +180,6 @@ public partial class ContentService
 
                 if (preCompressed)
                 {
-                    // Compressed length from extended header.
                     var compressedLength = BinaryPrimitives.ReadInt32LittleEndian(fileHeader.AsSpan(4, 4));
 
                     if (compressedLength > 0)
@@ -157,8 +188,6 @@ public partial class ContentService
                         EnsureBuffer(ref compressBuffer, compressedLength);
                         var compressedData = compressBuffer.AsMemory(0, compressedLength);
                         await stream.ReadExactAsync(compressedData, cancellationToken, blockFileLoadHandle ? null : fileLoadingHandler);
-
-                        // Decompress so that we can verify hash down below.
 
                         var decompressedLength = decompressContext!.Decompress(data.Span, compressedData.Span);
 
@@ -179,14 +208,11 @@ public partial class ContentService
 
                 using var fileStream = new MemoryStream(data.ToArray());
                 hashApi.Save(item, fileStream, null);
-
-                _logger.Log("file saved:" + item.Path);
-                fileLoadingHandler.Dispose();
-                downloadLoadHandler.AppendResolvedJob();
+                
+                downloadCountHandler.AppendResolvedJob();
                 i += 1;
                 
-                if (loadingHandlerFactory is not IConnectionSpeedHandler speedHandler) 
-                    continue;
+                if(loadingSpeedHandler is null) continue;
 
                 if (downloadWatchdog.ElapsedMilliseconds + timeAcc < 1000)
                 {
@@ -200,7 +226,7 @@ public partial class ContentService
                     timeAcc += downloadWatchdog.ElapsedMilliseconds;
                     lengthAcc += length;
                     
-                    speedHandler.PasteSpeed((int)(lengthAcc / (timeAcc / 1000)));
+                    loadingSpeedHandler?.PasteSpeed((int)(lengthAcc / (timeAcc / 1000)));
 
                     timeAcc = 0;
                     lengthAcc = 0;
@@ -208,12 +234,11 @@ public partial class ContentService
                     continue;
                 }
                 
-                speedHandler.PasteSpeed((int)(length / (downloadWatchdog.ElapsedMilliseconds / 1000)));
+                loadingSpeedHandler?.PasteSpeed((int)(length / (downloadWatchdog.ElapsedMilliseconds / 1000)));
             }
         }
         finally
         {
-            downloadLoadHandler.Dispose();
             decompressContext?.Dispose();
             compressContext?.Dispose();
         }
@@ -227,5 +252,15 @@ public partial class ContentService
         var newLen = 2 << BitOperations.Log2((uint)needsFit - 1);
 
         buf = new byte[newLen];
+    }
+
+    public Task Download(List<RobustManifestItem> toDownload, HashApi hashApi, ILoadingHandlerFactory factory, CancellationToken cancellationToken)
+    {
+        var downloadHandler = factory.CreateLoadingContext();
+        downloadHandler.SetJobsCount(toDownload.Count);
+        return Download(toDownload, hashApi,
+            factory as IConnectionSpeedHandler, factory.CreateLoadingContext(new FileLoadingFormater()),
+            downloadHandler,
+            cancellationToken);
     }
 }

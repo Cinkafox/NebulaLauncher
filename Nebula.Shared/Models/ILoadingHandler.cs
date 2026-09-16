@@ -39,6 +39,7 @@ public interface ILoadingFormater
 public interface ILoadingHandlerFactory: IDisposable
 {
     public ILoadingHandler CreateLoadingContext(ILoadingFormater? loadingFormater = null);
+    public void RemoveContextInstance(ILoadingHandler handler);
 }
 
 public interface IConnectionSpeedHandler

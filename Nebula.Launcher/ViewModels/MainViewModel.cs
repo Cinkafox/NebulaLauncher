@@ -98,7 +98,9 @@ public partial class MainViewModel : ViewModelBase
         var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loadingHandler.LoadingName = LocalizationService.GetString("migration-config-task");
         loadingHandler.IsCancellable = false;
-        ConfigurationService.MigrateConfigs(loadingHandler);
+        var loadingEntry = loadingHandler.CreateContextEntry();
+        
+        ConfigurationService.MigrateConfigs(loadingEntry);
         
         if (!VCRuntimeDllChecker.AreVCRuntimeDllsPresent())
         {
@@ -156,8 +158,9 @@ public partial class MainViewModel : ViewModelBase
         var loadingHandler = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loadingHandler.LoadingName = LocalizationService.GetString("migration-label-task");
         loadingHandler.IsCancellable = false;
+        var loadingEntry = loadingHandler.CreateContextEntry();
 
-        if (!ContentService.CheckMigration(loadingHandler))
+        if (!ContentService.CheckMigration(loadingEntry))
             return;
 
         OnPopupRequired(loadingHandler);

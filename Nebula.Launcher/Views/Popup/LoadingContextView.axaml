@@ -10,7 +10,7 @@
     <Design.DataContext>
         <popup:LoadingContextViewModel />
     </Design.DataContext>
-    <StackPanel Margin="25" Spacing="15" >
+    <Grid Margin="25" ColumnDefinitions="*" RowDefinitions="70,*"  >
         <Panel Margin="5">
             <Border Padding="15" Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
                 <Label VerticalAlignment="Center">
@@ -27,54 +27,60 @@
                 </Border>
             </Button>
         </Panel>
-        <Grid ColumnDefinitions="*,*">
-            <ScrollViewer Grid.Column="0" Grid.ColumnSpan="{Binding LoadingColumnSize}">
-                <ItemsControl
-                    Background="#00000000"
-                    ItemsSource="{Binding LoadingContexts}"
-                    Padding="0" >
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Vertical" Spacing="5" Margin="5" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type popup:LoadingContext}">
-                            <Border Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
-                                <StackPanel Margin="15">
-                                    <ProgressBar Height="40" Maximum="{Binding CurrJobs}" Value="{Binding ResolvedJobs}" />
-                                    <Panel Margin="5 15 5 5">
-                                        <Label HorizontalAlignment="Left" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding LoadingText}" />
-                                        </Label>
-                                        <Label HorizontalAlignment="Right" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Message}" />
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Entries}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="popup:LoadingContextEntry">
+                        <Grid ColumnDefinitions="*,*">
+                                <ItemsControl Grid.Column="0" Grid.ColumnSpan="{Binding LoadingColumnSize}"
+                                              Background="#00000000"
+                                              ItemsSource="{Binding LoadingContexts}"
+                                              Padding="0" >
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Vertical" Spacing="5" Margin="5" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type popup:LoadingContext}">
+                                            <Border Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
+                                                <StackPanel Margin="15">
+                                                    <ProgressBar Height="40" Maximum="{Binding CurrJobs}" Value="{Binding ResolvedJobs}" />
+                                                    <Panel Margin="5 15 5 5">
+                                                        <Label HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding LoadingText}" />
+                                                        </Label>
+                                                        <Label HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Message}" />
+                                                        </Label>
+                                                    </Panel>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            
+                            <StackPanel 
+                                Grid.Column="1" 
+                                Margin="10" Spacing="15"
+                                IsVisible="{Binding ShowSpeed}">
+                                <customControls:SimpleGraph Values="{Binding Values}" 
+                                                            Height="167" 
+                                                            GridBrush="{StaticResource DefaultForeground}"/>
+                                <Border Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
+                                    <Panel Margin="10">
+                                        <Label>Speed</Label>
+                                        <Label HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding SpeedText}" />
                                         </Label>
                                     </Panel>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-            
-            <StackPanel 
-                Grid.Column="1" 
-                Margin="10" Spacing="15"
-                IsVisible="{Binding ShowSpeed}">
-                <customControls:SimpleGraph Values="{Binding Values}" 
-                                            Height="167" 
-                                            GridBrush="{StaticResource DefaultForeground}"/>
-                <Border Background="{StaticResource DefaultGrad}" BoxShadow="0 1 1 0 #121212">
-                    <Panel Margin="10">
-                        <Label>Speed</Label>
-                        <Label HorizontalAlignment="Right">
-                            <TextBlock Text="{Binding SpeedText}" />
-                        </Label>
-                    </Panel>
-                </Border>
-            </StackPanel>
-        </Grid>
-    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

@@ -315,7 +315,7 @@ public sealed partial class FileContentEntry : IContentEntry
             loading.LoadingName = "Loading file";
             _popupMessageService.Popup(loading);
             
-            await _contentService.Download([file], hashApi, loading, cancellationToken);
+            await _contentService.Download([file], hashApi, loading.CreateContextEntry(), cancellationToken);
 
             loading.Dispose();
         }
@@ -381,7 +381,7 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
         ServerUrl = serverUrl;
 
         var buildInfo = await ContentService.GetBuildInfo(serverUrl, CancellationService.Token);
-        FileApi = await ContentService.GetAllItems(buildInfo, loading,
+        FileApi = await ContentService.GetAllItems(buildInfo, loading.CreateContextEntry(),
             CancellationService.Token);
 
         foreach (var path in FileApi.AllFiles)
@@ -428,7 +428,7 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
 
         Task.Run(() =>
         {
-            ContentService.Unpack(FileApi, myTempDir, loading.CreateLoadingContext());
+            ContentService.Unpack(FileApi, myTempDir, loading.CreateContextEntry().CreateLoadingContext());
             loading.Dispose();
         });
         ExplorerUtils.OpenFolder(tmpDir);

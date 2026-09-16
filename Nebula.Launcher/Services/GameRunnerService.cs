@@ -83,10 +83,11 @@ public class GameRunnerService
         {
             using var viewModelLoading = _viewHelperService.GetViewModel<LoadingContextViewModel>();
             viewModelLoading.LoadingName = "Loading instance...";
+            using var loadingEntry = viewModelLoading.CreateContextEntry();
 
             _popupMessageService.Popup(viewModelLoading);
             var currProcessStartProvider = 
-                await _gameRunnerPreparer.GetGameProcessStartInfoProvider(robustUrl, viewModelLoading, cancellationToken);
+                await _gameRunnerPreparer.GetGameProcessStartInfoProvider(robustUrl, loadingEntry, cancellationToken);
             _logger.Log("Preparing instance...");
             var instance = _instanceRunningContainer.RegisterInstance(currProcessStartProvider);
             _instanceRunningContainer.Run(instance);
@@ -116,10 +117,11 @@ public class GameRunnerService
         {
             using var viewModelLoading = _viewHelperService.GetViewModel<LoadingContextViewModel>();
             viewModelLoading.LoadingName = "Loading instance...";
-
+            using var loadingEntry = viewModelLoading.CreateContextEntry();
+            
             _popupMessageService.Popup(viewModelLoading);
             var currProcessStartProvider = 
-                await _gameRunnerPreparer.GetGameProcessStartInfoProvider(serverEntryViewModel.Address, viewModelLoading, cancellationToken);
+                await _gameRunnerPreparer.GetGameProcessStartInfoProvider(serverEntryViewModel.Address, loadingEntry, cancellationToken);
             _logger.Log("Preparing instance...");
             _instanceRunningContainer.RegisterInstance(serverEntryViewModel, currProcessStartProvider);
             _instanceRunningContainer.Run(serverEntryViewModel);
