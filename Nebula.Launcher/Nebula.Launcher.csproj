@@ -37,6 +37,13 @@
         <PackageReference Include="Avalonia.Controls.ItemsRepeater"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="SkiaSharp.NativeAssets.Win32" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
+        <PackageReference Include="SkiaSharp.NativeAssets.macOS" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
+    </ItemGroup>
+
+
     <Target Name="BuildCheck" AfterTargets="AfterBuild">
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.dll" DestinationFolder="$(OutDir)"/>
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.pdb" DestinationFolder="$(OutDir)"/>
