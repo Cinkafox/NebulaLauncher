@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -13,8 +12,10 @@ using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Shared.ViewHelper;
-using Openize.Animated.GIF;
 using SkiaSharp;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Formats.Gif;
 
 namespace Nebula.Launcher.ViewModels;
 
@@ -35,10 +36,9 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
             if (!States.TryGetValue(SelectedState, out var rotArray) ||
                 !rotArray.TryGetValue(SelectedRotation, out var rot))
             {
-
                 Console.WriteLine($"{SelectedState} with rot {SelectedRotation} not found");
                 return new Uri($"avares://Nebula.Launcher/Assets/gif/back.gif");
-            };
+            }
             
             var stream = new MemoryStream(rot);
             return stream;
@@ -47,13 +47,9 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
 
     public Dictionary<string, Dictionary<int, byte[]>> States { get; } = new();
     
-    protected override void InitialiseInDesignMode()
-    {
-    }
+    protected override void InitialiseInDesignMode() { }
 
-    protected override void Initialise()
-    {
-    }
+    protected override void Initialise() { }
 
     public async Task<RsiImageViewModel> LoadFromDirectory(IContentEntry entry)
     {
@@ -66,7 +62,6 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
         }
 
         await using var stream = await file.OpenFile();
-
         var currentRsi = JsonSerializer.Deserialize<RsiJsonMetadata>(stream, SerializerOptions);
         
         if(currentRsi is null)
@@ -89,9 +84,7 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
                 return this;
             
             await using var imageStream = await imageFile.OpenFile();
-            
             var image = SKBitmap.Decode(imageStream);
-            
             var directionCount = currState.Directions ?? 1;
 
             for (var curRotation = 0; curRotation < directionCount; curRotation++)
@@ -101,7 +94,6 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
         }
         
         SelectedState = currentRsi.States[0].Name;
-
         return this;
     }
 
@@ -134,7 +126,6 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
             }
             
             var containIndexes = 0;
-                    
             if (currState.Delays is not null)
             {
                 for (var d = 0; d < directionCount; d++)
@@ -151,44 +142,35 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
         }
         
         SelectedState = currentRsi.States[0].Name;
-
         return this;
     }
 
     partial void OnSelectedRotationChanged(int value)
     {
-        if(string.IsNullOrEmpty(SelectedState))
-            return;
-        
+        if(string.IsNullOrEmpty(SelectedState)) return;
         OnPropertyChanged(nameof(SelectedGif));
     }
 
     partial void OnSelectedStateChanged(string value)
     {
-        if(string.IsNullOrEmpty(SelectedState))
-            return;
-        
+        if(string.IsNullOrEmpty(SelectedState)) return;
         _selectedRotation = 0;
         OnPropertyChanged(nameof(SelectedGif));
     }
 
     public void ChangeRotationLeft()
     {
-        if (!States.TryGetValue(SelectedState, out var rotArray))
-                return;
-        
+        if (!States.TryGetValue(SelectedState, out var rotArray)) return;
         SelectedRotation = (SelectedRotation + 1) % rotArray.Count;
     }
     
     public void ChangeRotationRight()
     {
-        if (!States.TryGetValue(SelectedState, out var rotArray))
-            return;
-        
+        if (!States.TryGetValue(SelectedState, out var rotArray)) return;
         SelectedRotation = (SelectedRotation + rotArray.Count - 1) % rotArray.Count;
     }
 
-
+  
     private byte[] ProcessAtlasImage(SKBitmap originalImage,
         RsiJsonMetadata currentRsi,
         StateJsonMetadata state,
@@ -199,17 +181,15 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
             ? Math.Clamp(rotation, 0, state.Directions.Value - 1) 
             : 0;
         
-        using var stream = new MemoryStream();
         var frameCount = state.Delays is null ? 1 : state.Delays[rotation].Length;
+        var frameWidth = currentRsi.Size.X;
+        var frameHeight = currentRsi.Size.Y;
 
-        var encoder = new AnimatedGifEncoder();
-        encoder.SetRepeat(0);
-        encoder.SetBackground(Color.FromArgb(255,28,28,28));
-        encoder.SetQuality(1);
-        encoder.Start(stream);
+        using var gif = new Image<Rgba32>(frameWidth, frameHeight);
         
+        gif.Metadata.GetGifMetadata().ColorTableMode = SixLabors.ImageSharp.Formats.FrameColorTableMode.Local;
+
         var rotationFrameShift = 0;
-        
         for (var i = 0; i < rotation; i++)
         {
             if(state.Delays is null)
@@ -217,7 +197,6 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
                 rotationFrameShift++;
                 continue;
             }
-
             rotationFrameShift += state.Delays[i].Length;
         }
 
@@ -226,7 +205,7 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
             var currDelay = state.Delays is not null ? state.Delays[rotation][frame] : 1f;
             
             using var pixmap = new SKPixmap(originalImage.Info, originalImage.GetPixels());
-            var (x,y) = GetCropPosition(
+            var (x, y) = GetCropPosition(
                 originalImage.Width, 
                 originalImage.Height,
                 currentRsi.Size.X, 
@@ -236,25 +215,32 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
             var rectI = SKRectI.Create(x, y, currentRsi.Size.X, currentRsi.Size.Y);
             var subset = pixmap.ExtractSubset(rectI);
             
-            encoder.AddFrame(ConvertToAvaloniaBitmap(subset));
-            encoder.SetDelay((int)(currDelay * 1000));
+            using var frameImage = ConvertToImageSharp(subset);
+            
+            var frameMetadata = frameImage.Frames[0].Metadata.GetGifMetadata();
+            
+            frameMetadata.FrameDelay = Math.Max(1, (int)(currDelay * 100));
+            
+            gif.Frames.AddFrame(frameImage.Frames[0]);
         }
+
+        gif.Frames.RemoveFrame(0);
         
-        encoder.Finish();
+        using var stream = new MemoryStream();
+        gif.SaveAsGif(stream);
         
         return stream.ToArray();
     }
     
-    private Bitmap ConvertToAvaloniaBitmap(SKPixmap skBitmap)
+    private Image<Rgba32> ConvertToImageSharp(SKPixmap skPixmap)
     {
-        using (var image = SKImage.FromPixels(skBitmap))
-        using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
-        using (var stream = new MemoryStream())
-        {
-            data.SaveTo(stream);
-            stream.Seek(0, SeekOrigin.Begin);
-            return new Bitmap(stream);
-        }
+        using var skImage = SKImage.FromPixels(skPixmap);
+        using var data = skImage.Encode(SKEncodedImageFormat.Png, 100);
+        using var stream = new MemoryStream();
+        data.SaveTo(stream);
+        stream.Seek(0, SeekOrigin.Begin);
+        
+        return Image.Load<Rgba32>(stream);
     }
     
     private static (int X, int Y) GetCropPosition(
@@ -310,7 +296,6 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
         }
 
         LoadingErrorMessage = LocalizationService.GetString("rsi-parse-meta-not-found");
-        
         return null;
     }
 }

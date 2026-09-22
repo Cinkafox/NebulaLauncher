@@ -156,18 +156,25 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
                 case ".png":
                     Task.Run(async () =>
                     {
-                        await using var stream = await fileEntry.OpenFile();
+                        try
+                        {
+                            await using var stream = await fileEntry.OpenFile();
 
-                        var rsicShowViewModel = ViewHelperService.GetViewModel<ImageShowViewModel>();
+                            var rsicShowViewModel = ViewHelperService.GetViewModel<ImageShowViewModel>();
+                            
+                            if (ext == ".rsic")
+                                rsicShowViewModel.Image =
+                                    ViewHelperService.GetViewModel<RsiImageViewModel>().LoadFromStream(stream);
+                            else
+                                rsicShowViewModel.Image =
+                                    ViewHelperService.GetViewModel<StaticImageViewModel>().LoadFromStream(stream);
 
-                        if (ext == ".rsic")
-                            rsicShowViewModel.Image =
-                                ViewHelperService.GetViewModel<RsiImageViewModel>().LoadFromStream(stream);
-                        else
-                            rsicShowViewModel.Image =
-                                ViewHelperService.GetViewModel<StaticImageViewModel>().LoadFromStream(stream);
-
-                        PopupService.Popup(rsicShowViewModel);
+                            PopupService.Popup(rsicShowViewModel);
+                        }
+                        catch (System.Exception e)
+                        {
+                            PopupService.Popup(e);
+                        }
                     });
                     return true;
             }

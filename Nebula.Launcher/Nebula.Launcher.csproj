@@ -35,6 +35,7 @@
         <PackageReference Include="Openize.Animated-GIF" />
         <PackageReference Include="Robust.Natives"/>
         <PackageReference Include="Avalonia.Controls.ItemsRepeater"/>
+        <PackageReference Include="SixLabors.ImageSharp"/>
     </ItemGroup>
 
     <ItemGroup>
