@@ -9,13 +9,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using MetadataExtractor.Formats.Png;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.Services;
+using Nebula.Launcher.Utils;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Shared.ViewHelper;
 using SkiaSharp;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Formats.Gif;
 
 namespace Nebula.Launcher.ViewModels;
 
@@ -185,10 +183,7 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
         var frameWidth = currentRsi.Size.X;
         var frameHeight = currentRsi.Size.Y;
 
-        using var gif = new Image<Rgba32>(frameWidth, frameHeight);
-        
-        gif.Metadata.GetGifMetadata().ColorTableMode = SixLabors.ImageSharp.Formats.FrameColorTableMode.Local;
-
+        var encoder = new CustomGifEncoder();
         var rotationFrameShift = 0;
         for (var i = 0; i < rotation; i++)
         {
@@ -203,8 +198,8 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
         for (var frame = 0; frame < frameCount; frame++)
         {
             var currDelay = state.Delays is not null ? state.Delays[rotation][frame] : 1f;
-            
-            using var pixmap = new SKPixmap(originalImage.Info, originalImage.GetPixels());
+            var delayMs = Math.Max(1, (int)(currDelay * 100));
+
             var (x, y) = GetCropPosition(
                 originalImage.Width, 
                 originalImage.Height,
@@ -212,36 +207,24 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
                 currentRsi.Size.Y, 
                 shift + rotationFrameShift + frame);
         
-            var rectI = SKRectI.Create(x, y, currentRsi.Size.X, currentRsi.Size.Y);
-            var subset = pixmap.ExtractSubset(rectI);
-            
-            using var frameImage = ConvertToImageSharp(subset);
-            
-            var frameMetadata = frameImage.Frames[0].Metadata.GetGifMetadata();
-            
-            frameMetadata.FrameDelay = Math.Max(1, (int)(currDelay * 100));
-            
-            gif.Frames.AddFrame(frameImage.Frames[0]);
+            var framePixels = new SKColor[frameHeight, frameWidth];
+            for (var fy = 0; fy < frameHeight; fy++)
+            {
+                for (var fx = 0; fx < frameWidth; fx++)
+                {
+                    framePixels[fy, fx] = originalImage.GetPixel(x + fx, y + fy);
+                }
+            }
+
+            encoder.AddFrame(framePixels, delayMs);
         }
 
-        gif.Frames.RemoveFrame(0);
-        
         using var stream = new MemoryStream();
-        gif.SaveAsGif(stream);
-        
+        encoder.WriteToStream(stream);
         return stream.ToArray();
     }
     
-    private Image<Rgba32> ConvertToImageSharp(SKPixmap skPixmap)
-    {
-        using var skImage = SKImage.FromPixels(skPixmap);
-        using var data = skImage.Encode(SKEncodedImageFormat.Png, 100);
-        using var stream = new MemoryStream();
-        data.SaveTo(stream);
-        stream.Seek(0, SeekOrigin.Begin);
-        
-        return Image.Load<Rgba32>(stream);
-    }
+
     
     private static (int X, int Y) GetCropPosition(
         int imageWidth, 
