@@ -44,9 +44,7 @@ public class App : Application
             services.AddSingleton<LocalizationService>();
             
             var serviceProvider = services.BuildServiceProvider();
-            
-            var localizationService = serviceProvider.GetRequiredService<LocalizationService>();
-            
+            _ = serviceProvider.GetRequiredService<LocalizationService>();
             
             provider?.ShowMessage(
                 LocalizationService.GetString("error-app-already-running-message"), 
@@ -83,6 +81,7 @@ public class App : Application
                 case IClassicDesktopStyleApplicationLifetime desktop:
                     DisableAvaloniaDataAnnotationValidation();
                     desktop.MainWindow = serviceProvider.GetService<MainWindow>();
+                    serviceProvider.GetRequiredService<FileFormService>().SetMainWindow(desktop.MainWindow!);
                     break;
                 case ISingleViewApplicationLifetime singleViewPlatform:
                     singleViewPlatform.MainView = serviceProvider.GetRequiredService<MainView>();

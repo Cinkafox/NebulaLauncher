@@ -93,6 +93,10 @@ public class GameRunnerService
             _instanceRunningContainer.Run(instance);
             _logger.Log($"Starting instance... {instance} ");
         }
+        catch (OperationCanceledException _)
+        {
+
+        }
         catch (Exception e)
         {
             var error = new Exception("Error while attempt run instance", e);

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Nebula.Launcher.Models;
@@ -373,9 +374,12 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
     [GenerateProperty] public PopupMessageService PopupService { get; } = default!;
     [GenerateProperty] public DecompilerService DecompilerService { get; } = default!;
     [GenerateProperty] public FileService FileService { get; } = default!;
+    [GenerateProperty] private FileFormService FileFormService { get; } = default!;
+    [GenerateProperty] private DebugService DebugService { get; } = default!;
     
     public RobustUrl ServerUrl { get; private set; }
     private IFileApi FileApi { get; set; } = default!;
+    private RobustBuildInfo BuildInfo { get; set; } = default!;
     
     public async void Init(IContentHolder holder, RobustUrl serverUrl)
     {
@@ -387,8 +391,8 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
         PopupService.Popup(loading);
         ServerUrl = serverUrl;
 
-        var buildInfo = await ContentService.GetBuildInfo(serverUrl, CancellationService.Token);
-        FileApi = await ContentService.GetAllItems(buildInfo, loading.CreateContextEntry(),
+        BuildInfo = await ContentService.GetBuildInfo(serverUrl, CancellationService.Token);
+        FileApi = await ContentService.GetAllItems(BuildInfo, loading.CreateContextEntry(),
             CancellationService.Token);
 
         foreach (var path in FileApi.AllFiles)
@@ -425,20 +429,35 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
         return manifestContent;
     }
 
-    public void UnpackServerFiles()
+    public async void UnpackServerFiles()
     {
-        var myTempDir = FileService.EnsureTempDir(out var tmpDir);
+        var path = await FileFormService.ShowOpenFileDialogAsync();
+        if(path is null) return;
+        
         
         var loading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
         loading.LoadingName = "Unpacking entry";
         PopupService.Popup(loading);
 
-        Task.Run(() =>
+        try
         {
-            ContentService.Unpack(FileApi, myTempDir, loading.CreateContextEntry().CreateLoadingContext());
-            loading.Dispose();
-        });
-        ExplorerUtils.OpenFolder(tmpDir);
+            var ensuredFileApi = await ContentService.EnsureItems(
+                BuildInfo,
+                loading.CreateContextEntry(),
+                CancellationService.Token);
+            ContentService.Unpack(ensuredFileApi, path, loading.CreateContextEntry().CreateLoadingContext());
+            ExplorerUtils.OpenFolder(path.RootPath);
+        }
+        catch (OperationCanceledException _)
+        {
+
+        }
+        catch (Exception e)
+        {
+            DebugService.GetLogger(this).Error(e);
+        }
+        
+        loading.Dispose();
     }
     
     protected override void InitialiseInDesignMode() { }
