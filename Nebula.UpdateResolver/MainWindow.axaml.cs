@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Nebula.SharedModels;
 using Nebula.UpdateResolver.Configuration;
@@ -20,6 +21,7 @@ public partial class MainWindow : Window
     private readonly HttpClient _httpClient = new();
     private readonly FileApi _fileApi = new(Path.Join(RootPath, "app"));
     private string _logStr = "";
+    private string _oldMsh = "";
     
     public MainWindow()
     {
@@ -34,6 +36,21 @@ public partial class MainWindow : Window
             {
                 ProgressLabel.Content = message;
                 PercentLabel.Content = percentText;
+                
+                if (message != _oldMsh)
+                {
+                    if(LogPanel.Children.Count > 5)
+                        LogPanel.Children.RemoveAt(LogPanel.Children.Count - 1);
+                    
+                    LogPanel.Children.Add(new TextBlock()
+                    {
+                        Text = message,
+                        Foreground = Brushes.DimGray,
+                        FontSize = 8,
+                    });
+                }
+                
+                _oldMsh = message;
             });
             
             var messageOut =
@@ -43,10 +60,16 @@ public partial class MainWindow : Window
         };
         
         LogStandalone.Log("Starting up");
-        if (!Design.IsDesignMode)
-            Task.Run(Start);
-        else
+        
+        if (Design.IsDesignMode)
+        {
+            LogStandalone.Log("Debug information 1", 51);
+            LogStandalone.Log("Debug information 2", 51);
             LogStandalone.Log("Debug information", 51);
+            return;
+        }
+        
+        Task.Run(Start);
     }
 
     private async Task Start()
@@ -58,11 +81,11 @@ public partial class MainWindow : Window
             
             var info = EnsureFiles(FilterEntries(manifest.Entries));
             
-            LogStandalone.Log("Downloading files...");
+            LogStandalone.Log($"Fetching files from {UpdateConVars.UpdateCacheUrl}");
 
             foreach (var file in info.ToDelete)
             {
-                LogStandalone.Log("Deleting " + file.Path);
+                LogStandalone.Log("Removing " + file.Path);
                 _fileApi.Remove(file.Path);
             }
 
@@ -88,45 +111,31 @@ public partial class MainWindow : Window
                 Save(loadedManifest, manifest.RuntimeInfo);
             }
 
-            LogStandalone.Log("Download finished. Running launcher...");
+            LogStandalone.Log("Starting up launcher...");
 
             await DotnetStandalone.Run(manifest.RuntimeInfo, Path.Join(_fileApi.RootPath, "Nebula.Launcher.dll"));
+            
+            Thread.Sleep(4000);
+            Environment.Exit(0);
         }
-        catch(HttpRequestException e){
-            LogStandalone.LogError(e);
-            LogStandalone.Log("Network connection error...");
-            var logPath = Path.Join(RootPath,"updateResloverError.txt");
-            await File.WriteAllTextAsync(logPath, _logStr);
-            Process.Start(new ProcessStartInfo(){
-                FileName = "notepad",
-                Arguments = logPath
-            });
+        catch(HttpRequestException e)
+        {
+            LogException(e);
         }
         catch (Exception e)
         {
-            LogStandalone.LogError(e);
-            var logPath = Path.Join(RootPath,"updateResloverError.txt");
-            await File.WriteAllTextAsync(logPath, _logStr);
-            Process.Start(new ProcessStartInfo(){
-                FileName = "notepad",
-                Arguments = logPath
-            });
+            LogException(e);
         }
-        
-        Thread.Sleep(4000);
-        
-        Environment.Exit(0);
     }
 
     private ManifestEnsureInfo EnsureFiles(HashSet<LauncherManifestEntry> entries)
     {
-        LogStandalone.Log("Ensuring launcher manifest...");
+        LogStandalone.Log("Ensure launcher manifest...");
         
         var toDownload = new HashSet<LauncherManifestEntry>();
         var toDelete = new HashSet<LauncherManifestEntry>();
         var filesExist = new HashSet<LauncherManifestEntry>();
         
-        LogStandalone.Log("Manifest loaded!");
         if (ConfigurationStandalone.TryGetConfigValue(UpdateConVars.CurrentLauncherManifest, out var currentManifest))
         {
             LogStandalone.Log("Delta manifest loaded!");
@@ -177,6 +186,18 @@ public partial class MainWindow : Window
     private void Save(HashSet<LauncherManifestEntry> entries, LauncherRuntimeInfo info)
     {
         ConfigurationStandalone.SetConfigValue(UpdateConVars.CurrentLauncherManifest, new LauncherManifest(entries, info));
+    }
+
+    private void LogException(Exception e)
+    {
+        LogStandalone.LogError(e);
+        var logPath = Path.Join(RootPath, "updateResolverError.txt");
+        File.WriteAllText(logPath, _logStr);
+        
+        ExceptionBorder.IsVisible = true;
+        ExceptionBlock.Text = e.Message + Environment.NewLine + e.StackTrace;
+
+        LogBlock.Text = _logStr;
     }
 
     private LauncherManifestEntry EnsurePath(LauncherManifestEntry entry)

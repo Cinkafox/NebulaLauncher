@@ -14,8 +14,8 @@
         mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="225"
         x:Class="Nebula.UpdateResolver.MainWindow"
         Title="Nebula.UpdateResolver">
-    <Grid ColumnDefinitions="*" RowDefinitions="*,30">
-        <Image Grid.Row="0" Source="Assets/back.gif" Grid.RowSpan="2"/>
+    <Grid ColumnDefinitions="*" RowDefinitions="*,30,30">
+        <Image Grid.Row="0" Source="Assets/back.gif" Stretch="UniformToFill" Grid.RowSpan="2"/>
         <Border
             Padding="5"
             BorderThickness="0,3,0,0"
@@ -35,9 +35,23 @@
                 </LinearGradientBrush>
             </Border.BorderBrush>
             <Panel>
-                <Label HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="10" Name="ProgressLabel"/>
-                <Label HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" Name="PercentLabel"/>
+                <Label Foreground="#f3f3f3" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="10" Name="ProgressLabel"/>
+                <Label Foreground="#f3f3f3" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" Name="PercentLabel"/>
             </Panel>
+        </Border>
+        <Border Grid.Row="2" Background="#222222">
+            <ScrollViewer >
+                <StackPanel Name="LogPanel">
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+        <Border Name="ExceptionBorder" IsVisible="False" Grid.Row="0" Background="#222222" Grid.RowSpan="3">
+            <ScrollViewer>
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Name="ExceptionBlock" Foreground="Firebrick"/>
+                    <TextBlock Name="LogBlock" Foreground="#aaaaaa"/>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
     </Grid>
 </Window>

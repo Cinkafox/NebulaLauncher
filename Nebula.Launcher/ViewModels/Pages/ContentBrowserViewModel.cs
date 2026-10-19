@@ -39,7 +39,7 @@ public sealed partial class ContentBrowserViewModel : ViewModelBase, IContentHol
     [GenerateProperty, DesignConstruct] private ViewHelperService ViewHelperService { get; } = default!;
     [GenerateProperty] private DecompilerService DecompilerService { get; } = default!;
 
-    public static readonly string[] AllowedExtToOpen = [".yaml", ".yml", ".txt", ".html", ".mp3", ".ogg", ".json"];
+    public static readonly string[] AllowedExtToOpen = [".yaml", ".yml", ".txt", ".html", ".mp3", ".ogg", ".json", ".ftl"];
 
     public IContentEntry CurrentEntry
     {

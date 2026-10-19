@@ -12,6 +12,7 @@ public static class LogStandalone
         if(e.InnerException != null) 
             LogError(e.InnerException);
     }
+    
     public static void Log(string? message, int percentage = 0)
     {
         if(message is null) return;
