@@ -3,11 +3,12 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:pages="clr-namespace:Nebula.Launcher.ViewModels.Pages"
+             xmlns:contentBrowser="clr-namespace:Nebula.Launcher.ViewModels.ContentBrowser"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:DataType="pages:FolderContentEntry"
+             x:DataType="contentBrowser:FolderContentEntry"
              x:Class="Nebula.Launcher.Views.FileContentEntryView">
     <Design.DataContext>
-        <pages:FolderContentEntry/>
+        <contentBrowser:FolderContentEntry/>
     </Design.DataContext>
     
     <ScrollViewer
@@ -17,7 +18,7 @@
         Margin="0,0,0,5">
         <ItemsControl ItemsSource="{Binding Entries}" Padding="0,0,0,0">
             <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="{x:Type pages:IContentEntry}">
+                <DataTemplate DataType="{x:Type contentBrowser:IContentEntry}">
                     <Button
                         Command="{Binding GoCurrent}"
                         CornerRadius="0"

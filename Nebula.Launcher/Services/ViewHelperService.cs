@@ -23,6 +23,13 @@ public sealed partial class ViewHelperService
         viewModelBase = vmb;
         return true;
     }
+    
+    public bool TryGetViewModel<T>(Type type, [NotNullWhen(true)] out T? viewModelBase) where T : ViewModelBase
+    {
+        var success = TryGetViewModel(type, out var vmb);
+        viewModelBase = (T?)vmb;
+        return success;
+    }
 
     public bool TryGetViewModel<T>([NotNullWhen(true)] out T? viewModelBase) where T : ViewModelBase
     {

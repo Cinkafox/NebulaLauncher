@@ -18,10 +18,18 @@ public sealed partial class LocalizationService
     
     private CultureInfo _currentCultureInfo = CultureInfo.CurrentCulture;
     private static MessageContext? _currentMessageContext;
+    
+    public void LoadCurrentLanguage()
+    {
+        LoadLanguage(CultureInfo.GetCultureInfo(ConfigurationService.GetConfigValue(LauncherConVar.CurrentLang)!));
+    }
 
     private void Initialise()
     {
-        LoadLanguage(CultureInfo.GetCultureInfo(ConfigurationService.GetConfigValue(LauncherConVar.CurrentLang)!));
+    }
+
+    private void InitialiseInDesignMode()
+    {
     }
 
     public void LoadLanguage(CultureInfo cultureInfo)
@@ -45,11 +53,6 @@ public sealed partial class LocalizationService
             DebugService.GetLogger("localisationService").Error(e);
             LoadLanguage(CultureInfo.GetCultureInfo("en-US"));
         }
-    }
-
-    private void InitialiseInDesignMode()
-    {
-        Initialise();
     }
 
     public static string GetString(string locale, Dictionary<string, object>? options = null)

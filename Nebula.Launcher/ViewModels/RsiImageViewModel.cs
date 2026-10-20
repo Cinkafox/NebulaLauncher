@@ -8,17 +8,17 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MetadataExtractor.Formats.Png;
 using Nebula.Launcher.Models;
+using Nebula.Launcher.Models.ContentBrowser;
 using Nebula.Launcher.Services;
-using Nebula.Launcher.Utils;
-using Nebula.Launcher.ViewModels.Pages;
-using Nebula.Launcher.ViewModels.Popup;
+using Nebula.Launcher.ViewModels.ContentBrowser;
 using Nebula.Shared.ViewHelper;
 using SkiaSharp;
 
 namespace Nebula.Launcher.ViewModels;
 
 [ViewModelRegister(typeof(Views.RsiImageView), false)]
-public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
+[FileContentAssign([".rsic"])]
+public sealed partial class RsiImageViewModel : BaseFileContentEntry
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
     
@@ -49,16 +49,16 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
 
     protected override void Initialise() { }
 
-    public async Task<RsiImageViewModel> LoadFromDirectory(IContentEntry entry)
+    public async Task<RsiImageViewModel> LoadFromDirectory(BaseFolderContentEntry entry)
     {
-        if(entry.Name == null || 
-           !entry.Name.EndsWith(".rsi") || 
-           await entry.Go(new ContentPath("meta.json"), CancellationToken.None) is not FileContentEntry file)
+        Parent = entry.Parent;
+        
+        if(!entry.TryOpenFile<BaseFileContentEntry>("meta.json", out var file))
         {
             Console.WriteLine("RSI NOT FOUND");
             return this;
         }
-
+        
         await using var stream = await file.OpenFile();
         var currentRsi = JsonSerializer.Deserialize<RsiJsonMetadata>(stream, SerializerOptions);
         
@@ -77,8 +77,8 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
                 stateRotationDict = [];
                 States.Add(currState.Name, stateRotationDict);
             }
-
-            if (await entry.Go(new ContentPath($"{currState.Name}.png"), CancellationToken.None) is not FileContentEntry imageFile)
+            
+            if(!entry.TryOpenFile<BaseFileContentEntry>($"{currState.Name}.png", out var imageFile))
                 return this;
             
             await using var imageStream = await imageFile.OpenFile();
@@ -224,8 +224,6 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
         return stream.ToArray();
     }
     
-
-    
     private static (int X, int Y) GetCropPosition(
         int imageWidth, 
         int imageHeight, 
@@ -280,5 +278,11 @@ public sealed partial class RsiImageViewModel : ViewModelBase, IImageInput
 
         LoadingErrorMessage = LocalizationService.GetString("rsi-parse-meta-not-found");
         return null;
+    }
+
+    public override async void Execute(CancellationToken cancellationToken = default)
+    {
+        await using var stream = await OpenFile(cancellationToken);
+        LoadFromStream(stream);
     }
 }

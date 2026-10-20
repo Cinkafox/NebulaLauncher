@@ -62,11 +62,11 @@
             <Svg Path="/Assets/svg/next.svg" />
         </Button>
 
-        <ScrollViewer Grid.Column="0"
-                Grid.ColumnSpan="4"
-                Grid.Row="1" Content="{Binding CurrentEntry}">
+        <TransitioningContentControl Grid.Column="0"
+                                     Grid.ColumnSpan="4"
+                                     Grid.Row="1" Content="{Binding CurrentEntry}">
             
-        </ScrollViewer>
+        </TransitioningContentControl>
         
     </Grid>
 </UserControl>

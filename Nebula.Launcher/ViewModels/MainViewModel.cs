@@ -45,7 +45,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private ListItemTemplate? _selectedListItem;
     [ObservableProperty] private string? _loginText = LocalizationService.GetString("auth-current-login-no-name");
     
-    [GenerateProperty] private LocalizationService LocalizationService { get; } // Не убирать! Без этой хуйни вся локализация идет в пизду!
+    [GenerateProperty] private FileContentLinkService FileContentLinkService { get; }
     [GenerateProperty] private AccountInfoViewModel AccountInfoViewModel { get; }
     [GenerateProperty] private DebugService DebugService { get; } = default!;
     [GenerateProperty] private PopupMessageService PopupMessageService { get; } = default!;
@@ -71,6 +71,8 @@ public partial class MainViewModel : ViewModelBase
 
     protected override void Initialise()
     {
+        FileContentLinkService.AssignAllExtensions();
+        
         AccountInfoViewModel.Credentials.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName is not nameof(AccountInfoViewModel.Credentials.Value)) 

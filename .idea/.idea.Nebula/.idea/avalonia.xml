@@ -19,6 +19,8 @@
         <entry key="Nebula.Launcher/Views/FileContentEntryView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/MainView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/MainWindow.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
+        <entry key="Nebula.Launcher/Views/OpeningFileContentEntry.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
+        <entry key="Nebula.Launcher/Views/OpeningFileContentEntryView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Pages/AccountInfoPage.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Pages/AccountInfoView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Pages/AddFavoriteView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
