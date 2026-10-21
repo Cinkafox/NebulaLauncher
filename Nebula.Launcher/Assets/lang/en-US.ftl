@@ -76,3 +76,9 @@ server-list-loading = Loading server list.. Please wait
 
 error-app-already-running-title = Duplicate instance detected.
 error-app-already-running-message = Error: An instance of the application is already running. Please close the existing instance before launching a new one.
+
+privacy-info-popup-info = This server requires that you accept its privacy policy before connecting
+privacy-info-popup-read = View privacy policy
+privacy-info-popup-accept = Accept
+privacy-info-popup-decline = Decline
+privacy-info-popup-title = Privacy policy

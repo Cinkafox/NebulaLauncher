@@ -7,6 +7,11 @@ public sealed record AuthInfo(
     [property: JsonPropertyName("public_key")]
     string PublicKey);
 
+public sealed record BuildPrivacyInfo(
+    [property: JsonPropertyName("identifier")] string Identifier,
+    [property: JsonPropertyName("link")] string Link,
+    [property: JsonPropertyName("version")] string Version);
+
 public sealed record BuildInfo(
     [property: JsonPropertyName("engine_version")]
     string EngineVersion,
@@ -36,6 +41,7 @@ public sealed record ServerInfo(
     [property: JsonPropertyName("auth")] AuthInfo Auth,
     [property: JsonPropertyName("build")] BuildInfo Build,
     [property: JsonPropertyName("desc")] string Desc,
+    [property: JsonPropertyName("privacy_policy")] BuildPrivacyInfo? PrivacyPolicy,
     [property: JsonPropertyName("links")] List<ServerLink>? Links);
 
 public sealed record EngineVersionInfo(

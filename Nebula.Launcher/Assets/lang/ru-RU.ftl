@@ -76,3 +76,9 @@ server-list-loading = Загрузка списка серверов. Пожал
 
 error-app-already-running-title = Обнаружен повторный запуск
 error-app-already-running-message = Ошибка: приложение уже запущена. Пожалуйста, закройте её перед запуском новой.
+
+privacy-info-popup-info = Для подключения к этому серверу необходимо принять его политику конфиденциальности.
+privacy-info-popup-read = Посмотреть политику конфиденциальности
+privacy-info-popup-accept = Принять
+privacy-info-popup-decline = Отклонить
+privacy-info-popup-title = Политика конфиденциальности

@@ -46,6 +46,9 @@ public static class LauncherConVar
                 "https://auth.simplestation.org/",
             ])
     ]);
+
+    public static readonly ConVar<string[]> AcceptedPrivacyPolicies =
+        ConVarBuilder.Build<string[]>("launcher.accepted_privacy_policies", []);
     
     public static readonly ConVar<ServerHubRecord[]> Hub = ConVarBuilder.Build<ServerHubRecord[]>("launcher.hub.v2", [
         new ServerHubRecord("WizDen", "https://feline.durenko.tatar/hub-api/api/servers"),

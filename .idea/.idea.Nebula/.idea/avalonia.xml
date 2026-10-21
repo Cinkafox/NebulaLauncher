@@ -40,6 +40,7 @@
         <entry key="Nebula.Launcher/Views/Popup/LoadingContextView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/LogPopupView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/MessagePopupView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
+        <entry key="Nebula.Launcher/Views/Popup/PrivacyInfoView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/RsicShowView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/Popup/TfaView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />
         <entry key="Nebula.Launcher/Views/RsiImageView.axaml" value="Nebula.Launcher/Nebula.Launcher.csproj" />

@@ -5,7 +5,6 @@ using System.Windows.Input;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Nebula.Launcher.Models;
-using Nebula.Launcher.ServerListProviders;
 using Nebula.Launcher.Services;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.ViewModels.Popup;
@@ -44,6 +43,7 @@ public sealed partial class ServerEntryViewModel:
     [GenerateProperty] private RestService RestService { get; }
     [GenerateProperty] private CancellationService CancellationService { get; }
     [GenerateProperty] private GameRunnerService GameRunnerService { get; }
+    [GenerateProperty] private BuildPrivacyService BuildPrivacyService { get; }
 
     public RobustUrl Address { get; private set; }
     
@@ -143,13 +143,22 @@ public sealed partial class ServerEntryViewModel:
     }
 
     public void RunInstance()
-    { 
-        Task.Run(async ()=> await GameRunnerService.RunInstanceAsync(this, CancellationService.Token));
+    {
+        CheckPrivacyAndRun(false);
     }
 
     public void RunInstanceIgnoreAuth()
     {
-        Task.Run(async ()=> await GameRunnerService.RunInstanceAsync(this, CancellationService.Token, true));
+        CheckPrivacyAndRun(true);
+    }
+
+    private async void CheckPrivacyAndRun(bool ignoreLoginCredentials)
+    {
+        if (await BuildPrivacyService.IsPrivacyAcceptRequired(this)) 
+            return;
+        
+        await Task.Run(async () =>
+            await GameRunnerService.RunInstanceAsync(this, CancellationService.Token, ignoreLoginCredentials));
     }
 
     public void StopInstance()
