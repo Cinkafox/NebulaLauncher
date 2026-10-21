@@ -76,13 +76,13 @@ public class App : Application
             services.AddViews();
 
             var serviceProvider = services.BuildServiceProvider();
+            serviceProvider.GetRequiredService<LocalizationService>().LoadCurrentLanguage();
             
             switch (ApplicationLifetime)
             {
                 case IClassicDesktopStyleApplicationLifetime desktop:
                     DisableAvaloniaDataAnnotationValidation();
                     desktop.MainWindow = serviceProvider.GetService<MainWindow>();
-                    serviceProvider.GetRequiredService<LocalizationService>().LoadCurrentLanguage();
                     serviceProvider.GetRequiredService<FileFormService>().SetMainWindow(desktop.MainWindow!);
                     break;
                 case ISingleViewApplicationLifetime singleViewPlatform:
