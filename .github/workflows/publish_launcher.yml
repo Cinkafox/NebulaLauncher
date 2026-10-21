@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install system dependencies
-        run: sudo apt-get install -y python3-paramiko python3-lxml
+        run: sudo apt-get install -y python3-paramiko python3-lxml zip
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,8 +36,8 @@ jobs:
         with:
           name: Release ${{ github.ref_name }}
           files: |
-            ./publish/NebulaLauncher
-            ./publish/NebulaLauncher.exe
+            ./NebulaLauncher-linux.zip
+            ./NebulaLauncher-windows.zip
 
   build-resolver:
     runs-on: ubuntu-latest
