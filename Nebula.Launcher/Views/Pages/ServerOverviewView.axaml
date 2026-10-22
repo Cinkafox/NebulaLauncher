@@ -76,7 +76,7 @@
                 Margin="25,0,0,0"
                 Text="{Binding SearchText}"
                 VerticalAlignment="Center"
-                Watermark="{services:LocaledText 'server-search'}" />
+                PlaceholderText="{services:LocaledText 'server-search'}" />
             <Button
                 Command="{Binding FilterRequired}"
                 Grid.Column="2"

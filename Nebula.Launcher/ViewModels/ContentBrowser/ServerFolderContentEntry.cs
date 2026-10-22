@@ -73,7 +73,7 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
 
         if (FileContentLinkService.TryGetFileContent(Path.GetExtension(path.GetName()), out var fileContentType))
         {
-            if(!ViewHelperService.TryGetViewModel(fileContentType, out fileContentEntry))
+            if(!ViewHelperService.TryGetViewModel(fileContentType, out fileContentEntry!))
                 throw new InvalidOperationException();
         }
         else
@@ -107,7 +107,7 @@ public sealed partial class ServerFolderContentEntry : BaseFolderContentEntry
             ContentService.Unpack(ensuredFileApi, path, loading.CreateContextEntry().CreateLoadingContext());
             ExplorerUtils.OpenFolder(path.RootPath);
         }
-        catch (OperationCanceledException _)
+        catch (OperationCanceledException)
         {
 
         }

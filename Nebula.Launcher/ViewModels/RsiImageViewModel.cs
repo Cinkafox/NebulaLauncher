@@ -10,6 +10,7 @@ using MetadataExtractor.Formats.Png;
 using Nebula.Launcher.Models;
 using Nebula.Launcher.Models.ContentBrowser;
 using Nebula.Launcher.Services;
+using Nebula.Launcher.Utils;
 using Nebula.Launcher.ViewModels.ContentBrowser;
 using Nebula.Shared.ViewHelper;
 using SkiaSharp;

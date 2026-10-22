@@ -3,7 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:messageBox="clr-namespace:Nebula.Launcher.MessageBox"
-        SystemDecorations="BorderOnly"
+        WindowDecorations="BorderOnly"
         mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="260"
         Width="600"
         Height="260"

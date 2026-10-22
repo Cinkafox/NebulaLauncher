@@ -15,7 +15,7 @@
     </Design.DataContext>
     <StackPanel Margin="15" Spacing="10">
         <Border BoxShadow="{StaticResource DefaultShadow}">
-            <TextBox Text="{Binding IpInput}" Watermark="ss14://localhost" />
+            <TextBox Text="{Binding IpInput}" PlaceholderText="ss14://localhost" />
         </Border>
         <Border Background="{StaticResource DefaultSelected}" BoxShadow="{StaticResource DefaultShadow}">
             <Button Command="{Binding OnEnter}" HorizontalAlignment="Stretch">

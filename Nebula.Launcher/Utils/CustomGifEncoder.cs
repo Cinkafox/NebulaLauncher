@@ -1,11 +1,13 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using SkiaSharp;
+
+namespace Nebula.Launcher.Utils;
 
 public sealed class CustomGifEncoder
 {
-    private Stream _stream;
+    private Stream _stream = null!;
     private byte[]? _globalColorTable;
     private readonly List<GifFrame> _frames;
     private ushort _width;
@@ -188,6 +190,8 @@ public sealed class CustomGifEncoder
     
     private byte[] ConvertToIndexed(SKColor[,] pixels)
     {
+        ArgumentNullException.ThrowIfNull(_globalColorTable);
+        
         var indexed = new byte[_width * _height];
         
         for (var y = 0; y < _height; y++)
@@ -319,7 +323,7 @@ public sealed class CustomGifEncoder
     
     private class GifFrame
     {
-        public byte[] Data { get; set; }
+        public byte[] Data { get; set; } = null!;
         public ushort DelayTime { get; set; }
         public ushort Left { get; set; }
         public ushort Top { get; set; }
@@ -328,4 +332,3 @@ public sealed class CustomGifEncoder
         public bool Interlaced { get; set; }
     }
 }
-

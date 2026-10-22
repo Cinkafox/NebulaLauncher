@@ -16,7 +16,7 @@
             <TextBlock  Text="{Binding IpInput}"  Margin="10,8,10,8"/>
         </Border>
         <Border BoxShadow="{StaticResource DefaultShadow}">
-            <TextBox Text="{Binding NameInput}" Watermark="custom server name" />
+            <TextBox Text="{Binding NameInput}" PlaceholderText="custom server name" />
         </Border>
         <Border Background="{StaticResource DefaultSelected}" BoxShadow="{StaticResource DefaultShadow}">
             <Button Command="{Binding OnEnter}" HorizontalAlignment="Stretch">
