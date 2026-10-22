@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Labs.Gif;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MetadataExtractor.Formats.Png;
 using Nebula.Launcher.Models;
@@ -27,8 +28,7 @@ public sealed partial class RsiImageViewModel : BaseFileContentEntry
     [ObservableProperty] private string _selectedState = "";
     [ObservableProperty] private int _selectedRotation;
 
-    // TODO: Change it to GifStreamSource if we update avalonia. Its so bad..
-    public object SelectedGif
+    public GifStreamSource SelectedGif
     {
         get
         {
@@ -36,11 +36,10 @@ public sealed partial class RsiImageViewModel : BaseFileContentEntry
                 !rotArray.TryGetValue(SelectedRotation, out var rot))
             {
                 Console.WriteLine($"{SelectedState} with rot {SelectedRotation} not found");
-                return new Uri($"avares://Nebula.Launcher/Assets/gif/back.gif");
+                return GifStreamSource.FromUri(new Uri($"avares://Nebula.Launcher/Assets/gif/back.gif"));
             }
             
-            var stream = new MemoryStream(rot);
-            return stream;
+            return GifStreamSource.FromStream(new MemoryStream(rot));
         }
     }
 
