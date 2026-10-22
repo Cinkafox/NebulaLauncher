@@ -30,8 +30,8 @@ public static class TarExtractor
 
         Directory.CreateDirectory(destinationDirectory);
 
-        string pendingLongName = null;
-        string pendingLongLink = null;
+        string? pendingLongName = null;
+        string? pendingLongLink = null;
 
         var block = new byte[BlockSize];
         var zeroBlockCount = 0;
@@ -297,7 +297,7 @@ public static class TarExtractor
 
     private class TarHeader
     {
-        public string Name { get; private set; }
+        public string Name { get; private set; } = null!;
         public int Mode { get; private set; }
         public int Uid { get; private set; }
         public int Gid { get; private set; }
@@ -305,14 +305,14 @@ public static class TarExtractor
         public DateTimeOffset ModTime { get; private set; }
         public int Checksum { get; private set; }
         public char TypeFlag { get; private set; }
-        public string LinkName { get; private set; }
-        public string Magic { get; private set; }
-        public string Version { get; private set; }
-        public string UName { get; private set; }
-        public string GName { get; private set; }
-        public string DevMajor { get; private set; }
-        public string DevMinor { get; private set; }
-        public string Prefix { get; private set; }
+        public string LinkName { get; private set; } = null!;
+        public string Magic { get; private set; } = null!;
+        public string Version { get; private set; } = null!;
+        public string UName { get; private set; } = null!;
+        public string GName { get; private set; } = null!;
+        public string DevMajor { get; private set; } = null!;
+        public string DevMinor { get; private set; } = null!;
+        public string Prefix { get; private set; } = null!;
 
         public static TarHeader FromBlock(byte[] block)
         {

@@ -56,7 +56,7 @@
                         HorizontalAlignment="Stretch"
                         IsVisible="{Binding !IsFavorite}"
                         VerticalAlignment="Stretch">
-                        <Svg Margin="4" Path="/Assets/svg/star.svg" />
+                        <Image Margin="4" Source="/Assets/icon/star.png" />
                     </Button>
                     <Button
                         Command="{Binding ToggleFavorites}"
@@ -64,7 +64,7 @@
                         HorizontalAlignment="Stretch"
                         IsVisible="{Binding IsFavorite}"
                         VerticalAlignment="Stretch">
-                        <Svg Margin="4" Path="/Assets/svg/starfull.svg" />
+                        <Image Margin="4" Source="/Assets/icon/starfull.png" />
                     </Button>
                 </Panel>
             </Grid>

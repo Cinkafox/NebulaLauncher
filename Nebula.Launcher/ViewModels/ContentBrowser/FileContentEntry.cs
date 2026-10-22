@@ -20,7 +20,7 @@ public abstract class BaseFileContentEntry : ViewModelBase, IContentEntry
     public IContentHolder Holder { get; set; } = default!;
     public IContentEntry? Parent { get; set; }
     public string? Name { get; set; }
-    public string IconPath => "/Assets/svg/file.svg";
+    public string IconPath => "/Assets/icon/file.png";
     
     private IFileApi _fileApi = default!;
     private ContentService _contentService = default!;

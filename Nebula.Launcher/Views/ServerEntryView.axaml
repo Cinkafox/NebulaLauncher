@@ -75,7 +75,7 @@
                 CornerRadius="10,10,10,10"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch">
-                <Svg Margin="4" Path="/Assets/svg/pencil.svg" />
+                <Image Margin="4" Source="/Assets/icon/pencil.png" />
             </Button>
             
             <Panel
@@ -88,7 +88,7 @@
                     HorizontalAlignment="Stretch"
                     IsVisible="{Binding !IsFavorite}"
                     VerticalAlignment="Stretch">
-                    <Svg Margin="4" Path="/Assets/svg/star.svg" />
+                    <Image Margin="4" Source="/Assets/icon/star.png" />
                 </Button>
                 <Button
                     Command="{Binding ToggleFavorites}"
@@ -96,7 +96,7 @@
                     HorizontalAlignment="Stretch"
                     IsVisible="{Binding IsFavorite}"
                     VerticalAlignment="Stretch">
-                    <Svg Margin="4" Path="/Assets/svg/starfull.svg" />
+                    <Image Margin="4" Source="/Assets/icon/starfull.png" />
                 </Button>
             </Panel>
 
@@ -110,7 +110,7 @@
                     HorizontalAlignment="Stretch"
                     IsVisible="{Binding !IsInstanceRunning}"
                     VerticalAlignment="Stretch">
-                    <Svg Margin="4" Path="/Assets/svg/play.svg" />
+                    <Image Margin="4" Source="/Assets/icon/play.png" />
                 </Button>
                 <Grid ColumnDefinitions="*" IsVisible="{Binding IsInstanceRunning}">
                     <Button
@@ -118,7 +118,7 @@
                         CornerRadius="10"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch">
-                        <Svg Margin="4" Path="/Assets/svg/newspaper.svg" />
+                        <Image Margin="4" Source="/Assets/icon/newspaper.png" />
                     </Button>
                 </Grid>
             </Panel>
@@ -217,7 +217,7 @@
                                         CommandParameter="{Binding Url}"
                                         Margin="3">
                                         <StackPanel Orientation="Horizontal" Spacing="5">
-                                            <Svg Height="20" Path="{Binding Icon, Converter={x:Static converters:TypeConverters.IconConverter}}" />
+                                            <Image Height="20" Source="{Binding Icon, Converter={x:Static converters:TypeConverters.IconConverter}}" />
                                             <Label FontSize="10">
                                                 <TextBlock Text="{Binding Name}" />
                                             </Label>
@@ -247,7 +247,7 @@
                 Spacing="5">
                 <Button
                     Command="{Binding OpenContentViewer}">
-                    <Svg Margin="4" Path="/Assets/svg/folder.svg" />
+                    <Image Margin="4" Source="/Assets/icon/folder.png" />
                 </Button>
                 <Button
                     Command="{Binding StopInstance}"
@@ -256,7 +256,7 @@
                     HorizontalAlignment="Stretch"
                     IsVisible="{Binding IsInstanceRunning}"
                     VerticalAlignment="Stretch">
-                    <Svg Margin="4" Path="/Assets/svg/stop.svg" />
+                    <Image Margin="4" Source="/Assets/icon/stop.png" />
                 </Button>
             </StackPanel>
         </Grid>

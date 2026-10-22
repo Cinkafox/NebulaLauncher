@@ -81,13 +81,13 @@
                 Command="{Binding FilterRequired}"
                 Grid.Column="2"
                 Padding="10">
-                <Svg Path="/Assets/svg/filter.svg" />
+                <Image Source="/Assets/icon/filter.png" />
             </Button>
             <Button
                 Command="{Binding UpdateRequired}"
                 Grid.Column="3"
                 Padding="10">
-                <Svg Path="/Assets/svg/refresh.svg" />
+                <Image Source="/Assets/icon/refresh.png" />
             </Button>
         </Grid>
     </Grid>

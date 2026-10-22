@@ -67,9 +67,9 @@
                                 <ListBox.ItemTemplate>
                                     <DataTemplate DataType="{x:Type models1:ListItemTemplate}">
                                         <StackPanel Orientation="Horizontal" Margin="5,0,0,0" Spacing="25">
-                                            <Svg
+                                            <Image
                                                 Height="40"
-                                                Path="{Binding IconKey, Converter={x:Static converters:TypeConverters.IconConverter}}"
+                                                Source="{Binding IconKey, Converter={x:Static converters:TypeConverters.IconConverter}}"
                                                 Width="40" />
                                             <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
                                         </StackPanel>
@@ -129,10 +129,10 @@
                                 CornerRadius="0"
                                 Command="{Binding OpenAuthPage}">
                                 <StackPanel Spacing="5" Orientation="Horizontal">
-                                    <Svg
-                                        Height="40"
-                                        Path="/Assets/svg/user.svg"
-                                        Width="10" />
+                                    <Image
+                                        Height="10"
+                                        Source="/Assets/icon/user.png"
+                                        Width="20" />
                                     <Panel>
                                         <TextBlock 
                                             Foreground="#777777" 
@@ -147,10 +147,10 @@
                                 CornerRadius="0"
                                 Command="{Binding OpenRootPath}">
                                 <StackPanel Orientation="Horizontal" Spacing="5">
-                                    <Svg
-                                        Height="40"
-                                        Path="/Assets/svg/folder.svg"
-                                        Width="10" />
+                                    <Image
+                                        Height="10"
+                                        Source="/Assets/icon/folder.png"
+                                        Width="20" />
                                     <TextBlock Foreground="#777777" Text="{services:LocaledText goto-path-home}"/>
                                 </StackPanel>
                             </Button>

@@ -84,9 +84,9 @@
                                         </LinearGradientBrush>
                                     </Border.Background>
                                     <Button Command="{Binding OnDelete}" CornerRadius="0,10,0,10" HorizontalAlignment="Stretch">
-                                        <Svg
+                                        <Image
                                             Height="15"
-                                            Path="/Assets/svg/delete.svg"
+                                            Source="/Assets/icon/delete.png"
                                             Width="15" />
                                     </Button>
                                 </Border>
@@ -114,10 +114,10 @@
                 </Border.Background>
                 <Panel>
                     <StackPanel IsVisible="{Binding !IsLogged}" Spacing="15">
-                        <Svg
+                        <Image
                             Height="100"
                             Margin="0,0,0,20"
-                            Path="/Assets/svg/user.svg" />
+                            Source="/Assets/icon/user.png" />
                         <StackPanel HorizontalAlignment="Center">
                             <StackPanel IsVisible="{Binding DoRetryAuth}">
                                 <Border Background="{StaticResource DefaultSelected}" BoxShadow="{StaticResource DefaultShadow}">
@@ -183,10 +183,10 @@
                     </StackPanel>
 
                     <StackPanel IsVisible="{Binding IsLogged}">
-                        <Svg
+                        <Image
                             Height="100"
                             Margin="0,0,0,20"
-                            Path="/Assets/svg/user.svg" />
+                            Source="/Assets/icon/user.png" />
                         <Label>
                             <StackPanel Spacing="15">
                                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="5">

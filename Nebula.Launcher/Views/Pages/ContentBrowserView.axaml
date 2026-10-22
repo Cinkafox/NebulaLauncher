@@ -32,34 +32,34 @@
             Margin="5"
             Text="{Binding ServerText}"
             VerticalAlignment="Center"
-            Watermark="{services:LocaledText content-view-server}" />
+            PlaceholderText="{services:LocaledText content-view-server}" />
         <TextBox
             Grid.Column="1"
             Grid.Row="0"
             Margin="5"
             Text="{Binding SearchText}"
             VerticalAlignment="Center"
-            Watermark="{services:LocaledText content-view-path}" />
+            PlaceholderText="{services:LocaledText content-view-path}" />
         <Button
             Command="{Binding OnBackEnter}"
             Grid.Column="2"
             Grid.Row="0"
             Padding="10">
-            <Svg Path="/Assets/svg/undo.svg" />
+            <Image Source="/Assets/icon/undo.png" />
         </Button>
         <Button
             Command="{Binding OnUnpack}"
             Grid.Column="3"
             Grid.Row="0"
             Padding="10">
-            <Svg Path="/Assets/svg/folder.svg" />
+            <Image Source="/Assets/icon/folder.png" />
         </Button>
         <Button
             Command="{Binding OnGoEnter}"
             Grid.Column="4"
             Grid.Row="0"
             Padding="10">
-            <Svg Path="/Assets/svg/next.svg" />
+            <Image Source="/Assets/icon/next.png" />
         </Button>
 
         <TransitioningContentControl Grid.Column="0"

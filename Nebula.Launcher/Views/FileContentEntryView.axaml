@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:pages="clr-namespace:Nebula.Launcher.ViewModels.Pages"
              xmlns:contentBrowser="clr-namespace:Nebula.Launcher.ViewModels.ContentBrowser"
+             xmlns:converters="clr-namespace:Nebula.Launcher.Converters"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:DataType="contentBrowser:FolderContentEntry"
              x:Class="Nebula.Launcher.Views.FileContentEntryView">
@@ -12,9 +12,6 @@
     </Design.DataContext>
     
     <ScrollViewer
-        Grid.Column="0"
-        Grid.ColumnSpan="4"
-        Grid.Row="1"
         Margin="0,0,0,5">
         <ItemsControl ItemsSource="{Binding Entries}" Padding="0,0,0,0">
             <ItemsControl.ItemTemplate>
@@ -30,10 +27,10 @@
                                 Background="#00000000"
                                 BorderThickness="0,0,2,0"
                                 CornerRadius="0">
-                                <Svg
+                                <Image
                                     Height="15"
                                     Margin="10,0,10,0"
-                                    Path="{Binding IconPath}" />
+                                    Source="{Binding IconPath, Converter={x:Static converters:TypeConverters.ImageConverter}}" />
                                 <Border.BorderBrush>
                                     <LinearGradientBrush EndPoint="100%,50%" StartPoint="0%,50%">
                                         <GradientStop Color="#442222" Offset="0.0" />

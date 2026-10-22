@@ -18,7 +18,7 @@ public abstract class BaseFolderContentEntry : ViewModelBase, IContentEntry
 
     private Dictionary<string, IContentEntry> _childs = [];
 
-    public string IconPath => "/Assets/svg/folder.svg";
+    public string IconPath => "/Assets/icon/folder.png";
     
     private IContentHolder? _holder = null;
     public IContentHolder Holder

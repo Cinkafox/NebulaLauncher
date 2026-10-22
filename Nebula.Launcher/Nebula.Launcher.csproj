@@ -18,7 +18,6 @@
         <PackageReference Include="Avalonia"/>
         <PackageReference Include="Avalonia.Desktop"/>
         <PackageReference Include="Avalonia.Labs.Gif" />
-        <PackageReference Include="Avalonia.Svg.Skia"/>
         <PackageReference Include="Avalonia.Themes.Fluent"/>
         <PackageReference Include="Avalonia.Fonts.Inter"/>
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
@@ -36,14 +35,7 @@
         <PackageReference Include="Robust.Natives"/>
         <PackageReference Include="Avalonia.Controls.ItemsRepeater"/>
     </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="SkiaSharp.NativeAssets.Win32" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
-        <PackageReference Include="SkiaSharp.NativeAssets.Linux" Condition="$([MSBuild]::IsOSPlatform('Linux'))" />
-        <PackageReference Include="SkiaSharp.NativeAssets.macOS" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
-    </ItemGroup>
-
-
+    
     <Target Name="BuildCheck" AfterTargets="AfterBuild">
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.dll" DestinationFolder="$(OutDir)"/>
         <Copy SourceFiles="..\Nebula.Runner\bin\$(Configuration)\$(TargetFramework)\Nebula.Runner.pdb" DestinationFolder="$(OutDir)"/>
