@@ -39,9 +39,6 @@ public partial class MainWindow : Window
                 
                 if (message != _oldMsh)
                 {
-                    if(LogPanel.Children.Count > 5)
-                        LogPanel.Children.RemoveAt(LogPanel.Children.Count - 1);
-                    
                     LogPanel.Children.Add(new TextBlock()
                     {
                         Text = message,
@@ -65,6 +62,8 @@ public partial class MainWindow : Window
         {
             LogStandalone.Log("Debug information 1", 51);
             LogStandalone.Log("Debug information 2", 51);
+            LogStandalone.Log("Debug information 3", 51);
+            LogStandalone.Log("Debug information 4", 51);
             LogStandalone.Log("Debug information", 51);
             return;
         }

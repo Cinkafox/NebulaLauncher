@@ -40,8 +40,8 @@
         </Border>
         <Border Grid.Row="2" Background="#222222">
             <ScrollViewer >
-                <StackPanel Name="LogPanel">
-                </StackPanel>
+                <ReversibleStackPanel ReverseOrder="True" Name="LogPanel">
+                </ReversibleStackPanel>
             </ScrollViewer>
         </Border>
         <Border Name="ExceptionBorder" IsVisible="False" Grid.Row="0" Background="#222222" Grid.RowSpan="3">
