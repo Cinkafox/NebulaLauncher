@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Nebula.Launcher.Models.ContentBrowser;
 using Nebula.Launcher.ProcessHelper;
 using Nebula.Launcher.ServerListProviders;
 using Nebula.Launcher.ViewModels;
-using Nebula.Launcher.ViewModels.ContentBrowser;
 using Nebula.Launcher.ViewModels.Pages;
 using Nebula.Launcher.ViewModels.Popup;
 using Nebula.Shared;
@@ -26,8 +24,6 @@ public class GameRunnerService
     private readonly AccountInfoViewModel _accountInfoViewModel;
     private readonly FavoriteServerListProvider _favoriteServerListProvider;
     private readonly ILogger _logger;
-
-    private Dictionary<RobustUrl, InstanceKey> _instanceDictionary = [];
 
     public GameRunnerService(PopupMessageService popupMessageService, 
         DebugService debugService, 
@@ -107,7 +103,7 @@ public class GameRunnerService
         }
     }
 
-    public async Task RunInstanceAsync(ServerEntryViewModel serverEntryViewModel, CancellationToken cancellationToken, bool ignoreLoginCredentials = false)
+    public async Task RunInstanceAsync(ServerEntryViewModel serverEntryViewModel,LoadingContextEntry loadingEntry, CancellationToken cancellationToken, bool ignoreLoginCredentials = false)
     {
         _logger.Log("Running instance..." + serverEntryViewModel.RealName);
         if (!ignoreLoginCredentials && _accountInfoViewModel.Credentials.Value is null)
@@ -121,11 +117,6 @@ public class GameRunnerService
 
         try
         {
-            using var viewModelLoading = _viewHelperService.GetViewModel<LoadingContextViewModel>();
-            viewModelLoading.LoadingName = "Loading instance...";
-            using var loadingEntry = viewModelLoading.CreateContextEntry();
-            
-            _popupMessageService.Popup(viewModelLoading);
             var currProcessStartProvider = 
                 await _gameRunnerPreparer.GetGameProcessStartInfoProvider(serverEntryViewModel.Address, loadingEntry, cancellationToken);
             _logger.Log("Preparing instance...");

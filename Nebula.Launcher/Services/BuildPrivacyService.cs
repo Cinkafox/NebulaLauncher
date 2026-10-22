@@ -13,9 +13,9 @@ public class BuildPrivacyService(
     PopupMessageService popupMessageService,
     ConfigurationService configurationService)
 {
-    public async Task<bool> IsPrivacyAcceptRequired(ServerEntryViewModel serverEntry)
+    public async Task<bool> IsPrivacyAcceptRequired(ServerEntryViewModel serverEntry, LoadingContextEntry loadingContextEntry)
     {
-        var info = await serverEntry.GetServerInfo();
+        var info = await serverEntry.GetServerInfo(loadingContextEntry);
         if(info?.PrivacyPolicy is null) 
             return false;
         
@@ -23,7 +23,7 @@ public class BuildPrivacyService(
         var privacyKey = info.PrivacyPolicy.Identifier + "-" + info.PrivacyPolicy.Version;
         if (privacyAcceptedList.Contains(privacyKey))
             return false;
-
+        
         using var privacyPopup = viewHelperService.GetViewModel<PrivacyInfoViewModel>();
         popupMessageService.Popup(privacyPopup);
         if (await privacyPopup.AskPrivacyAccepting(info.PrivacyPolicy))

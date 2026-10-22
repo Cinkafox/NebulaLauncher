@@ -176,14 +176,14 @@
                         Grid.Row="0">
                         <Panel Margin="12,0,0,0" VerticalAlignment="Center">
                             <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
-                                <Label Content="{Binding CurrentTitle}" VerticalAlignment="Center" />
+                                <Label Content="{Binding CurrentPopup?.Title}" VerticalAlignment="Center" />
                             </StackPanel>
                             <Button
                                 Command="{Binding CloseCurrentPopup}"
                                 Content="X"
                                 CornerRadius="0,10,0,0"
                                 HorizontalAlignment="Right"
-                                IsVisible="{Binding IsPopupClosable}"
+                                IsVisible="{Binding CurrentPopup?.IsClosable}"
                                 Margin="0"
                                 Padding="10,8,10,8"
                                 VerticalAlignment="Stretch" />

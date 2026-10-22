@@ -44,6 +44,8 @@ public sealed partial class ServerEntryViewModel:
     [GenerateProperty] private CancellationService CancellationService { get; }
     [GenerateProperty] private GameRunnerService GameRunnerService { get; }
     [GenerateProperty] private BuildPrivacyService BuildPrivacyService { get; }
+    [GenerateProperty] private ViewHelperService ViewHelperService { get; }
+    [GenerateProperty] private PopupMessageService PopupMessageService { get; }
 
     public RobustUrl Address { get; private set; }
     
@@ -66,14 +68,17 @@ public sealed partial class ServerEntryViewModel:
     public ObservableCollection<string> Tags { get; } = [];
     public ICommand OnLinkGo { get; } = new LinkGoCommand();
 
-    public async Task<ServerInfo?> GetServerInfo()
+    public async Task<ServerInfo?> GetServerInfo(LoadingContextEntry? loadingContextEntry)
     {
         if (_serverInfo != null) 
             return _serverInfo;
+
+        using var loadingContext = loadingContextEntry?.CreateLoadingContext();
+        loadingContext?.SetLoadingMessage(LocalizationService.GetString("server-info-get"));
         
         try
         {
-            _serverInfo = await RestService.GetAsync<ServerInfo>(Address.InfoUri, CancellationService.Token);
+            _serverInfo = await RestService.GetAsync<ServerInfo>(Address.InfoUri, CancellationService.Token, loadingContext);
         }
         catch (Exception e)
         {
@@ -154,11 +159,16 @@ public sealed partial class ServerEntryViewModel:
 
     private async void CheckPrivacyAndRun(bool ignoreLoginCredentials)
     {
-        if (await BuildPrivacyService.IsPrivacyAcceptRequired(this)) 
+        using var viewModelLoading = ViewHelperService.GetViewModel<LoadingContextViewModel>();
+        viewModelLoading.LoadingName = "Loading instance...";
+        PopupMessageService.Popup(viewModelLoading);
+        using var loadingEntry = viewModelLoading.CreateContextEntry();
+        
+        if (await BuildPrivacyService.IsPrivacyAcceptRequired(this, loadingEntry)) 
             return;
         
         await Task.Run(async () =>
-            await GameRunnerService.RunInstanceAsync(this, CancellationService.Token, ignoreLoginCredentials));
+            await GameRunnerService.RunInstanceAsync(this, loadingEntry, CancellationService.Token, ignoreLoginCredentials));
     }
 
     public void StopInstance()
@@ -181,7 +191,7 @@ public sealed partial class ServerEntryViewModel:
         ExpandInfo = !ExpandInfo;
         if (Design.IsDesignMode) return;
 
-        var info = await GetServerInfo();
+        var info = await GetServerInfo(null);
         if (info == null) return;
 
         Description = info.Desc;

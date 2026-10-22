@@ -37,10 +37,8 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string _versionInfo = "dev";
     [ObservableProperty] private ViewModelBase _currentPage;
     [ObservableProperty] private PopupViewModelBase? _currentPopup;
-    [ObservableProperty] private string _currentTitle = "Default";
     [ObservableProperty] private bool _isEnabled = true;
     [ObservableProperty] private bool _isPaneOpen;
-    [ObservableProperty] private bool _isPopupClosable = true;
     [ObservableProperty] private bool _popup;
     [ObservableProperty] private ListItemTemplate? _selectedListItem;
     [ObservableProperty] private string? _loginText = LocalizationService.GetString("auth-current-login-no-name");
@@ -205,29 +203,29 @@ public partial class MainViewModel : ViewModelBase
 
     public void PopupMessage(PopupViewModelBase viewModelBase)
     {
-        if (CurrentPopup == null)
+        if (CurrentPopup != null)
         {
+            _viewQueue.Insert(0, CurrentPopup);
             CurrentPopup = viewModelBase;
-            CurrentTitle = viewModelBase.Title;
-            IsPopupClosable = viewModelBase.IsClosable;
-            OnOpenRequired();
         }
         else
         {
-            _viewQueue.Add(viewModelBase);
+            CurrentPopup = viewModelBase;
         }
     }
 
-    private void OnCloseRequired()
+    partial void OnCurrentPopupChanged(PopupViewModelBase? value)
     {
-        IsEnabled = true;
-        Popup = false;
-    }
-
-    private void OnOpenRequired()
-    {
-        IsEnabled = false;
-        Popup = true;
+        if (value is null)
+        {
+            IsEnabled = true;
+            Popup = false;
+        }
+        else
+        {
+            IsEnabled = false;
+            Popup = true;
+        }
     }
 
     public void OpenAuthPage()
@@ -296,13 +294,8 @@ public partial class MainViewModel : ViewModelBase
     private void ClosePopup()
     {
         var viewModelBase = _viewQueue.FirstOrDefault();
-        if (viewModelBase is null)
+        if (viewModelBase is not null)
         {
-            OnCloseRequired();
-        }
-        else
-        {
-            CurrentTitle = viewModelBase.Title;
             _viewQueue.RemoveAt(0);
         }
 

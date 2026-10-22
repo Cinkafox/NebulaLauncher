@@ -10,14 +10,14 @@
     <Design.DataContext>
         <popup:PrivacyInfoViewModel />
     </Design.DataContext>
-    <Grid RowDefinitions="40,40,40,40" ColumnDefinitions="*,*" ColumnSpacing="5" RowSpacing="5">
+    <Grid Margin="50,30,50,30" RowDefinitions="40,40,40,40" ColumnDefinitions="*,*" ColumnSpacing="5" RowSpacing="15">
         <TextBlock 
             VerticalAlignment="Center"
             HorizontalAlignment="Center" 
             Grid.ColumnSpan="2" 
             Text="{services:LocaledText privacy-info-popup-info}"/>
         
-        <Border Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0"  Background="{StaticResource DefaultSelected}" BoxShadow="{StaticResource DefaultShadow}">
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0"  Background="{StaticResource DefaultGrad}" BoxShadow="{StaticResource DefaultShadow}">
             <Button HorizontalAlignment="Stretch" Command="{Binding GoToPrivacy}">
                 <TextBlock HorizontalAlignment="Center" Text="{services:LocaledText privacy-info-popup-read}"/>
             </Button>

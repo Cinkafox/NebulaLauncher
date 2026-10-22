@@ -21,6 +21,7 @@ public sealed class EngineService
     
     private ModulesInfo? _modulesInfo;
     private Dictionary<string, EngineVersionInfo>? _versionsInfo;
+    private HttpClient _client = new HttpClient();
 
     public EngineService(RestService restService, DebugService debugService, ConfigurationService varService,
         FileService fileService, AssemblyService assemblyService)
@@ -139,14 +140,12 @@ public sealed class EngineService
         loadingHandler.SetLoadingMessage("Downloading engine version " + version);
         loadingHandler.Clear();
         
-        using var client = new HttpClient();
-        
-        var response = await client.GetAsync(info.Url, cancellationToken);
+        var response = await _client.GetAsync(info.Url, cancellationToken);
         response.EnsureSuccessStatusCode();
         loadingHandler.SetJobsCount(response.Content.Headers.ContentLength ?? 0);
         
         await using var streamContent = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var s = await client.GetStreamAsync(info.Url, cancellationToken);
+        var s = await _client.GetStreamAsync(info.Url, cancellationToken);
         _engineFileApi.Save(version, s, loadingHandler);
         await s.DisposeAsync();
     }
@@ -231,8 +230,8 @@ public sealed class EngineService
 
         _logger.Log("Downloading engine module version " + moduleVersion);
         loadingHandler.SetLoadingMessage("Downloading engine module version " + moduleVersion);
-        using var client = new HttpClient();
-        var s = await client.GetStreamAsync(info.Url);
+       
+        var s = await _client.GetStreamAsync(info.Url);
         _engineFileApi.Save(ConcatName(moduleName, moduleVersion), s, loadingHandler);
         await s.DisposeAsync();
     }

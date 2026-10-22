@@ -35,7 +35,7 @@ public class AuthService(
         {
             Console.WriteLine(e.Content);
             if (e.StatusCode != HttpStatusCode.Unauthorized) throw;
-            var err = await e.Content.AsJson<AuthDenyError>();
+            var err = await e.Content.AsJson<AuthDenyError>(null);
             
             if (err is null) throw;
             e.Dispose();
