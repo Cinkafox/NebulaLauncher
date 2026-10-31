@@ -36,7 +36,7 @@ public static class LauncherConVar
         new AuthServerCredentials(
             "WizDen", 
             [
-                "https://feline.durenko.tatar/auth-api/",
+                "https://durenko.tatar/mirror/auth/",
                 "https://auth.spacestation14.com/",
                 "https://auth.fallback.spacestation14.com/",
             ]),
@@ -51,7 +51,7 @@ public static class LauncherConVar
         ConVarBuilder.Build<string[]>("launcher.accepted_privacy_policies", []);
     
     public static readonly ConVar<ServerHubRecord[]> Hub = ConVarBuilder.Build<ServerHubRecord[]>("launcher.hub.v2", [
-        new ServerHubRecord("WizDen", "https://feline.durenko.tatar/hub-api/api/servers"),
+        new ServerHubRecord("WizDen", "https://durenko.tatar/mirror/hub/api/servers"),
     ]);
 
     public static readonly ConVar<string> CurrentLang = ConVarBuilder.Build<string>("launcher.language", CultureInfo.CurrentCulture.Name);
