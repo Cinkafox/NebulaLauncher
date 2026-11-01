@@ -8,14 +8,14 @@ public static class CurrentConVar
 {
     public static readonly ConVar<string[]> EngineManifestUrl =
         ConVarBuilder.Build<string[]>("engine.manifestUrl", [
-            "https://durenko.tatar/mirror/engine/manifest.json", 
+            "https://robust-builds.cdn.spacestation14.com/manifest.json", 
             "https://robust-builds.fallback.cdn.spacestation14.com/manifest.json"
         ]);
 
     public static readonly ConVar<string[]> EngineModuleManifestUrl =
         ConVarBuilder.Build<string[]>("engine.moduleManifestUrl", 
         [
-            "https://durenko.tatar/mirror/engine/modules.json",
+            "https://robust-builds.cdn.spacestation14.com/modules.json",
             "https://robust-builds.fallback.cdn.spacestation14.com/modules.json"
         ]);
 
@@ -41,4 +41,15 @@ public static class CurrentConVar
     
     public static readonly ConVar<string> DotnetVersion = ConVarBuilder.Build<string>("dotnet.version", "10.0.2");
     public static readonly ConVar<int> ContentDownloadConcurrently = ConVarBuilder.Build<int>("engine.contentDownloadConcurrently", 3);
+
+    public static readonly ConVar<Dictionary<string, string>> DnsResolveIps =
+        ConVarBuilder.Build("engine.dnsResolveIps", new Dictionary<string, string>
+        {
+            // TODO: Узнать настоящие айпишники первых двух адресов.
+            // На данный момент они спрятаны за CloudFlare, который не позволяет сделать такие приколы с проксированием шифрованного трафика.
+            //{"robust-builds.cdn.spacestation14.com","92.63.189.61"},
+            //{"auth.spacestation14.com","92.63.189.61"},
+            {"hub.spacestation14.com","92.63.189.61"},
+            {"robust-builds.playss14.com","92.63.189.61"},
+        });
 }
