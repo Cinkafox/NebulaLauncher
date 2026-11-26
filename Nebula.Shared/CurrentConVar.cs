@@ -49,7 +49,7 @@ public static class CurrentConVar
             // На данный момент они спрятаны за CloudFlare, который не позволяет сделать такие приколы с проксированием шифрованного трафика.
             //{"robust-builds.cdn.spacestation14.com","92.63.189.61"},
             //{"auth.spacestation14.com","92.63.189.61"},
-            {"hub.spacestation14.com","92.63.189.61"},
-            {"robust-builds.playss14.com","92.63.189.61"},
+            //{"hub.spacestation14.com","92.63.189.61"},
+            //{"robust-builds.playss14.com","92.63.189.61"},
         });
 }
